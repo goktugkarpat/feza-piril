@@ -1556,9 +1556,10 @@ function omDn2Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0b1a
 function omDn3Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#f3b8a8'; g.fillRect(0, 0, W, H); }
 function omDn6Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#2b2452'; g.fillRect(0, 0, W, H); }   // Bölüm 6: mor-lacivert alacakaranlık
 function omDn7Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#1d2556'; g.fillRect(0, 0, W, H); }   // Bölüm 7: mavi-mor kış gecesi
-const OM_DR_ON = BOLUM_NO === 7 ? 'dn7' : BOLUM_NO === 6 ? 'dn6' : BOLUM_NO === 5 ? 'dn5' : BOLUM_NO === 4 ? 'dn4' : BOLUM_NO === 3 ? 'dn3' : 'dn2', OM_DR_YEDEK = BOLUM_NO === 7 ? omDn7Yedek : BOLUM_NO === 6 ? omDn6Yedek : BOLUM_NO === 3 ? omDn3Yedek : omDn2Yedek;
+function omDn8Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#2a1f4e'; g.fillRect(0, 0, W, H); }   // Bölüm 8: mor-turuncu Cadılar Bayramı gecesi
+const OM_DR_ON = BOLUM_NO === 8 ? 'dn8' : BOLUM_NO === 7 ? 'dn7' : BOLUM_NO === 6 ? 'dn6' : BOLUM_NO === 5 ? 'dn5' : BOLUM_NO === 4 ? 'dn4' : BOLUM_NO === 3 ? 'dn3' : 'dn2', OM_DR_YEDEK = BOLUM_NO === 8 ? omDn8Yedek : BOLUM_NO === 7 ? omDn7Yedek : BOLUM_NO === 6 ? omDn6Yedek : BOLUM_NO === 3 ? omDn3Yedek : omDn2Yedek;
 function omDr(ad) {   // çağrı anında seçilir (dunya2.js / dunya3.js sonradan tanımlanmış olabilir)
-  if (!(BOLUM_NO >= 2 && BOLUM_NO <= 7)) { const f = globalThis[OM_DR1[ad]]; return typeof f === 'function' ? f : null; }
+  if (!(BOLUM_NO >= 2 && BOLUM_NO <= 8)) { const f = globalThis[OM_DR1[ad]]; return typeof f === 'function' ? f : null; }
   const f2 = globalThis[OM_DR_ON + ad];
   if (typeof f2 === 'function') return f2;
   return ad === 'Background' ? OM_DR_YEDEK : null;
