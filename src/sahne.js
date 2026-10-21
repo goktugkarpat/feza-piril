@@ -2650,7 +2650,7 @@ function shHiQ() { return Math.min(1400, Math.round(Math.max(W, H) * 0.6 / 8) * 
 function shBalonBirak() { if (sh.balon) for (const k in sh.balon) shBirak(sh.balon[k]); sh.balon = {}; }
 // ── RÜYA KAVANOZLARI: ölçüler, önbellekli parçalar, dokunuş / sürükleme ──
 const SH_KAV_SURE = 2.1;    // kavanoz açılışından onSec'e (sn): mantar fırlar → ışık süzülür → rüyaya dalış
-const SH_KAV_BUYUK = 1.36;  // ortadaki kavanozun yandakilere oranı
+const SH_KAV_BUYUK = 1.3;   // ortadaki kavanozun yandakilere oranı
 const SH_KAV_EN = 0.9;      // kavanozun eni / boyu (mantar dahil)
 const SH_KAV_ESIK = 12;     // bu kadar (CSS px) kayan dokunuş sürüklemedir: kavanoz açmaz
 // raf ve kavanoz ölçüleri (ekran pikseli). Raf tahtasının alt kenarı ≈0,476 H: yatakta Feza'nın ve Pırıl'ın yüzleri (≈0,485 H ve
@@ -2660,8 +2660,8 @@ function shKavYer() {
   if (K && K.W === W && K.H === H && K.asagi === asagi) return K;
   const yatay = W > H * 1.1, fs = Math.min(H * 0.1, W * 0.088), tb = H * (yatay ? 0.025 : 0.035) + fs * 1.62 + asagi;
   const pt = H * 0.028, yp = H * 0.448, ts = pt * 0.34;
-  const hc = clamp(Math.min(yp - tb - H * 0.016, H * 0.245), H * 0.12, W * (yatay ? 0.2 : 0.36) / SH_KAV_EN), hs = hc / SH_KAV_BUYUK;
-  const sp = yatay ? Math.max(hs * SH_KAV_EN * 1.8, W * 0.25) : Math.max(hs * SH_KAV_EN * 1.22, W * 0.34);
+  const hc = 0.87 * clamp(Math.min(yp - tb - H * 0.016, H * 0.245), H * 0.12, W * (yatay ? 0.2 : 0.36) / SH_KAV_EN), hs = hc / SH_KAV_BUYUK;
+  const sp = yatay ? Math.max(hs * SH_KAV_EN * 1.95, W * 0.225) : Math.max(hs * SH_KAV_EN * 1.35, W * 0.31);   // ebeveyn isteği: kavanozlar ≈%13 küçük
   const h0 = Math.max(48, Math.round(hc / 8) * 8);   // önbellek boyu (ortadaki kavanoz); yandakiler küçültülerek çizilir
   return sh.kavYer = { W, H, asagi, yatay, tb, yp, pt, ts, hc, hs, sp, h0, q0: Math.max(64, Math.round(h0 * 1.02 / 8) * 8) };
 }
@@ -2697,7 +2697,7 @@ function shKavCam(h0, col) {
     x.fillStyle = 'rgba(8,5,24,0.42)'; x.beginPath(); x.ellipse(X, Y + h * 0.004, h * 0.44, h * 0.045, 0, 0, 6.283); x.fill(); x.restore();
     x.save(); shKavYol(x, X, Y, h, 0.028); x.clip();
     let gr = x.createRadialGradient(X - h * 0.06, Y - h * 0.42, h * 0.12, X, Y - h * 0.4, h * 0.56);
-    gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.62, 'rgba(30,18,70,0.06)'); gr.addColorStop(1, 'rgba(22,12,55,0.42)');
+    gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.7, 'rgba(30,18,70,0.03)'); gr.addColorStop(1, 'rgba(22,12,55,0.26)');
     x.fillStyle = gr; x.fillRect(X - h * 0.6, Y - h, h * 1.2, h * 1.05);
     x.globalCompositeOperation = 'lighter'; x.fillStyle = mixc(col, col, 0, 0.07); x.fillRect(X - h * 0.6, Y - h, h * 1.2, h * 1.05); x.globalCompositeOperation = 'source-over';
     shKavYol(x, X, Y, h, 0.028); x.strokeStyle = 'rgba(255,255,255,0.16)'; x.lineWidth = h * 0.055; x.stroke();
@@ -2793,10 +2793,22 @@ function shKavTahta(K) {
     }
     x.strokeStyle = 'rgba(255,220,240,0.1)'; x.lineWidth = Math.max(0.6, pt * 0.035);
     for (let k = 0; k < 2; k++) { const y0 = ts + pt * (0.32 + k * 0.32), ph = r() * 6.283; x.beginPath(); for (let i = 0; i <= 48; i++) { const u = i / 48, yy = y0 + Math.sin(u * 6.283 * 3 + ph) * pt * 0.05; if (i) x.lineTo(u * w, yy); else x.moveTo(0, yy); } x.stroke(); }
-    for (const u of [0.08, 0.58]) {   // iki kavanozun arasına oyulmuş yıldızlar (ay ışığında hafifçe parlar)
-      x.fillStyle = 'rgba(30,16,34,0.45)'; shYildiz5(x, u * w + pt * 0.03, ts + pt * 0.53, pt * 0.27); x.fill();
-      x.fillStyle = 'rgba(255,226,170,0.38)'; shYildiz5(x, u * w, ts + pt * 0.5, pt * 0.25); x.fill();
+    for (const [u, ay] of [[0.08, 1], [0.58, 0]]) {   // iki kavanozun arasına oyulmuş hilal ve yıldızlar (ay ışığında hafifçe parlar)
+      const cx = u * w, cy = ts + pt * 0.5;
+      if (ay) {
+        x.fillStyle = 'rgba(30,16,34,0.45)'; x.beginPath(); x.arc(cx + pt * 0.03, cy + pt * 0.03, pt * 0.3, 0, 6.283); x.arc(cx + pt * 0.15, cy - pt * 0.07, pt * 0.26, 0, 6.283, true); x.fill();
+        x.fillStyle = 'rgba(255,226,170,0.42)'; x.beginPath(); x.arc(cx, cy, pt * 0.3, 0, 6.283); x.arc(cx + pt * 0.13, cy - pt * 0.09, pt * 0.25, 0, 6.283, true); x.fill();
+        for (const [dx, dy, rr] of [[0.55, -0.15, 0.13], [0.85, 0.12, 0.09]]) { x.fillStyle = 'rgba(255,226,170,0.38)'; shYildiz5(x, cx + dx * pt, cy + dy * pt, rr * pt); x.fill(); }
+      } else {
+        x.fillStyle = 'rgba(30,16,34,0.45)'; shYildiz5(x, cx + pt * 0.03, cy + pt * 0.03, pt * 0.27); x.fill();
+        x.fillStyle = 'rgba(255,226,170,0.38)'; shYildiz5(x, cx, cy, pt * 0.25); x.fill();
+      }
     }
+    // tahtanın üst kenarında kıvrılan ince sarmaşık, minik yapraklar (uçları ışıl ışıl: canlı katmanda)
+    x.strokeStyle = '#3f6a52'; x.lineWidth = Math.max(1, pt * 0.07); x.beginPath();
+    for (let i = 0; i <= 64; i++) { const u = i / 64, yy = ts * 0.9 + Math.sin(u * 6.283 * 4) * pt * 0.1; if (i) x.lineTo(u * w, yy); else x.moveTo(0, yy); } x.stroke();
+    for (let k = 0; k < 16; k++) { const u = (k + 0.5) / 16, px = u * w, py = ts * 0.9 + Math.sin(u * 6.283 * 4) * pt * 0.1, sd = k % 2 ? 1 : -1;
+      x.fillStyle = k % 3 ? '#4f9a66' : '#6fbf7a'; x.save(); x.translate(px, py); x.rotate(sd * 0.7 - 0.3); x.beginPath(); x.ellipse(pt * 0.16, 0, pt * 0.17, pt * 0.08, 0, 0, 6.283); x.fill(); x.restore(); }
     x.fillStyle = 'rgba(255,215,200,0.4)'; x.fillRect(0, ts, w, Math.max(1, pt * 0.09));   // ön kenar ışığı
     x.fillStyle = 'rgba(20,10,30,0.5)'; x.fillRect(0, ts + pt - Math.max(1, pt * 0.08), w, Math.max(1, pt * 0.08));
     gr = x.createLinearGradient(0, ts + pt, 0, ts + pt + gl); gr.addColorStop(0, 'rgba(6,6,22,0.45)'); gr.addColorStop(1, 'rgba(6,6,22,0)'); x.fillStyle = gr; x.fillRect(0, ts + pt, w, gl);
@@ -2863,10 +2875,10 @@ function shKavAc(i) {   // mantar fırlar: rüyaya geçiş başlar (balondaki ol
 function shKavFizik(S2, dt) {
   const n = S2.opts.length; if (!n || S2.el) return;
   const h = Math.min(dt, 0.05); if (!(h > 0)) return;
-  const K = 46, C = 2 * Math.sqrt(K) * 0.88;
+  const K = 52, C = 2 * Math.sqrt(K) * 0.6;   // az sönümlü: yerine otururken minicik sekme
   S2.v += (K * (S2.hedef - S2.kay) - C * S2.v) * h; S2.kay += S2.v * h;
   if (!isFinite(S2.kay) || !isFinite(S2.v)) { S2.kay = S2.hedef; S2.v = 0; }
-  if (Math.abs(S2.hedef - S2.kay) < 0.03 && Math.abs(S2.v) < 0.3) {
+  if (Math.abs(S2.hedef - S2.kay) < 0.03 && Math.abs(S2.v) < 0.5) {
     if (S2.cin !== S2.hedef) { S2.cin = S2.hedef; S2.oturT = sh.t; if (S2.acil < 0) shSfx('parilti', 0); }
   }
 }
@@ -2972,7 +2984,7 @@ function shSecimOda(tm, dt, sec) {   // gece odası: lamba, uyuyan Feza, parlaya
   shYatakArka(p, 0, 0, tm);
   sh.fzOlc = 1.18; sh.prOlc = 1; sh.kirpK = 0;
   const S2 = sh.sec, nu = S2 ? clamp((sh.t - S2.nab) / 1.1, 0, 1) : 1;
-  const fl = S2 && S2.secili ? Math.sin(shSeg(sec, 0, 0.6) * Math.PI) : nu < 1 ? Math.sin(nu * Math.PI) * 0.45 : 0;   // dokununca (boş dokunuşta da hafifçe) Pırıl parlar
+  const fl = S2 && S2.secili ? Math.sin(shSeg(sec, 0, 0.6) * Math.PI) : Math.max(nu < 1 ? Math.sin(nu * Math.PI) * 0.45 : 0, S2 && S2.oturT > 0 ? 0.4 * Math.sin(shSeg(sh.t, S2.oturT, S2.oturT + 1.1) * Math.PI) : 0);   // kavanoz ortaya oturunca Pırıl da hafifçe parlar   // dokununca (boş dokunuşta da hafifçe) Pırıl parlar
   shPirilIsik(shKucak.px, shKucak.py, tm, 1 + 0.4 * fl);
   const cy = (tm + 4) % 12.5, sok = cy > 7 && cy < 9.2 ? Math.sin((cy - 7) / 2.2 * Math.PI) : 0;   // ≈12 sn'de bir: iç çekip Pırıl'a sokulur
   shFeza(SH_FEZA.x + 0.25 * sok, SH_FEZA.y + 0.12 * sok, 1.18, shPozVar('uykuya_dalis') ? 'uykuya_dalis' : 'uyku', tm, shPirilPozVar('pelus_sik') ? 'pelus_sik' : 'pelus', shPirilPozVar('pelus_sik') ? 0.45 + 0.25 * Math.sin(tm * 1.5) + 0.3 * sok : undefined, undefined, shPozVar('uykuya_dalis') ? 3.3 + tm * 0.2 : tm);
@@ -2996,7 +3008,7 @@ function shRuyaIzi(px, py, ex, ey, d, col, tm, i, a) {
     dglow('#ffffff', x, y, d * (k % 2 ? 0.01 : 0.016), al * 0.95);
   }
 }
-const SH_KAV_IS = ['#ffe6a8', '#c9b2ff', '#9fe6ff', '#ffb6d9', '#a8f0c8'];   // rafın peri ışıkları
+const SH_KAV_IS = ['#ffd98a', '#ffc2a0', '#ffe6a8', '#ffb6c8', '#fff0c0'];   // sıcak tonlar   // rafın peri ışıkları
 // raf: uzun büyülü tahta (kavanozlarla birlikte kayar; iki ucu yuvarlak, havada durur), ön yüzünde ışıldayan peri ışıkları
 function shKavRaf(K, S2, tm, a) {
   if (a <= 0.01) return;
@@ -3028,35 +3040,38 @@ function shKavRaf(K, S2, tm, a) {
     if (bx < -10 || bx > W + 10) continue;
     const m = ((k * 3 + j) % 5 + 5) % 5, tw = 0.55 + 0.45 * Math.sin(tm * 2.1 + k * 1.3 + j * 2.1);
     dglow(SH_KAV_IS[m], bx, by, K.pt * 0.75, a * 0.42 * tw);
-    g.globalAlpha = a * (0.65 + 0.35 * tw); g.fillStyle = '#fff8e8'; g.beginPath(); g.arc(bx, by, Math.max(1, K.pt * 0.11), 0, 6.283); g.fill();
+    g.globalAlpha = a * (0.65 + 0.35 * tw); g.fillStyle = '#fff2d0'; g.beginPath(); g.arc(bx, by, Math.max(1, K.pt * 0.11), 0, 6.283); g.fill();
   }
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
 }
+function shKavT(b) { const c = Math.cos(b.egim || 0), sn = Math.sin(b.egim || 0); g.setTransform(c, sn, -sn, c, b.x - c * b.x + sn * b.y, b.y - sn * b.x - c * b.y); }   // tabandan eğik
 // tek kavanoz: arkasında ışık, içinde rüyanın canlı resmi (kavanoz biçiminde kesilir) ve süzülen ışık tozları, üstünde cam,
 // kurdele, sallanan etiket ve mantar; durum işaretleri (tamam: altın yıldız, son: dönen ışık halkası, yeni: ışıltılar)
 function shKavCiz(K, S2, o, i, b, tm, al, odak, hov, ilk, u) {
   const X = b.x, Y = b.y, h = b.h, col = SH_BALON_RENK[o.ikon] || '#e6d6ff', s = h / K.h0, cy = Y - h * 0.41, acilan = S2.secili && S2.si === i;
   const t = sh.t, nu = clamp((t - S2.nab) / 0.9, 0, 1), nd = Math.hypot(S2.nabX - X, S2.nabY - cy), nb = nu < 1 ? Math.sin(nu * Math.PI) * clamp(1.4 - nd / (Math.max(W, H) * 0.5), 0.3, 1) : 0;
-  const parla = acilan ? Math.sin(shSeg(u, 0, 0.5) * Math.PI) : 0, son = !!o.son, yeni = !o.tamam;
+  const parla = acilan ? Math.sin(shSeg(u, 0, 0.5) * Math.PI) : 0, yeni = !o.tamam;
+  shKavT(b);   // kayarken kavanoz tabanının üstünde hafifçe sallanır
   // arkadaki ışık ve rafa düşen renkli ışık
   g.globalCompositeOperation = 'lighter';
-  dglow(col, X, cy, h * (0.7 + 0.25 * odak + 0.2 * parla), al * (0.1 + 0.26 * odak * (0.85 + 0.15 * Math.sin(tm * 1.6)) + (son ? 0.1 : 0) + 0.25 * nb + 0.5 * parla + 0.12 * hov));
-  dglow(col, X, Y + K.pt * 0.3, h * 0.42, al * (0.1 + 0.2 * odak));
+  dglow(col, X, cy, h * (0.7 + 0.25 * odak + 0.2 * parla), al * (0.1 + 0.26 * odak * (0.85 + 0.15 * Math.sin(tm * 1.6)) + 0.25 * nb + 0.5 * parla + 0.12 * hov));
+  dglow('#ffd9a0', X, Y + K.pt * 0.15, h * 0.5, al * (0.14 + 0.24 * odak)); dglow(col, X, Y + K.pt * 0.2, h * 0.34, al * (0.12 + 0.22 * odak));   // tahtada kavanozun altına biriken sıcak ışık
   g.globalCompositeOperation = 'source-over';
   // içerideki rüya: kavanozun iç hattıyla kesilir; yandakiler biraz soluk
-  const dim = lerp(0.68, 1, odak), q = h * 1.0;
+  const dim = lerp(0.62, 1, odak), q = h * 1.0;
   g.save(); shKavYol(g, X, Y, h, 0.028); g.clip();
   g.globalAlpha = al * dim; g.drawImage(shBalonIc(o.ikon, K.q0), X - q / 2, cy - q / 2, q, q); g.globalAlpha = 1;
-  g.translate(X, cy); shIkonCanli(o.ikon, -q / 2, -q / 2, q, tm, al * dim, i, hov); g.setTransform(1, 0, 0, 1, 0, 0);
+  g.translate(X, cy); shIkonCanli(o.ikon, -q / 2, -q / 2, q, tm, al * dim, i, hov); shKavT(b);
   g.globalCompositeOperation = 'lighter';
   for (let k = 0; k < 5; k++) {   // kavanozun içinde yavaşça yükselen ışık tozları
     const uu = (tm * (0.07 + k * 0.012) + k * 0.21 + i * 0.13) % 1, px = X + Math.sin(k * 2.1 + tm * 0.7 + i) * h * 0.24, py = Y - h * (0.08 + uu * 0.62), aa = Math.sin(uu * Math.PI) * al * (0.6 + 0.4 * odak);
     dglow(k % 2 ? col : '#ffffff', px, py, h * 0.04, aa * 0.5);
     if (k % 2 === 0) shParilti(px, py, h * 0.022, aa * 0.85);
   }
+  if (odak > 0.02) { g.globalAlpha = al * odak * (0.07 + 0.03 * Math.sin(tm * 1.6)); g.fillStyle = mixc(col, '#ffffff', 0.5); g.fillRect(X - h * 0.5, Y - h, h, h); g.globalAlpha = 1; }   // ortadaki: içi ışıl ışıl
   if (parla > 0) { g.globalAlpha = parla * 0.35; g.fillStyle = col; g.fillRect(X - h * 0.5, Y - h, h, h); g.globalAlpha = 1; }   // açılırken içi ışıl ışıl
   g.globalCompositeOperation = 'source-over';
-  g.restore(); g.setTransform(1, 0, 0, 1, 0, 0);
+  g.restore(); shKavT(b);
   // cam, mantar (açılırken fırlar, döner, söner), boyna bağlı kurdele, iple sarkan etiket
   shKavBas(shKavCam(K.h0, col), X, Y, s, al);
   const mp = acilan ? shEaseOut(shSeg(u, 0, 0.2)) : 0, ma = acilan ? 1 - shSeg(u, 0.12, 0.3) : 1;
@@ -3083,14 +3098,8 @@ function shKavCiz(K, S2, o, i, b, tm, al, odak, hov, ilk, u) {
       dglow(k % 3 ? col : '#ffffff', px, py, h * 0.07, Math.sin(e * Math.PI) * 0.6); shParilti(px, py, h * 0.03, Math.sin(e * Math.PI));
     }
   }
-  // durum işaretleri
-  if (son && !acilan) {   // son oynanan: kavanozun çevresinde sıcak, yavaşça dönen kesik ışık halkası
-    g.strokeStyle = `rgba(255,236,190,${al * (0.32 + 0.18 * Math.sin(tm * 1.6))})`; g.lineWidth = Math.max(2, h * 0.014); g.setLineDash([h * 0.06, h * 0.035]); g.lineDashOffset = -tm * h * 0.05;
-    g.beginPath(); g.ellipse(X, cy, h * 0.6, h * 0.56, 0, 0, 6.283); g.stroke(); g.setLineDash([]); g.lineDashOffset = 0;
-  }
-  if (yeni && !acilan) {   // oynanmamış: çevresinde dönen minik ışıltılar, mantarın üstünde parıltı
-    for (let k = 0; k < 5; k++) { const a2 = tm * 0.5 + k * 1.2566 + i, tw = 0.5 + 0.5 * Math.sin(tm * 2.2 + k * 1.9 + i); shParilti(X + Math.cos(a2) * h * 0.56, cy + Math.sin(a2) * h * 0.52, h * 0.045 * (0.5 + tw), al * tw * 0.85); }
-    const tw = Math.pow(Math.max(0, Math.sin(tm * 1.7 + i)), 3); shParilti(X - h * 0.12, Y - h * 0.99, h * 0.06 * tw, al * tw);
+  if (yeni && !acilan) {   // hiç oynanmamış rüya: çok hafif, ara sıra bir ışıltı (rozet/halka yok)
+    for (let k = 0; k < 2; k++) { const a2 = tm * 0.4 + k * 3.1 + i, tw = Math.pow(Math.max(0, Math.sin(tm * 1.3 + k * 2.4 + i * 1.7)), 3); shParilti(X + Math.cos(a2) * h * 0.5, cy + Math.sin(a2) * h * 0.46, h * 0.04 * tw, al * tw * 0.55); }
   }
   if (ilk && odak > 0.9 && !S2.secili && S2.acil < 0) {   // ilk kez: ortadaki kavanozda dokunma ipucu (nabız halkaları, el çizimi yok)
     const ia = shEase(shSeg(t, 2.6, 3.6)) * al;
@@ -3098,11 +3107,6 @@ function shKavCiz(K, S2, o, i, b, tm, al, odak, hov, ilk, u) {
     const bs = 0.5 + 0.5 * Math.sin(tm * 3.45); dglow('#fff6d8', X, cy, h * 0.16 * (0.8 + 0.4 * bs), ia * (0.35 + 0.3 * bs));
   }
   g.globalCompositeOperation = 'source-over';
-  if (o.tamam && !acilan) {   // altın yıldız rozeti: mantarın yanında, kavanoz belirince küçük bir zıplamayla
-    const rz0 = 0.9 + Math.abs(i - S2.bas) * 0.16, rz = shSeg(t, rz0, rz0 + 0.55), rzb = shEaseBack(rz), rx = X + h * 0.27, ry = Y - h * 0.93;
-    if (rz > 0.3 && !sh.anlar['rozet' + i] && b.gor) { sh.anlar['rozet' + i] = 1; shSfx('yildizRozet'); }
-    shAltinRozet(rx, ry, h * 0.075 * rzb, tm, al * Math.min(1, rz * 2));
-  }
 }
 // ok ipucu: rafın ekran kenarındaki ucunda (ön yüzünde), ekranın dışında başka kavanoz varsa yumuşakça nabız atan ışıklı ok ve o yöne süzülen ışıltılar
 function shKavOk(K, sd, tm, a) {
@@ -3135,6 +3139,9 @@ function shSecimCiz(tm, dt) {
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = sh.ustGr; g.fillRect(0, 0, W, H * 0.7);
   shZerreler(tm, 0.45, true);
   const gir = shEase(shSeg(t, 0, 1.5)), yz = 1 - shEase(shSeg(u, 0.22, 0.42));
+  // odak: duvarın rafın çevresindeki kısmı hafifçe kararır (kavanozlar öne çıkar), yatak sıcak ve aydınlık kalır
+  if (!sh.kavGr || sh.kavGrH !== H) { const y1 = K.yp + K.pt; sh.kavGr = g.createLinearGradient(0, 0, 0, y1 + H * 0.07); sh.kavGr.addColorStop(0, 'rgba(4,5,20,0.16)'); sh.kavGr.addColorStop(clamp((y1 - H * 0.03) / (y1 + H * 0.07), 0, 1), 'rgba(4,5,20,0.26)'); sh.kavGr.addColorStop(1, 'rgba(4,5,20,0)'); sh.kavGrH = H; }
+  { const da = shEase(shSeg(t, 0.2, 1.4)) * yz; if (da > 0.01) { g.globalAlpha = da; g.fillStyle = sh.kavGr; g.fillRect(0, 0, W, K.yp + K.pt + H * 0.07); g.globalAlpha = 1; } }
   // başlık
   const B = shBaslikSprite(), by = H * (W > H * 1.1 ? 0.025 : 0.035) + shSecGuvenli.asagi - H * 0.02 * shEase(shSeg(u, 0, 0.4)), nf = 0.72 + 0.22 * Math.sin(tm * 1.3);
   g.globalAlpha = Math.min(1, gir * yz * nf); g.drawImage(B.glow, 0, by);
@@ -3151,11 +3158,15 @@ function shSecimCiz(tm, dt) {
     const b = S2.pos[i] || (S2.pos[i] = { x: 0, y: 0, h: 0, gor: false, hazir: 0, ad: 0 });
     b.x = W / 2 + dx * K.sp; b.y = K.yp - K.ts * 0.45; b.ad = ad; b.hazir = em;
     b.h = K.hs * sc * (0.15 + 0.85 * shEaseBack(em)) * (1 + 0.018 * Math.sin(tm * 1.6) * odak);   // ortadaki yavaşça nefes alır
+    b.egim = clamp(-S2.v * 0.035 * (0.6 + 0.4 * odak), -0.13, 0.13) + Math.sin(tm * 1.1 + i * 1.9) * 0.008;   // kayarken sallanır
+    if (S2.secili && S2.si === i) {   // açılırken: mantar fırlarken esner, sonra resim kavanozdan taşacakmış gibi şişer
+      const sq = Math.sin(shSeg(u, 0, 0.16) * Math.PI) * 0.07; b.h *= (1 - sq) * (1 + 0.32 * shEase(shSeg(u, 0.18, 0.4))); b.egim = 0;
+    }
     b.gor = em > 0 && b.x > -b.h && b.x < W + b.h;
   }
   // Pırıl'dan ortadaki kavanoza süzülen rüya tozu
   const ci = clamp(Math.round(S2.kay), 0, n - 1), bc = S2.pos[ci];
-  if (sh.oda && bc && bc.gor) { g.globalCompositeOperation = 'lighter'; shRuyaIzi(shEkranX(shKucak.px), shEkranY(shKucak.py - 2), bc.x, bc.y - bc.h * 0.3, bc.h, SH_BALON_RENK[S2.opts[ci].ikon] || '#e6d6ff', tm, ci, shSeg(t, 1.6, 3) * (1 - bc.ad) * yz * 0.8); g.globalCompositeOperation = 'source-over'; }
+  if (sh.oda && bc && bc.gor) { g.globalCompositeOperation = 'lighter'; shRuyaIzi(shEkranX(shKucak.px), shEkranY(shKucak.py - 2), bc.x, bc.y - bc.h * 0.3, bc.h, SH_BALON_RENK[S2.opts[ci].ikon] || '#e6d6ff', tm, ci, shSeg(t, 1.6, 3) * (1 - bc.ad) * yz * (0.85 + 0.6 * (1 - shSeg(t, S2.oturT, S2.oturT + 1.2)))); g.globalCompositeOperation = 'source-over'; }
   // kavanozlar: uzaktakiler önce, ortadaki en son (komşusunun önünde kalsın)
   const ciz = i => {
     const b = S2.pos[i]; if (!b.gor) return;
@@ -3167,6 +3178,7 @@ function shSecimCiz(tm, dt) {
   for (let i = 0; i < ci; i++) ciz(i);
   for (let i = n - 1; i > ci; i--) ciz(i);
   ciz(ci);
+  g.setTransform(1, 0, 0, 1, 0, 0);
   // uç ipuçları: ekranın dışında başka kavanoz varsa
   if (!S2.secili) {
     const oa = shEase(shSeg(t, 2.2, 3.2)) * yz;
@@ -3177,7 +3189,7 @@ function shSecimCiz(tm, dt) {
   if (S2.secili) {
     const o = S2.secili, b = S2.pos[S2.si], col = SH_BALON_RENK[o.ikon] || '#e6d6ff';
     const pu = Math.pow(shSeg(u, 0.3, 0.78), 2.1), mv = shEase(shSeg(u, 0.32, 0.62));
-    const cx = lerp(b.x, W / 2, mv), cy = lerp(b.y - b.h * 0.42, H / 2, mv), R = lerp(b.h * 0.3, Math.hypot(W, H) * 0.62, pu), pa = shSeg(u, 0.3, 0.38);
+    const cx = lerp(b.x, W / 2, mv), cy = lerp(b.y - b.h * 0.42, H / 2, mv), R = lerp(b.h * 0.4, Math.hypot(W, H) * 0.62, pu), pa = shSeg(u, 0.3, 0.34);
     if (pa > 0) {
       g.save(); g.beginPath(); g.arc(cx, cy, R, 0, 6.283); g.clip();
       const q = R * 2.16, ic = S2.hi && R > b.h * 0.45 ? S2.hi : shBalonIc(o.ikon, K.q0);
