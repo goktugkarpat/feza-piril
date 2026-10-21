@@ -280,6 +280,28 @@ function dnLayer(o) { o.ch = new Map(); o.steps = o.steps || 25; return o; }
 function dnBounds(f, fy, top, bot) { return [Math.min(top, 110 * f + DN_DY0 * fy - 40), Math.max(bot, VH / 0.75 + 110 * f + DN_DY1 * fy + 40)]; }
 const dnOY = L => L.world ? cam.y : 110 * L.f + dnDY() * L.fy;
 const dnOX = L => L.world ? cam.x : cam.x * L.f;
+// parçanın tamamen saydam kısımlarını bir kez bul (parça boyanınca): 8 sütun; boş sütunlar atlanır, dolu sütun dizilerinin
+// üstündeki/altındaki saydam satırlar çizilmez. Sınırlar hep saydam bölgede (2 px pay) → görüntü aynı, ekrana boyama azalır.
+const DN_KS = 8;
+function dnKirp(cv, pad) {
+  const w = cv.width, h = cv.height; let d;
+  try { d = cv.getContext('2d').getImageData(0, 0, w, h).data; } catch (e) { return null; }
+  const iw = w - pad * 2, top = [], bot = [];
+  for (let s = 0; s < DN_KS; s++) {
+    const xa = pad + Math.floor(s * iw / DN_KS), xb = pad + Math.floor((s + 1) * iw / DN_KS);
+    let y = 0; a: for (; y < h; y++) { const o = y * w * 4 + 3; for (let x = xa; x < xb; x++) if (d[o + x * 4]) break a; }
+    let z = h; if (y < h) { b: for (z = h - 1; z >= y; z--) { const o = z * w * 4 + 3; for (let x = xa; x < xb; x++) if (d[o + x * 4]) break b; } z++; }
+    top.push(y); bot.push(z);
+  }
+  const out = [];
+  for (let s = 0; s < DN_KS;) {
+    if (top[s] >= h) { s++; continue; }
+    let e = s, u = top[s], v = bot[s]; while (e + 1 < DN_KS && top[e + 1] < h) { e++; u = Math.min(u, top[e]); v = Math.max(v, bot[e]); }
+    const a = Math.max(pad, pad + Math.floor(s * iw / DN_KS) - 2), b = Math.min(w - pad, pad + Math.floor((e + 1) * iw / DN_KS) + 2);
+    out.push(a, b, Math.max(0, u - 2), Math.min(h, v + 2)); s = e + 1;
+  }
+  return out;
+}
 function dnRenderChunk(L, k, sc, lq, c) {
   const PAD = 2, w = Math.round(DN_CH * sc) + PAD * 2, h = Math.round((L.y1 - L.y0) * sc);
   if (!c || !c.cv) c = { cv: dnPoolGet() };
@@ -291,7 +313,7 @@ function dnRenderChunk(L, k, sc, lq, c) {
   x.lineCap = 'round'; x.lineJoin = 'round';
   L.paint(x, k * DN_CH - 20, (k + 1) * DN_CH + 20, lq, L);
   x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
-  c.sc = sc; c.l = lq; c.pad = PAD;
+  c.sc = sc; c.l = lq; c.pad = PAD; c.run = dnKirp(c.cv, PAD);
   L.ch.set(k, c);
   return c;
 }
@@ -312,7 +334,11 @@ function dnDrawLayer(L, noPaint) {   // ekran dönüşümünde (birim matris ya 
     }
     if (!vis || !c) continue;
     const sx0 = Math.round((k * DN_CH - ox) * S), sx1 = Math.round(((k + 1) * DN_CH - ox) * S);
-    g.drawImage(c.cv, c.pad, 0, c.cv.width - c.pad * 2, c.cv.height, sx0, sy0, sx1 - sx0, sy1 - sy0);
+    const cw = c.cv.width - c.pad * 2, ch = c.cv.height, R = c.run;
+    if (!R) { g.drawImage(c.cv, c.pad, 0, cw, ch, sx0, sy0, sx1 - sx0, sy1 - sy0); continue; }
+    const kx = (sx1 - sx0) / cw, ky = (sy1 - sy0) / ch;   // kırpılmış parçalar: tam çizimle aynı eşleme, yalnız saydam kenarlar atlanır
+    for (let i = 0; i < R.length; i += 4) { const a = R[i], b = R[i + 1], u = R[i + 2], v = R[i + 3];
+      g.drawImage(c.cv, a, u, b - a, v - u, sx0 + (a - c.pad) * kx, sy0 + u * ky, (b - a) * kx, (v - u) * ky); }
   }
   if (!noPaint) for (const k of L.ch.keys()) if ((k - (k0 + k1) / 2) * dir > 0 ? k > k1 + 3 || k < k0 - 3 : k < k0 - 2 || k > k1 + 2) { dnPoolPut(L.ch.get(k)); L.ch.delete(k); }
 }
