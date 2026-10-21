@@ -76,9 +76,15 @@ const bl7Soz=(c,k,gec)=>nesne('konusma',c,yuzey(c),{anahtar:k,r:90,gec:nx(gec||c
 for(const [c,y] of [[12],[34],[64],[88],[113,11*T],[146],[171],[244],[300],[482]])
  nesne('karFener',c,y===undefined?yuzey(c):y,{r:80,sira:NESNELER.filter(n=>n.tip==='karFener').length,renk:NESNELER.filter(n=>n.tip==='karFener').length%10});
 
-// ── Kar yığınında uyuyan yavrular (5): 3 kutup tilkisi, 2 tavşan. Üstüne zıplayınca uyanır, yükseğe sıçratır (≈7 kare). ──
+// ── Kar yığınında uyuyan yavrular (5): 3 kutup tilkisi, 2 tavşan. Üstüne zıplayınca uyanır, yükseğe sıçratır (≈7 kare), ──
+// sonra bölüm boyunca Feza'nın peşinden gelir.
 for(const [c,hayvan,yon] of [[40,'tilki',1],[98,'tavsan',1],[133,'tilki',1],[203,'tavsan',1],[307,'tilki',1]])
- nesne('karYavru',c,yuzey(c),{r:70,hayvan,yon,guc:1150,w:64,h:30});
+ nesne('karYavru',c,yuzey(c),{r:70,hayvan,yon,guc:1150,w:76,h:32});
+
+// ── Karda oynayan hayvanlar (dekor, sayılmaz): tilkiler kara dalar, tavşanlar hoplaşır; Feza yaklaşınca durup ona bakarlar. ──
+for(const [c,hayvan,yon,alan] of [[29,'tavsan',1,3],[31,'tavsan',-1,3],[54,'tilki',1,3],[124,'tilki',-1,3],[156,'tavsan',1,3],
+ [284,'tavsan',1,2.5],[286,'tavsan',-1,2.5],[498,'tilki',1,2.5]])
+ nesne('karOyuncu',c,yuzey(c),{hayvan,yon,alan:alan*T});
 
 // ── Yavru ren geyiği: erken karşılaşılır, sonra Feza'nın arkasında yürür (geyik.js). ──
 nesne('geyik',22,yuzey(22),{r:140,yon:-1});
