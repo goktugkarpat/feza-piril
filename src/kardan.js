@@ -157,7 +157,7 @@ function kdDal(c, x, y, a, sol, uz) {   // kök (x,y), açı a (0 = yatay dışa
 // ── ortak çizici ──
 function kardanCiz(c, x, y, s, t, o) {
   kdSprite(); o = o || KD_BOS; t = t || 0;
-  const poz = o.poz || 'dur', yon = o.yon < 0 ? -1 : 1, canli = o.canli !== false, top = o.toplar == null ? 3 : clamp(o.toplar | 0, 0, 3), m = o.parca == null ? KD_TUM : o.parca;
+  const poz = o.poz || 'dur', canli = o.canli !== false, top = o.toplar == null ? 3 : clamp(o.toplar | 0, 0, 3), m = o.parca == null ? KD_TUM : o.parca;
   const al = o.alpha == null ? 1 : clamp(o.alpha, 0, 1); if (al <= 0.01 || top <= 0) return;
   const ph = o.faz != null ? o.faz : t;
   let hop = 0, sq = 0, tilt = 0, sway = 0, kafa = 0, aR = -0.42, aL = -0.42, atk = Math.sin(t * 1.7) * 0.06, sapE = -0.12, pom = 0;
@@ -179,40 +179,51 @@ function kardanCiz(c, x, y, s, t, o) {
   if (o.sallan) { const w = smooth(clamp(o.sallan, 0, 1)); aR = lerp(aR, -1.4 + Math.sin(t * 11) * 0.45, w); kafa += Math.sin(t * 5.5) * 1.2 * w; }
   if (o.egil) tilt += clamp(o.egil, -1, 1) * 0.17;
   if (o.sars) sq += Math.sin(t * 34) * 0.07 * clamp(o.sars, 0, 1);
+  // Dönüş: o.yon bir bakış değeridir (1 sağa · 0 önden · -1 sola; ara değerler dönüşün kendisi, bkz. kdDonYw). Kardan adam aynalanmaz:
+  // toplar hep aynı ışıkla çizilir, yüz (gözler, havuç, gülümseme) kürenin üstünde kayar, havuç önden bakışta kısalıp kameraya döner,
+  // kollar ve eğilme yumuşakça yer değiştirir. Dönerken minik bir hoplayış (kar silkinir gibi).
+  const yw = Number.isFinite(o.yon) ? clamp(o.yon, -1, 1) : 1, sg = yw < 0 ? -1 : 1, ay = Math.abs(yw);
+  const dk = Math.sin(Math.min(1, (1 - ay) / 0.6) * Math.PI / 2);
+  if (dk > 0.001) { hop += dk * 9; sq -= dk * 0.04; aR -= dk * 0.35; aL -= dk * 0.35; pom = Math.max(pom, dk); }
+  { const am = (aR + aL) / 2, r0 = sg > 0 ? aR : aL, l0 = sg > 0 ? aL : aR; aR = lerp(am, r0, ay); aL = lerp(am, l0, ay); }   // ekranda sağ/sol kol
   const R = KD_R, CY = KD_CY;
   const M0 = c.getTransform(), a0 = c.globalAlpha;
-  c.translate(x, y); c.scale(s * yon, s); c.globalAlpha = a0 * al;
+  c.translate(x, y); c.scale(s, s); c.globalAlpha = a0 * al;
   const gs = 1 - Math.min(0.45, hop / 40), gw = (top >= 1 ? R[0] : 20) * 1.5 * gs;
   c.globalAlpha = a0 * al * 0.6 * gs; c.drawImage(KDS.golge, -gw, -5, gw * 2, 11); c.globalAlpha = a0 * al;
-  c.translate(0, -hop); c.rotate(tilt); c.scale(1 + sq, 1 - sq);
+  c.translate(0, -hop); c.rotate(tilt * yw); c.scale(1 + sq, 1 - sq);
   if (o.isik > 0) kdGlow(c, '#bfe8ff', 0, CY[1], 150, o.isik * 0.42);
-  const b1x = sway * 0.7 + kafa * 0.3, b2x = -sway * 0.55 + kafa;
+  const b1x = sway * 0.7 + kafa * 0.3 * yw, b2x = -sway * 0.55 + kafa * yw;
   kdTopCiz(c, 0, CY[0], R[0], 0.4);
   if (top >= 2) {
     if (m & 32) { kdDal(c, b1x + R[1] * 0.74, CY[1] - 5, aR, false, 36); kdDal(c, b1x - R[1] * 0.74, CY[1] - 5, aL, true, 36); }
     kdTopCiz(c, b1x, CY[1], R[1], 2.1);
-    if (m & 16) for (let i = 0; i < 3; i++) kdKomur(c, b1x + 1, CY[1] - 11 + i * 10.5, 4.8);
+    if (m & 16) for (let i = 0; i < 3; i++) kdKomur(c, b1x + yw, CY[1] - 11 + i * 10.5, 4.8);
   }
   if (top >= 3) {
     kdTopCiz(c, b2x, CY[2], R[2], 4.2);
     const fs = 2, ny = CY[2] + R[2] * 0.86, nx = (b1x + b2x) * 0.5;
     if (m & 64) {   // atkı: önce sarkan uç, sonra boyun bandı
-      const M = c.getTransform(), k = 30 / 92; c.translate(nx + R[2] * 0.5, ny + 1); c.rotate(atk); c.drawImage(KDS.atkiUc, -20 * k, -6 * k, 40 * k, 110 * k); c.setTransform(M);
+      const M = c.getTransform(), k = 30 / 92; c.translate(nx + R[2] * 0.5 * yw, ny + 1); c.scale(sg, 1); c.rotate(atk); c.drawImage(KDS.atkiUc, -20 * k, -6 * k, 40 * k, 110 * k); c.setTransform(M);
       const w = R[2] * 2.3 / 120; c.drawImage(KDS.atki, nx - 65 * w, ny - 20 * w, 130 * w, 40 * w);
     }
-    const gx = b2x + fs, gy = CY[2] - 4;
+    const gx = b2x + fs * yw, gy = CY[2] - 4;
     if (m & 2) {   // gözler
       const mutlu = !!o.mutlu;
       let gz = o.goz != null ? clamp(o.goz, 0, 1) : (canli ? (((t + 0.7) % 3.7) < 0.14 ? 0 : 1) : 1);
-      for (const ex of [gx - 5.5, gx + 5.5]) {
+      for (const ex of [gx - 5.5 * (1 - 0.12 * ay) - 0.8 * yw, gx + 5.5 * (1 - 0.12 * ay) - 0.8 * yw]) {
         if (mutlu || gz < 0.3) { c.strokeStyle = '#221c36'; c.lineWidth = 1.9; c.lineCap = 'round'; c.beginPath(); if (mutlu) c.arc(ex, gy + 1.4, 2.6, Math.PI * 1.15, Math.PI * 1.85); else c.arc(ex, gy - 0.6, 2.6, Math.PI * 0.15, Math.PI * 0.85); c.stroke(); }
         else { const d = 5.6, h = d * gz; c.drawImage(KDS.komur, ex - d * 0.667, gy - h * 0.667, d * 1.333, h * 1.333); if (canli) { c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ex - 1.1, gy - 1.2 * gz, 1.05, 0, 6.2832); c.fill(); } }
       }
     }
-    if (m & 8) for (let i = 0; i < 5; i++) { const u = (i - 2) / 2; kdKomur(c, gx + 1 + u * 7.5, CY[2] + 7.2 + (1 - u * u) * 2.8, 2.9); }   // kömür gülümseme
-    if (m & 4) { const M = c.getTransform(), k = 16 / 70; c.translate(gx + 2.5, CY[2] + 1.5); c.rotate(0.1 + Math.sin(t * 2.3) * 0.03); c.drawImage(KDS.havuc, -4 * k, -16 * k, 80 * k, 32 * k); c.setTransform(M); }
+    if (m & 8) for (let i = 0; i < 5; i++) { const u = (i - 2) / 2; kdKomur(c, gx + yw + u * 7.5 * (1 - 0.1 * ay), CY[2] + 7.2 + (1 - u * u) * 2.8, 2.9); }   // kömür gülümseme
+    if (m & 4) {   // havuç: yana bakarken uzun; önden bakışta kısalır ve ucu kameraya döner (turuncu yuvarlak taban + uç)
+      const M = c.getTransform(), k = 16 / 70; c.translate(gx + 2.5 * yw, CY[2] + 1.5);
+      if (ay < 0.7) { const w = 1 - ay / 0.7; c.globalAlpha = a0 * al * w; c.fillStyle = '#ff9535'; c.beginPath(); c.arc(0, 0.4, 2.9, 0, 6.2832); c.fill(); c.fillStyle = '#e8641f'; c.beginPath(); c.arc(0.3, 0.8, 1.3, 0, 6.2832); c.fill(); c.globalAlpha = a0 * al; }
+      c.scale(sg * Math.max(0.16, ay), 1); c.rotate(0.1 + Math.sin(t * 2.3) * 0.03); c.drawImage(KDS.havuc, -4 * k, -16 * k, 80 * k, 32 * k); c.setTransform(M);
+    }
     if (m & 1) {   // bere
-      const M = c.getTransform(), w = R[2] * 2.25 / 118; c.translate(b2x + kafa * 0.2, CY[2] - R[2] * 0.6 - pom * 1.5); c.rotate(sapE); c.drawImage(KDS.sapka, -65 * w, -104 * w, 130 * w, 120 * w); c.setTransform(M);
+      const M = c.getTransform(), w = R[2] * 2.25 / 118; c.translate(b2x + kafa * 0.2 * yw, CY[2] - R[2] * 0.6 - pom * 1.5); c.rotate(sapE * yw); c.drawImage(KDS.sapka, -65 * w, -104 * w, 130 * w, 120 * w); c.setTransform(M);
     }
   }
   c.setTransform(M0); c.globalAlpha = a0;
@@ -485,6 +496,13 @@ function kdKardanX(o) {   // canlanmada kardan adamın tabanı: yerinden Feza'n�
 function kdCanlanPoz(o, t, tm) {   // canlanma anına göre kardanCiz seçenekleri
   const q = KD_CPOZ; q.poz = 'dur'; q.yon = 1; q.sallan = 0; q.goz = null; q.mutlu = false; q.silk = 0; q.egil = 0; q.kipir = 0; q.faz = null; q.isik = 0; q.canli = true; q.sars = 0;
   q.toplar = 3; q.parca = KD_TUM; q.alpha = 1;
+  kdCanlanPozHam(q, t);
+  const k = o.kd, d = k.dnC || (k.dnC = {}), dt = k.dnT == null ? 0 : t - k.dnT; k.dnT = t;
+  if (dt < 0) { k.dnC = {}; return q; }   // yeniden başladı
+  q.yon = kdDonYw(d, q.yon, dt, KD_DON_SN, 0);
+  return q;
+}
+function kdCanlanPozHam(q, t) {
   if (t < 0.6) { q.canli = false; q.isik = smooth(t / 0.6); return q; }
   q.isik = Math.max(0, 1 - (t - 0.6) / 1.2);
   if (t < 1.9) { const u = t - 1.15, v = t - 1.6; q.goz = (u > 0 && u < 0.16) || (v > 0 && v < 0.16) ? 0 : 1; q.egil = Math.sin(clamp((t - 0.7) / 1.2, 0, 1) * Math.PI) * -0.25; return q; }
@@ -574,6 +592,9 @@ function kdCizOn(o, tm) {
 }
 const KD_FZ_OPT = { ruzgar: 0.1 };
 
+// Dönüş durumu (geyik.js gyDonAdim: histerezis + sabit süreli 3B dönüş); yoksa anında
+function kdDonYw(d, istek, dt, sure, gec) { return typeof gyDonAdim === 'function' ? gyDonAdim(d, istek, dt, sure, gec) : (istek < 0 ? -1 : 1); }
+const KD_DON_SN = 0.42;
 // ── takipçi: bölüm boyunca Feza'nın arkasından gelir ──
 function kdZemin(x, y) {
   if (typeof topOf !== 'function' || typeof T === 'undefined') return null;
@@ -584,7 +605,7 @@ function kdZemin(x, y) {
 function kdTakipKur(o) {
   if (KARDAN.takipci) return KARDAN.takipci;
   const x = kdKardanX(o);
-  const t = { tip: 'kardanTakip', id: 'kardanTakip', x, y: o.y, vx: 0, yon: -1, poz: 'dur', faz: 0, alpha: 1, gizle: false, hedef: null, dans: false, sallanT: 0, salBek: 3, gizli: false, ilk: 1.2, izF: 0 };
+  const t = { tip: 'kardanTakip', id: 'kardanTakip', x, y: o.y, vx: 0, yon: -1, yw: -1, dn: {}, poz: 'dur', faz: 0, alpha: 1, gizle: false, hedef: null, dans: false, sallanT: 0, salBek: 3, gizli: false, ilk: 1.2, izF: 0 };
   NESNELER.push(t); KARDAN.takipci = t; return t;
 }
 function kdTakipAdim(t, dt) {
@@ -600,15 +621,18 @@ function kdTakipAdim(t, dt) {
     kdKarSac(t.x, t.y, 10, 100); kdIsikSac(t.x, t.y - 60, 6, 60);
   }
   t.alpha = Math.min(1, t.alpha + dt * 2.5);
-  const dx = hx - t.x, ist = Math.abs(dx) > 24 ? clamp(dx * 2.4, -340, 340) : 0;
+  const dx = hx - t.x, ist = Math.abs(dx) > 24 ? clamp(dx * 2.4, -340, 340) : 0, vx0 = t.vx;
   t.vx += (ist - t.vx) * (1 - Math.exp(-dt * 5)); t.x += t.vx * dt;
+  // ivmeye göre eğilme: kalkışta öne atılır, dururken geriye yaylanır (ağırlık hissi)
+  const ivme = (t.vx - vx0) / dt * (t.yon || 1); t.egil = (t.egil || 0) + (clamp(ivme / 900, -0.7, 0.7) - (t.egil || 0)) * (1 - Math.exp(-dt * 8));
   const z = kdZemin(t.x, t.y); if (z != null && Math.abs(z - t.y) < 160) t.y += (z - t.y) * (1 - Math.exp(-dt * 10)); else if (z == null && t.hedef && isFinite(t.hedef.y)) t.y += (t.hedef.y - t.y) * (1 - Math.exp(-dt * 6));
   if (t.hedef && isFinite(t.hedef.y) && Math.abs(dx) < 30) t.y += (t.hedef.y - t.y) * (1 - Math.exp(-dt * 6));
   const v = Math.abs(t.vx);
   t.poz = (final || t.dans) && v < 120 ? 'dans' : v > 250 ? 'kay' : v > 22 ? 'yuru' : 'dur';
   if (t.poz === 'yuru') { const once = t.faz; t.faz += dt * clamp(v / 150, 0.6, 1.6) * 0.62; if (Math.floor(once * 7.2 / Math.PI) !== Math.floor(t.faz * 7.2 / Math.PI)) { kdKarSac(t.x, t.y, 3, 40); if (typeof dn7Iz === 'function') { try { dn7Iz(t.x, t.y, 'kardan'); } catch (e) {} } } }
   else if (t.poz === 'kay') { t.izF += dt; if (t.izF > 0.06) { t.izF = 0; kdToz(0, t.x - Math.sign(t.vx) * 28, t.y - 2, -t.vx * 0.15, -40 - Math.random() * 40, 0.5, 1.5 + Math.random() * 1.5); if (typeof dn7Iz === 'function') { try { dn7Iz(t.x, t.y, 'kardanKay'); } catch (e) {} } } }
-  if (v > 15) t.yon = Math.sign(t.vx); else t.yon = Math.sign(fx - t.x) || t.yon;
+  if (v > 40) t.yon = Math.sign(t.vx); else if (v < 12 && Math.abs(fx - t.x) > 50) t.yon = Math.sign(fx - t.x) || t.yon;   // ölü bölge: kıpırdanmada dönmez
+  t.yw = kdDonYw(t.dn, t.yon, dt, KD_DON_SN, v > 120 ? 0.08 : 0.2);
   // ara sıra Feza'ya el sallar
   if (t.poz === 'dur') { t.salBek -= dt; if (t.salBek <= 0 && t.sallanT <= 0) { t.sallanT = 1.6; t.salBek = 7 + Math.random() * 6; } } else t.salBek = Math.max(t.salBek, 2);
   t.sallanT = Math.max(0, t.sallanT - dt);
@@ -617,8 +641,8 @@ function kdTakipAdim(t, dt) {
 const KD_TPOZ = {};
 function kdTakipCiz(t, tm) {
   if (t.alpha <= 0.01) return;
-  const q = KD_TPOZ; q.poz = t.poz; q.yon = t.yon; q.faz = t.poz === 'yuru' ? t.faz : null; q.alpha = t.alpha; q.canli = true;
-  q.sallan = t.sallanT > 0 ? Math.sin(clamp(t.sallanT / 1.6, 0, 1) * Math.PI) * 1.4 : 0; q.mutlu = t.poz === 'dans' && (tm % 1.6) < 0.8; q.goz = null; q.silk = 0; q.egil = 0; q.kipir = 0; q.isik = 0; q.sars = 0; q.toplar = 3; q.parca = KD_TUM;
+  const q = KD_TPOZ; q.poz = t.poz; q.yon = t.yw == null ? t.yon : t.yw; q.faz = t.poz === 'yuru' ? t.faz : null; q.alpha = t.alpha; q.canli = true;
+  q.sallan = t.sallanT > 0 ? Math.sin(clamp(t.sallanT / 1.6, 0, 1) * Math.PI) * 1.4 : 0; q.mutlu = t.poz === 'dans' && (tm % 1.6) < 0.8; q.goz = null; q.silk = 0; q.egil = t.egil || 0; q.kipir = 0; q.isik = 0; q.sars = 0; q.toplar = 3; q.parca = KD_TUM;
   kardanCiz(g, t.x, t.y, KD_TAKIP_S, tm, q);
   if (!KARDAN.aktif) kdTozCiz(g);
 }

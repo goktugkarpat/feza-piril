@@ -10,6 +10,19 @@ const DR_TAIL_N = 7, DR_TAIL_LEN = 3.2;   // peluştaki gibi orta boy, incelerek
 // renkler: Feza'nın gerçek peluşu (lila gövde, limon yeşili karın/kulak, koyu yeşil ibik, yeşil gözler)
 const DR_COL = { pur: '#b28ae6', purL: '#d2b6f7', purD: '#8660c4', line: '#52338c', lime: '#bde43a', limeL: '#d9f27e', limeD: '#93bd28',
   crest: '#2f8a2c', crestL: '#55ad44', crestD: '#1f5c1c', eye: '#1c1228' };
+// Sabit koordinatlı, sabit renkli gradyanlar bir kez yapılır (CanvasGradient bağlamdan bağımsızdır; koordinatlar
+// doldurma anındaki dönüşümle yorumlanır): karede ~10 gradyan nesnesi daha az (iPad'de her biri GPU sürecine giden bir nesne).
+const DR_GK = {};
+function drGL(x, x0, y0, x1, y1, ...d) { const g2 = x.createLinearGradient(x0, y0, x1, y1); for (let i = 0; i < d.length; i += 2) g2.addColorStop(d[i], d[i + 1]); return g2; }
+// gece tüyü gradyanı (birim boy 0→1): durak saydamlıkları A·sh/1,25 çarpanı dışarıda (globalAlpha) — ×1,25 içeride; hız 1/32 adımda
+const DR_TUY_GR = [];
+function drTuyGr(x, vs) {
+  const q = Math.round(clamp(vs, 0, 1) * 32);
+  let gr = DR_TUY_GR[q];
+  if (!gr) { const v = q / 32; gr = DR_TUY_GR[q] = drGL(x, 0, 0, 1, 0, 0, 'rgba(226,206,255,0.75)', 0.6, 'rgba(196,176,255,0.425)', 1, `rgba(170,255,222,${((0.2 + 0.15 * v) * 1.25).toFixed(4)})`); }
+  return gr;
+}
+function drGR(x, x0, y0, r0, x1, y1, r1, ...d) { const g2 = x.createRadialGradient(x0, y0, r0, x1, y1, r1); for (let i = 0; i < d.length; i += 2) g2.addColorStop(d[i], d[i + 1]); return g2; }
 const DR_NEFES = ['#fff6d6', '#d9f6ff', '#e8d6ff', '#ffffff', '#ffd6f2', '#bff4ff'];
 const DR_IZ = ['#fff2a8', '#ffe0f6', '#e2ccff', '#ffffff'];
 const DR_GOK = ['#ff6b8a', '#ffa04d', '#ffd43b', '#5fd27a', '#4dabf7', '#6a7cff', '#b98cff'];   // Bölüm 3 gökkuşağı (kuzucuk sırası)
@@ -1415,9 +1428,13 @@ function drawTail(x, tm) {
   x.beginPath(); x.moveTo(pts[0][0], pts[0][1]);
   for (let i = 1; i < pts.length - 1; i++) { const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2; x.quadraticCurveTo(pts[i][0], pts[i][1], mx, my); }
   x.closePath();
-  const gr = x.createLinearGradient(tl[0].x, tl[0].y, tl[n - 1].x, tl[n - 1].y);
-  gr.addColorStop(0, C.pur); gr.addColorStop(1, C.purL);
-  x.fillStyle = gr; x.fill();
+  {   // kuyruk boyunca gradyan: birim gradyan (0,0)→(1,0) bir kez yapılır, dolgu anında kuyruk yönüne döndürülür (benzerlik dönüşümü: aynı sonuç)
+    const gx = tl[n - 1].x - tl[0].x, gy = tl[n - 1].y - tl[0].y;
+    if (gx * gx + gy * gy > 1e-6) {
+      x.save(); x.transform(gx, gy, -gy, gx, tl[0].x, tl[0].y);
+      x.fillStyle = DR_GK.kuyruk || (DR_GK.kuyruk = drGL(x, 0, 0, 1, 0, 0, C.pur, 1, C.purL)); x.fill(); x.restore();
+    } else { x.fillStyle = C.pur; x.fill(); }
+  }
   x.strokeStyle = C.line; x.lineWidth = 0.8; x.stroke();
   // kürek biçimli yumuşak uç (rüyada ışık kaynağı)
   const p = tl[n - 1], q = tl[n - 2];
@@ -1427,7 +1444,7 @@ function drawTail(x, tm) {
   x.beginPath(); x.moveTo(-1, -1.4);   // yassı, ucu yuvarlak kürek (yaprak/maça gibi)
   x.bezierCurveTo(0.4, -4.2, 3.4, -4.7, 5.2, -3.2); x.bezierCurveTo(6.8, -1.9, 8.2, -0.6, 8.2, 0.2);
   x.bezierCurveTo(8.2, 1, 6.8, 2.3, 5.2, 3.4); x.bezierCurveTo(3.4, 4.8, 0.4, 4.3, -1, 1.4); x.closePath();
-  const sg = x.createLinearGradient(0, -5, 0, 5); sg.addColorStop(0, C.purL); sg.addColorStop(1, C.pur);
+  const sg = DR_GK.ayak || (DR_GK.ayak = drGL(x, 0, -5, 0, 5, 0, C.purL, 1, C.pur));
   x.fillStyle = sg; x.fill(); x.strokeStyle = C.line; x.lineWidth = 0.8; x.stroke();
   x.strokeStyle = 'rgba(90,60,150,0.35)'; x.lineWidth = 0.5; x.beginPath(); x.moveTo(0.6, 0); x.quadraticCurveTo(3.6, 0.3, 5.8, 0); x.stroke();
   x.restore();
@@ -1474,11 +1491,14 @@ function drawWing(x, far, tm) {
     if (spr) {   // gündüz tüyü: önbellekli sprite (gradyan + kenar + damar), yalnız boyu/saydamlığı değişir
       x.globalAlpha = A * (0.82 + 0.18 * sh); x.drawImage(spr, 0, -rk * 1.1, Lk * 1.04, rk * 2.2); x.globalAlpha = 1;
     } else {
-    const gr = x.createLinearGradient(0, 0, Lk, 0);
+    x.beginPath(); x.ellipse(Lk / 2, 0, Lk / 2, rk, 0, 0, 6.283);
     if (so) {   // gündüz (Bölüm 3): parlak gökte beyaza boğulmasın; lila-nane yarı saydam tüy, beyaz kenar
+      const gr = x.createLinearGradient(0, 0, Lk, 0);
       gr.addColorStop(0, `rgba(206,178,255,${0.62 * A})`); gr.addColorStop(0.6, `rgba(176,150,250,${0.42 * A * sh})`); gr.addColorStop(1, `rgba(130,226,196,${(0.34 + 0.1 * vs) * A})`);
-    } else { gr.addColorStop(0, `rgba(226,206,255,${0.6 * A * sh})`); gr.addColorStop(0.6, `rgba(196,176,255,${0.34 * A * sh})`); gr.addColorStop(1, `rgba(170,255,222,${(0.2 + 0.15 * vs) * A * sh})`); }
-    x.fillStyle = gr; x.beginPath(); x.ellipse(Lk / 2, 0, Lk / 2, rk, 0, 0, 6.283); x.fill();
+      x.fillStyle = gr; x.fill();
+    } else {   // gece: ortak çarpan A·sh globalAlpha'ya alınır, gradyan yalnız hıza (vs, 1/32 adım) bağlı ve önbellekli; x yönü Lk ile ölçeklenir
+      x.save(); x.scale(Lk, 1); x.globalAlpha = A * sh / 1.25; x.fillStyle = drTuyGr(x, vs); x.fill(); x.restore();
+    }
     x.strokeStyle = so ? `rgba(255,255,255,${0.75 * A})` : `rgba(255,255,255,${(0.32 + 0.2 * vs) * A})`; x.lineWidth = so ? 0.7 : 0.6; x.stroke();
     if (so) { x.strokeStyle = `rgba(150,120,230,${0.35 * A})`; x.lineWidth = 0.45; x.beginPath(); x.moveTo(1, 0); x.lineTo(Lk * 0.85, 0); x.stroke(); }   // tüy damarı
     }
@@ -1523,9 +1543,8 @@ function drOpenEye(x, rx, ry, lookSx) {   // kocaman yeşil göz: beyaz kenar, y
   x.fillStyle = '#ffffff'; x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, 6.283); x.fill();
   x.save(); x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, 6.283); x.clip();
   const ox = D.lookX * lookSx * rx * 0.2, oy = D.lookY * ry * 0.14 + ry * 0.06;
-  const ig = x.createLinearGradient(0, oy - ry, 0, oy + ry);
-  ig.addColorStop(0, '#2b7a26'); ig.addColorStop(0.45, '#4fae37'); ig.addColorStop(1, '#a8e46e');
-  x.fillStyle = ig; x.beginPath(); x.ellipse(ox, oy, rx * 0.8, ry * 0.84, 0, 0, 6.283); x.fill();
+  x.beginPath(); x.ellipse(ox, oy, rx * 0.8, ry * 0.84, 0, 0, 6.283);
+  if (ry > 0) { x.save(); x.translate(0, oy); x.scale(ry, ry); x.fillStyle = DR_GK.iris || (DR_GK.iris = drGL(x, 0, -1, 0, 1, 0, '#2b7a26', 0.45, '#4fae37', 1, '#a8e46e')); x.fill(); x.restore(); }
   x.fillStyle = '#0d0a12'; x.beginPath(); x.ellipse(ox + lookSx * rx * 0.06, oy + ry * 0.04, rx * 0.4, ry * 0.5, 0, 0, 6.283); x.fill();
   x.fillStyle = '#ffffff';
   x.beginPath(); x.ellipse(ox - rx * 0.22, oy - ry * 0.3, rx * 0.26, ry * 0.22, 0, 0, 6.283); x.fill();
@@ -1616,9 +1635,8 @@ function drMouthDraw(x, cx, cy, wdt, front) {   // ağız: cx,cy = ağız ortas�
 function drBelly(x, cx, cy, rx, ry, rot, seam) {   // limon yeşili çizgili karın paneli
   const C = DR_COL;
   x.save(); x.translate(cx, cy); x.rotate(rot);
-  const gr = x.createLinearGradient(-rx, 0, rx, 0);
-  gr.addColorStop(0, C.limeD); gr.addColorStop(0.45, C.lime); gr.addColorStop(1, C.limeL);
-  x.fillStyle = gr; x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, 6.283); x.fill();
+  x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, 6.283);
+  if (rx > 0) { x.save(); x.scale(rx, rx); x.fillStyle = DR_GK.karin || (DR_GK.karin = drGL(x, -1, 0, 1, 0, 0, C.limeD, 0.45, C.lime, 1, C.limeL)); x.fill(); x.restore(); }
   x.save(); x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, 6.283); x.clip();
   x.strokeStyle = 'rgba(110,150,20,0.45)'; x.lineWidth = 0.45;
   x.beginPath(); for (let yy = -ry + 1.4; yy < ry; yy += 1.55) { x.moveTo(-rx, yy); x.quadraticCurveTo(0, yy + 0.7, rx, yy); } x.stroke();
@@ -1632,7 +1650,7 @@ function drEar(x, rot, s) {   // yeşil yüzgeç kulak (arkası taraklı); yerel
   x.beginPath(); x.moveTo(1.2, 1.4); x.quadraticCurveTo(1.8, -5, 0.6, -10.6);
   x.quadraticCurveTo(-1.6, -9.4, -3, -7.4); x.quadraticCurveTo(-4.8, -6.6, -5.2, -4.2);
   x.quadraticCurveTo(-6.6, -3, -6.4, -0.6); x.quadraticCurveTo(-3, 0.6, 1.2, 1.4); x.closePath();
-  const gr = x.createLinearGradient(0, 0, -3, -9); gr.addColorStop(0, DR_COL.limeD); gr.addColorStop(0.55, DR_COL.lime); gr.addColorStop(1, DR_COL.limeL);
+  const gr = DR_GK.yuz || (DR_GK.yuz = drGL(x, 0, 0, -3, -9, 0, DR_COL.limeD, 0.55, DR_COL.lime, 1, DR_COL.limeL));
   x.fillStyle = gr; x.fill();
   // narin yüzgeç ışığı & kılçıkları (kulak yüzgecinin masalsı dokusu)
   x.strokeStyle = 'rgba(235,255,190,0.45)'; x.lineWidth = 0.38; x.lineCap = 'round';
@@ -1680,8 +1698,7 @@ function drFront(x, tm, yaw) {   // önden görünüş (dönüşte yaw ile 3/4'e
     x.bezierCurveTo(5.6, -7.2, 8, -2.4, 9.4, 3.2); x.bezierCurveTo(11, 9.6, 8.4, 15, 0, 15);
     x.bezierCurveTo(-8.4, 15, -11, 9.6, -9.4, 3.2); x.bezierCurveTo(-8, -2.4, -5.6, -7.2, 0, -7.2); x.closePath();
   };
-  const bg = x.createRadialGradient(-2, -1, 1, 0, 4, 14);
-  bg.addColorStop(0, C.purL); bg.addColorStop(0.6, C.pur); bg.addColorStop(1, C.purD);
+  const bg = DR_GK.govde || (DR_GK.govde = drGR(x, -2, -1, 1, 0, 4, 14, 0, C.purL, 0.6, C.pur, 1, C.purD));
   bodyP(); x.fillStyle = bg; x.fill(); x.strokeStyle = C.line; x.lineWidth = 0.8; x.stroke();
   x.save(); bodyP(); x.clip();
   drBelly(x, bsh, 3.4, 5.8 * (1 - 0.18 * ya), 10.8, 0, pl);
@@ -1708,8 +1725,7 @@ function drFront(x, tm, yaw) {   // önden görünüş (dönüşte yaw ile 3/4'e
     x.restore();
   };
   ear(-1, false); ear(1, false);
-  const hg = x.createRadialGradient(-3, -17, 1, 0, -11, 15);
-  hg.addColorStop(0, C.purL); hg.addColorStop(0.6, C.pur); hg.addColorStop(1, C.purD);
+  const hg = DR_GK.bas || (DR_GK.bas = drGR(x, -3, -17, 1, 0, -11, 15, 0, C.purL, 0.6, C.pur, 1, C.purD));
   const mx = sph(0, 12.6) * 0.9, snx = mx + ys * 2.6 * ya;   // ağız/burun ortası; 3/4'te burun çıkıntısı
   const headP = () => { x.beginPath(); x.ellipse(0, -12, 12.6, 11.4, 0, 0, 6.283); if (ya > 0.05) { x.moveTo(snx + 5.4, -6.6); x.ellipse(snx, -6.6, 5.4, 4.2, 0, 0, 6.283); } };
   headP(); x.fillStyle = hg; x.fill('nonzero');
@@ -1731,9 +1747,8 @@ function drFront(x, tm, yaw) {   // önden görünüş (dönüşte yaw ile 3/4'e
   }
   x.strokeStyle = 'rgba(255,245,255,0.4)'; x.lineWidth = 1.2; x.beginPath(); x.ellipse(0, -12, 11.2, 10, 0, -2.5, -0.7); x.stroke();
   // küçük yuvarlak burun
-  const sg = x.createRadialGradient(mx, -6.8, 0.5, mx, -6.2, 4.6);
-  sg.addColorStop(0, 'rgba(232,212,255,0.95)'); sg.addColorStop(0.7, 'rgba(214,186,248,0.6)'); sg.addColorStop(1, 'rgba(214,186,248,0)');
-  x.fillStyle = sg; x.beginPath(); x.ellipse(mx, -6.2, 4.8, 3.6, 0, 0, 6.283); x.fill();
+  x.beginPath(); x.ellipse(mx, -6.2, 4.8, 3.6, 0, 0, 6.283);
+  x.save(); x.translate(mx, 0); x.fillStyle = DR_GK.burun || (DR_GK.burun = drGR(x, 0, -6.8, 0.5, 0, -6.2, 4.6, 0, 'rgba(232,212,255,0.95)', 0.7, 'rgba(214,186,248,0.6)', 1, 'rgba(214,186,248,0)')); x.fill(); x.restore();
   x.strokeStyle = 'rgba(78,47,138,0.3)'; x.lineWidth = 0.5; x.beginPath();
   if (!(ys > 0 && ya > 0.4)) { x.moveTo(mx - 3.4, -8.6); x.quadraticCurveTo(mx - 4.4, -6.2, mx - 3.8, -4.4); }
   if (!(ys < 0 && ya > 0.4)) { x.moveTo(mx + 3.4, -8.6); x.quadraticCurveTo(mx + 4.4, -6.2, mx + 3.8, -4.4); }
@@ -1784,7 +1799,7 @@ function drCrest(x, tm, w) {   // w: dalgalanma ağırlığı
   const sway = (Math.sin(D.ph - 1.4) * 0.035 * (1 - D.glide) + Math.sin(tm * 1.9) * 0.02) * w * (1 - D.plush);
   x.save(); x.translate(-2, -17); x.rotate(sway - D.tilt * 0.08 + (D.sCr ? D.sCr.a * w : 0)); x.scale(0.9, 0.9); x.translate(2, 17);
   drCrestPath(x);
-  const cg = x.createLinearGradient(-4, -34, 2, -16); cg.addColorStop(0, C.crestL); cg.addColorStop(0.42, C.crest); cg.addColorStop(1, C.crestD);
+  const cg = DR_GK.ibik || (DR_GK.ibik = drGL(x, -4, -34, 2, -16, 0, C.crestL, 0.42, C.crest, 1, C.crestD));
   x.fillStyle = cg; x.fill(); x.strokeStyle = C.crestD; x.lineWidth = 0.9; x.lineJoin = 'round'; x.stroke();
   // dilimler arası dikiş/kıvrım çizgileri ve yumuşak parlaklık (peluş kumaş)
   x.strokeStyle = 'rgba(16,60,16,0.55)'; x.lineWidth = 0.7; x.lineCap = 'round';
@@ -1819,8 +1834,7 @@ function drSide(x, tm) {   // yandan görünüş (sağa bakan yerel uzay)
   if (pose > 0.3) { arm(true); arm(false); } else arm(true);
   // sırt dikenleri, gövde, karın
   drBlobs(x, DR_SPINE_S, C.crest, C.crestD, 1.3);
-  const bg = x.createRadialGradient(0, -2, 1, -1, 4, 14);
-  bg.addColorStop(0, C.purL); bg.addColorStop(0.6, C.pur); bg.addColorStop(1, C.purD);
+  const bg = DR_GK.govdeY || (DR_GK.govdeY = drGR(x, 0, -2, 1, -1, 4, 14, 0, C.purL, 0.6, C.pur, 1, C.purD));
   const spc = D.spineW || 0;
   const bodyP = () => {   // armut gövde: boyun ince, karın/kalça tombul (uçuş kıvrımları)
     x.beginPath(); x.moveTo(-4.8, -6.4 + spc * 3.5);
@@ -1856,16 +1870,14 @@ function drHeadPath(x) {
 }
 function drHeadStatik(x) {   // yandan kafanın hareketsiz katmanı: dolgu, limon çene, burun ışığı, parlama, dış çizgi, burun deliği
   const C = DR_COL, headPath = () => drHeadPath(x);
-  const hg = x.createRadialGradient(6, -18, 1, 5, -11, 16);
-  hg.addColorStop(0, C.purL); hg.addColorStop(0.6, C.pur); hg.addColorStop(1, C.purD);
+  const hg = DR_GK.basY || (DR_GK.basY = drGR(x, 6, -18, 1, 5, -11, 16, 0, C.purL, 0.6, C.pur, 1, C.purD));
   headPath(); x.fillStyle = hg; x.fill();
   x.save(); headPath(); x.clip();
   // limon yeşili alt çene (karına bağlanır)
   x.fillStyle = C.lime; x.beginPath(); x.moveTo(20.4, -6.6); x.quadraticCurveTo(12.5, -5.4, 4.6, -2.6); x.lineTo(3, 4); x.lineTo(22, 4); x.closePath(); x.fill();
   x.strokeStyle = 'rgba(110,150,20,0.45)'; x.lineWidth = 0.45; x.beginPath(); x.moveTo(9, -2.6); x.lineTo(13, -3.8); x.moveTo(7, -1.2); x.lineTo(12, -2.2); x.stroke();
   // burun ucu açık ton
-  const mg = x.createRadialGradient(17.6, -10, 0.5, 17.6, -10, 5.5);
-  mg.addColorStop(0, 'rgba(235,215,255,0.8)'); mg.addColorStop(1, 'rgba(235,215,255,0)');
+  const mg = DR_GK.burunY || (DR_GK.burunY = drGR(x, 17.6, -10, 0.5, 17.6, -10, 5.5, 0, 'rgba(235,215,255,0.8)', 1, 'rgba(235,215,255,0)'));
   x.fillStyle = mg; x.fillRect(11, -16, 11, 11);
   x.beginPath(); x.rect(-8, -30, 30, 12); x.clip();
   x.translate(0.6, 1.4); headPath(); x.strokeStyle = 'rgba(255,245,255,0.42)'; x.lineWidth = 1.2; x.stroke();
@@ -1964,8 +1976,7 @@ function drBinekGovde(x) {
 function drBinekGovdeKatman(x) {   // 'binek' gövdesinin hareketsiz katmanı (önbelleğe çizilir): sırt dikenleri, gövde, karın, parlama, yakın uyluk
   const C = DR_COL;
   drBlobs(x, [12.6, -12.4, 1.9, 14.8, -15.8, 1.7, 9.8, -10.6, 1.9, 6.2, -10.4, 2.0, -7.6, -10.4, 2.1, -11.8, -9.2, 2.0, -15.2, -6.4, 1.8, 16.4, -9.6, 1.8], C.crest, C.crestD, 1.3);
-  const bg = x.createRadialGradient(-1, -6, 2, 0, 1, 20);
-  bg.addColorStop(0, C.purL); bg.addColorStop(0.55, C.pur); bg.addColorStop(1, C.purD);
+  const bg = DR_GK.govdeO || (DR_GK.govdeO = drGR(x, -1, -6, 2, 0, 1, 20, 0, C.purL, 0.55, C.pur, 1, C.purD));
   drBinekGovde(x); x.fillStyle = bg; x.fill(); x.strokeStyle = C.line; x.lineWidth = 0.85; x.stroke();
   x.save(); drBinekGovde(x); x.clip();
   drBelly(x, 1.5, 7.6, 5.2, 16, Math.PI / 2 - 0.05, 0);

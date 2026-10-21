@@ -40,7 +40,7 @@ const C = (k, al = 1) => mixc(PAL[k][0], PAL[k][1], light, al);
 // gözle seçilmez) ve en çok GLOW_MAX sprite tutulur; dolunca en uzun süredir kullanılmayan bırakılır (LRU). Aynı renk dizesi
 // için arama tek bir Map okumasıdır (dize kesme/ayrıştırma yok). Bırakılan bir sprite'ı elinde tutan çizim onu kullanmaya
 // devam edebilir (tuval değiştirilmez, yalnız önbellekten çıkar).
-const GLOW_MAX = 96, GLOW_BOY = 128;
+const GLOW_MAX = 128, GLOW_BOY = 128;
 const glowQ = new Map();   // nicelenmiş renk (r<<16|g<<8|b) → kayıt { c: tuval|null, u: son kullanım, r, gg, b }
 const glowS = new Map();   // gelen renk dizesi → aynı kayıt
 const glowSay = { sprite: 0, yapilan: 0, atilan: 0 };   // test/ölçüm için

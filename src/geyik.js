@@ -193,12 +193,79 @@ function gyIsiltiSpr() {   // dört uçlu parıltı + hale (kristal çekirdeği,
   q.fillStyle = '#ffffff'; q.beginPath(); q.moveTo(24, 5); q.quadraticCurveTo(26, 22, 43, 24); q.quadraticCurveTo(26, 26, 24, 43); q.quadraticCurveTo(22, 26, 5, 24); q.quadraticCurveTo(22, 22, 24, 5); q.fill();
   GY.isilti = c; return c;
 }
+// ── Önden görünüş (dönüşün ortası): göğüs, boyun + yuvarlak baş, ayrı ağız-burun (3/4 bakışta öne kayar) ──
+function gyGovdeOn(p) {   // göğüs: gövdenin önden kesiti (merkez (0, GY_BY)); iki yanda yuvarlaklık gölgesi, krem göğüs, omuz benekleri
+  const t = gyTuval(-16, -55, 32, 34), q = t.q, cy = GY_BY, rx = 13, ry = 13.8;
+  q.fillStyle = p.g; q.beginPath(); q.ellipse(0, cy, rx, ry, 0, 0, GY_PI2); q.fill();
+  q.save(); q.clip();
+  const gr = q.createLinearGradient(0, cy - ry, 0, cy + ry); gr.addColorStop(0, 'rgba(255,236,214,.34)'); gr.addColorStop(.5, 'rgba(255,255,255,0)'); gr.addColorStop(1, p.gk);
+  q.fillStyle = gr; q.fillRect(-rx, cy - ry, rx * 2, ry * 2);
+  q.fillStyle = 'rgba(90,56,41,.2)'; q.beginPath(); q.ellipse(-rx + .5, cy + 2, 3.6, ry, 0, 0, GY_PI2); q.ellipse(rx - .5, cy + 2, 3.6, ry, 0, 0, GY_PI2); q.fill();
+  q.fillStyle = p.kr; q.beginPath(); q.ellipse(0, cy + 4, 6.6, 10.5, 0, 0, GY_PI2); q.fill();
+  q.fillStyle = 'rgba(255,240,220,.24)'; q.beginPath(); q.ellipse(-4.5, cy - 8, 5, 2.8, -.35, 0, GY_PI2); q.fill();
+  q.fillStyle = p.bn; q.globalAlpha = .9;
+  for (const [x, y, r] of [[-9, -46.5, 1.3], [-5.5, -49, 1.45], [5.5, -49, 1.45], [9, -46.5, 1.3], [-11, -41.5, 1.05], [11, -41.5, 1.05]]) { q.beginPath(); q.ellipse(x, y, r * 1.1, r * .9, 0, 0, GY_PI2); q.fill(); }
+  q.globalAlpha = 1;
+  q.strokeStyle = 'rgba(90,56,41,.16)'; q.lineWidth = .7;
+  for (let i = 0; i < 4; i++) { const x = -6 + i * 4; q.beginPath(); q.moveTo(x, -31); q.quadraticCurveTo(x - .6, -28.5, x - 1.4, -27); q.stroke(); }
+  q.restore();
+  q.strokeStyle = p.cz; q.lineWidth = 1.5; q.beginPath(); q.ellipse(0, cy, rx, ry, 0, 0, GY_PI2); q.stroke();
+  return t.c;
+}
+const GY_HY = -70.4, GY_HR = 13.3;   // önden baş merkezi ve yarıçapı (yan pozdaki iri başla aynı boy)
+function gyBasOn(p) {   // boyun + yuvarlak baş (ağız-burun ayrı katman); boyunda krem yaka
+  const t = gyTuval(-16, -86, 32, 42), q = t.q;
+  const boyun = () => { q.beginPath(); q.moveTo(-7.5, -46); q.quadraticCurveTo(-8.6, -54, -7, -62); q.lineTo(7, -62); q.quadraticCurveTo(8.6, -54, 7.5, -46); q.closePath(); };
+  const kafa = () => { q.beginPath(); q.ellipse(0, GY_HY, GY_HR, GY_HR * .95, 0, 0, GY_PI2); };
+  q.strokeStyle = p.cz; q.lineWidth = 1.5; boyun(); q.stroke(); kafa(); q.stroke();
+  q.fillStyle = p.g; boyun(); q.fill(); kafa(); q.fill();
+  q.save(); q.globalCompositeOperation = 'source-atop';
+  const gr = q.createLinearGradient(0, -84, 0, -44); gr.addColorStop(0, 'rgba(255,236,214,.32)'); gr.addColorStop(.5, 'rgba(255,255,255,0)'); gr.addColorStop(1, p.gk);
+  q.fillStyle = gr; q.fillRect(-16, -86, 32, 42);
+  q.fillStyle = 'rgba(90,56,41,.13)'; q.beginPath(); q.ellipse(-GY_HR + 1, GY_HY + 2, 3.4, 10, 0, 0, GY_PI2); q.ellipse(GY_HR - 1, GY_HY + 2, 3.4, 10, 0, 0, GY_PI2); q.fill();
+  q.fillStyle = mixc(p.g, p.kr, .45); q.beginPath(); q.ellipse(0, GY_HY - 8.5, 3.4, 2.3, 0, 0, GY_PI2); q.fill();
+  q.fillStyle = 'rgba(255,240,220,.3)'; q.beginPath(); q.ellipse(-5, GY_HY - 6, 5, 2.8, -.45, 0, GY_PI2); q.fill();
+  q.fillStyle = p.kr;
+  q.beginPath(); q.moveTo(-5, -60); q.quadraticCurveTo(-7.4, -55.5, -4.2, -53.5); q.quadraticCurveTo(-6.8, -50, -3.2, -47); q.lineTo(3.2, -47); q.quadraticCurveTo(6.8, -50, 4.2, -53.5); q.quadraticCurveTo(7.4, -55.5, 5, -60); q.closePath(); q.fill();
+  q.restore();
+  q.strokeStyle = 'rgba(90,56,41,.35)'; q.lineWidth = .9;
+  q.beginPath(); q.moveTo(-4.2, -53.5); q.quadraticCurveTo(-3, -53, -2, -52.6); q.moveTo(4.2, -53.5); q.quadraticCurveTo(3, -53, 2, -52.6); q.stroke();
+  return t.c;
+}
+function gyAgizOn(p) {   // önden ağız-burun: krem burun ucu, pembe yumuşak burun, gülümseme. Merkez (0,0)
+  const t = gyTuval(-10, -9, 20, 17), q = t.q;
+  q.strokeStyle = p.cz; q.lineWidth = 1.3; q.beginPath(); q.ellipse(0, 0, 8.6, 6.4, 0, 0, GY_PI2); q.stroke(); q.fillStyle = p.kr; q.fill();
+  q.fillStyle = p.bu; q.strokeStyle = mixc(p.bu, p.cz, .55); q.lineWidth = 1;
+  q.beginPath(); q.ellipse(0, -2.4, 4, 2.9, 0, 0, GY_PI2); q.fill(); q.stroke();
+  q.fillStyle = 'rgba(255,255,255,.65)'; q.beginPath(); q.ellipse(-1.2, -3.3, 1.2, .8, .2, 0, GY_PI2); q.fill();
+  q.strokeStyle = p.cz; q.lineWidth = 1.1; q.beginPath(); q.moveTo(0, .5); q.lineTo(0, 2.3); q.moveTo(-3.2, 2.2); q.quadraticCurveTo(-1.6, 3.9, 0, 2.3); q.quadraticCurveTo(1.6, 3.9, 3.2, 2.2); q.stroke();
+  return t.c;
+}
 function gySprite() {
   if (GY.spr) return GY.spr;
   const p = GY_P;
   GY.spr = { govde: gyGovde(p), bas: gyBas(p), kulak: gyKulak(p, false), kulakU: gyKulak(p, true), ust: gyUstBacak(p, false), ustU: gyUstBacak(p, true),
-    alt: gyAltBacak(p, false), altU: gyAltBacak(p, true), kuyruk: gyKuyruk(p), boy: gyBoynuz(false), boyU: gyBoynuz(true) };
+    alt: gyAltBacak(p, false), altU: gyAltBacak(p, true), kuyruk: gyKuyruk(p), boy: gyBoynuz(false), boyU: gyBoynuz(true),
+    govdeOn: gyGovdeOn(p), basOn: gyBasOn(p), agizOn: gyAgizOn(p) };
   return GY.spr;
+}
+// ── Dönüş (sağ↔sol): eskiden yatay ölçek ince bir çizgiye kadar ezilip açılıyordu (karton gibi). Pofuduk/Pırıl tekniği:
+// yön bir "bakış" değeri yw ile verilir (1 sağ profil · 0 tam önden · -1 sol profil). Yan pozda gövde en çok %20 daralır,
+// |yw| < GY_ON iken önden poz çizilir (göğüs, iki göz, iki boynuz, iki kulak; baş ve ağız 3/4 bakışta öne kayar);
+// ayna işareti önden pozun içinde, görünmeden değişir. Dönüş kısa bir hoplayışla olur (bacaklar toplanır, kulaklar savrulur).
+// gyDonAdim: istenen yöne histerezisle (gecikme sn boyunca istenirse) ve sabit sürede döndürür; ortada "önden bakış"ta biraz oyalanır.
+const GY_ON = .55, GY_DON_SN = .46;
+function gyDonAdim(d, istek, dt, sure, gecikme) {
+  istek = istek < 0 ? -1 : 1; dt = Number.isFinite(dt) ? clamp(dt, 0, .1) : 0;
+  if (d.y === undefined) { d.y = d.h = istek; d.u = 0; d.bek = 0; d.yw = istek; }
+  if (!d.u) {
+    if (istek !== d.y) { d.bek += dt; if (d.bek >= (gecikme || 0)) { d.u = 1e-4; d.h = istek; d.bek = 0; } }
+    else d.bek = 0;
+  }
+  if (d.u) { d.u += dt / (sure || GY_DON_SN); if (d.u >= 1) { d.u = 0; d.y = d.h; } }
+  const e = d.u ? d.u + .12 * Math.sin(GY_PI2 * d.u) : 0;   // ortada yavaşlar: önden bakış bir an durur
+  d.yw = d.u ? -d.h * Math.cos(Math.PI * e) : d.y;
+  return d.yw;
 }
 // Önbellekleri kareye yayarak ısıt (her çağrıda bir parça); hepsi hazırsa true
 function geyikIsit() {
@@ -247,36 +314,47 @@ function geyikCiz(c, x, y, s, t, o) {
   const kris = clamp(+o.kristal || 0, 0, 1), parla = clamp(+o.parla || 0, 0, 1), utanc = clamp(+o.utanc || 0, 0, 1), sev = clamp(+o.sevinc || 0, 0, 1),
     uyku = clamp(+o.uyku || 0, 0, 1), kulakO = clamp(+o.kulak || 0, -1, 1), bak = Number.isFinite(o.bak) ? clamp(o.bak, -1, 1.2) : 0,
     buhar = o.buhar == null ? 1 : clamp(+o.buhar || 0, 0, 1), renk = o.renkler && o.renkler.length ? o.renkler : GY_KUZEY;
-  let yon = Number.isFinite(o.yon) ? clamp(o.yon, -1, 1) : 1; if (Math.abs(yon) < .12) yon = yon < 0 ? -.12 : .12;
-  const sp = gySprite(), yk = smooth(uyku);
+  // bakış: 1 sağ profil · 0 önden · -1 sol profil (bkz. gyDonAdim). Yan pozda en çok %20 daralır; |yw| < GY_ON önden poz.
+  const yw = Number.isFinite(o.yon) ? clamp(o.yon, -1, 1) : 1, ayw = Math.abs(yw), don = 1 - ayw;
+  const yon = (yw < 0 ? -1 : 1) * (ayw >= GY_ON ? .8 + .2 * (ayw - GY_ON) / (1 - GY_ON) : 1);
+  const dk = Math.sin(Math.min(1, don / (1 - GY_ON)) * Math.PI / 2);   // dönüş hoplayışı 0..1 (önden pozda tam)
+  const sp = gySprite(), yk = smooth(uyku), zd = Math.max(z, dk * .5);
   // adım fazı: koşarken hızlanır; sıçrayışlı dörtnala gövdeyi yaylandırır
-  const ph = t * (8 + kos * 5) + (+o.faz || 0), adim = Math.max(kos, cek * .85) * (1 - z) * (1 - yk), nefes = Math.sin(t * (uyku > .5 ? 1.3 : 2.3));
-  const bob = -Math.max(0, Math.sin(ph + .5)) * 6.5 * adim + nefes * .45 * (1 - yk) + cek * 3;
+  const ph = t * (8 + kos * 5) + (+o.faz || 0), adim = Math.max(kos, cek * .85) * (1 - z) * (1 - yk) * (1 - dk * .7), nefes = Math.sin(t * (uyku > .5 ? 1.3 : 2.3));
+  const bob = -Math.max(0, Math.sin(ph + .5)) * 6.5 * adim + nefes * .45 * (1 - yk) + cek * 3 - dk * 6;
   const yat = yk * 17;
-  const govRot = -z * .2 + Math.sin(ph + 2.0) * .085 * adim + cek * .1 + utanc * .04;
-  const basRot = yk * .35 - z * .14 + bak * .3 + Math.sin(t * 1.25) * .035 * (1 - yk) - adim * .05 + Math.sin(ph + 1) * .06 * adim + cek * .22 + utanc * .3 - sev * .08;
+  const govRot = -zd * .2 + Math.sin(ph + 2.0) * .085 * adim + cek * .1 + utanc * .04;
+  // baş adımla ters yönde hafifçe iner-kalkar (ağırlık); dönüşte biraz kalkar
+  const basRot = yk * .35 - zd * .14 + bak * .3 + Math.sin(t * 1.25) * .035 * (1 - yk) - adim * .05 + Math.sin(ph + 1) * .06 * adim + cek * .22 + utanc * .3 - sev * .08;
+  const kirpK = Math.pow(Math.max(0, Math.sin(t * .61 + 1.7)), 40), dinle = Math.sin(t * 1.5) * .07 * (1 - yk);
+  // kulaklar: adımın gecikmeli yankısıyla sallanır (ikincil hareket), dönüşte savrulur
+  const kul = -yk * .5 + kulakO * .35 - utanc * .45 + sev * .25 + dinle - adim * .2 + Math.sin(ph - .9) * .13 * adim - dk * .3;
   const ga = c.globalAlpha;
+  if (ayw < GY_ON) {
+    const q = GY_ONP; q.ph = ph; q.adim = adim; q.zd = zd; q.Y = yat + bob; q.basRot = basRot; q.kul = kul; q.kirpK = kirpK; q.kris = kris; q.renk = renk;
+    q.parla = parla; q.ga = ga; q.alpha = alpha; q.yk = yk; q.sev = sev; q.utanc = utanc; q.bak = bak; q.buhar = buhar; q.kos = kos; q.nefes = nefes;
+    gyOnCiz(c, sp, x, y, s, t, yw, q); return;
+  }
   c.save(); c.translate(x, y); c.scale(s * yon, s); if (alpha < 1) c.globalAlpha = ga * alpha;
   if (utanc > .002) c.translate(-utanc * 3, 0);
 
-  const bac = gyBacakHesap(ph, adim, z, cek, yk);
+  const bac = gyBacakHesap(ph, adim, zd, cek, yk);
   // bütün bacaklar gövdeden önce (tepeleri gövdenin altında kalır; uzaklar gölgeli)
   for (let i = 0; i < 4; i++) gyBacakCiz(c, i < 2 ? sp.ustU : sp.ust, i < 2 ? sp.altU : sp.alt, GY_KALCA[i][0], GY_KY + yat + bob, bac[i]);
   c.save(); c.translate(0, yat + bob); c.translate(GY_BX, -38); c.rotate(govRot); c.translate(-GY_BX, 38);
   // kuyruk: sevinçle sallanır, koşarken dik
-  const kSal = Math.sin(t * (sev > .3 ? 13 : 2.2)) * (.12 + .3 * sev) + kos * -.25 - z * .2;
+  const kSal = Math.sin(t * (sev > .3 ? 13 : 2.2)) * (.12 + .3 * sev) + kos * -.25 - zd * .2 + Math.sin(ph - 1.6) * .22 * adim;   // koşarken adımla zıplar
   c.save(); c.translate(-20.5, -45); c.rotate(kSal); c.drawImage(sp.kuyruk, -9, -10, 13, 14); c.restore();
   // baş + boyun (arkadan başlar; ek yeri gövdeyle örtülür). Uzak kulak ve uzak boynuz başın arkasında.
   c.save(); c.translate(GY_NP.x, GY_NP.y); c.rotate(basRot); c.translate(-GY_NP.x, -GY_NP.y);
   c.translate(GY_BKX, GY_BKY); c.scale(GY_BK, GY_BK); c.translate(-GY_BKX, -GY_BKY);
-  const kirpK = Math.pow(Math.max(0, Math.sin(t * .61 + 1.7)), 40), dinle = Math.sin(t * 1.5) * .07 * (1 - yk);
-  const kul = -yk * .5 + kulakO * .35 - utanc * .45 + sev * .25 + dinle - adim * .2;
   gyKulakCiz(c, sp.kulakU, 16, -72.5, -.25 - kul + Math.sin(t * 1.5 + .9) * .05);
   c.save(); c.translate(GY_BKOK[0][0], GY_BKOK[0][1]); c.rotate(-.3); c.scale(.82, .82); gyKoy(c, sp.boyU); gyKristaller(c, 1, t, kris, renk, parla, ga * alpha); c.restore();
   gyKoy(c, sp.bas);
   c.restore();
-  // gövde (nefesle hafifçe kabarır)
-  c.save(); c.translate(0, GY_BY + GY_RY); c.scale(1 - nefes * .008, 1 + nefes * (uyku > .5 ? .03 : .012)); c.translate(0, -(GY_BY + GY_RY)); gyKoy(c, sp.govde); c.restore();
+  // gövde (nefesle hafifçe kabarır; koşuda inişte hafifçe basılır: ağırlık)
+  const ez = Math.max(0, Math.sin(ph + 2.6)) * .045 * adim;
+  c.save(); c.translate(0, GY_BY + GY_RY); c.scale(1 - nefes * .008 + ez * .5, 1 + nefes * (uyku > .5 ? .03 : .012) - ez); c.translate(0, -(GY_BY + GY_RY)); gyKoy(c, sp.govde); c.restore();
   // kızak koşumu: göğüste yumuşak krem kayış + altın çıngırak
   if (cek > .02) gyKosum(c, cek, t, kos);
   c.restore();
@@ -286,7 +364,7 @@ function geyikCiz(c, x, y, s, t, o) {
   c.translate(GY_BKX, GY_BKY); c.scale(GY_BK, GY_BK); c.translate(-GY_BKX, -GY_BKY);
   gyKulakCiz(c, sp.kulak, 17.5, -73.5, -.1 - kul - kirpK * .45);
   c.save(); c.translate(GY_BKOK[1][0], GY_BKOK[1][1]); c.rotate(.1); c.scale(.88, .88); gyKoy(c, sp.boy); gyKristaller(c, 0, t, kris, renk, parla, ga * alpha); c.restore();
-  gyGoz(c, t, yk, z, sev, utanc);
+  gyGoz(c, t, yk, zd, sev, utanc, 26, -70, -1, 1, 1);
   // nefes buharı: burundan öne-yukarı yükselip açılan küçük bulutçuklar (soğuk gece)
   if (buhar > .02) {
     const per = kos > .3 || cek > .3 ? 1.1 : 2.8, puf = gyPufSpr();
@@ -350,30 +428,73 @@ function gyKosum(c, cek, t, kos) {
   c.fillStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.arc(bx - .8, by - .9, .8, 0, GY_PI2); c.fill();
 }
 // İri sıcak göz: koyu kahve, altta bal rengi parıltı, iki beyaz benek, kirpik. Kırpar; sevinçte mutlu kavis; utançta aşağı bakar.
-function gyGoz(c, t, uyku, z, sev, utanc) {
-  const gx = 26, gy = -70;
+// ls: kirpik yönü (-1 geriye/sola, 1 sağa), bs: allık yönü, rk: genişlik (3/4 bakışta uzak göz daralır)
+function gyGoz(c, t, uyku, z, sev, utanc, gx, gy, ls, bs, rk) {
   const kf = t * .85 + .6, kirp = Math.max(Math.pow(Math.max(0, Math.sin(kf)), 60), Math.sin(kf * .29) > .6 ? Math.pow(Math.max(0, Math.sin(kf - .3)), 60) : 0);
   const kapak = Math.max(kirp, smooth(clamp((uyku - .25) / .45, 0, 1)));
   c.lineCap = 'round';
   if (sev > .55 || kapak > .82) {
     c.strokeStyle = '#3a2420'; c.lineWidth = 1.6; c.beginPath();
-    if (sev > .55 && kapak <= .82) { c.moveTo(gx - 4.2, gy + 1.2); c.quadraticCurveTo(gx, gy - 3.6, gx + 4.2, gy + 1.2); }   // mutlu ^
-    else { c.moveTo(gx - 4.2, gy + .5); c.quadraticCurveTo(gx, gy + 4, gx + 4.2, gy + .5); }
+    if (sev > .55 && kapak <= .82) { c.moveTo(gx - 4.2 * rk, gy + 1.2); c.quadraticCurveTo(gx, gy - 3.6, gx + 4.2 * rk, gy + 1.2); }   // mutlu ^
+    else { c.moveTo(gx - 4.2 * rk, gy + .5); c.quadraticCurveTo(gx, gy + 4, gx + 4.2 * rk, gy + .5); }
     c.stroke();
-    c.lineWidth = 1; c.beginPath(); c.moveTo(gx - 3.4, gy - .4); c.lineTo(gx - 5.2, gy - 2); c.stroke();
-    if (sev > .3) { c.fillStyle = 'rgba(255,130,150,' + (.3 + .25 * sev) + ')'; c.beginPath(); c.ellipse(gx + 2.5, gy + 7, 3.4, 1.8, 0, 0, GY_PI2); c.fill(); }
+    c.lineWidth = 1; c.beginPath(); c.moveTo(gx + ls * 3.4 * rk, gy - .4); c.lineTo(gx + ls * 5.2 * rk, gy - 2); c.stroke();
+    if (sev > .3) { c.fillStyle = 'rgba(255,130,150,' + (.3 + .25 * sev) + ')'; c.beginPath(); c.ellipse(gx + bs * 2.5, gy + 7, 3.4 * rk, 1.8, 0, 0, GY_PI2); c.fill(); }
     return;
   }
-  const ry = 5.6 * (1 - kapak), rx = 4.4, bk = utanc * 1.6;   // utançta göz bebeği aşağı-geriye kaçar
+  const ry = 5.6 * (1 - kapak), rx = 4.4 * rk, bk = utanc * 1.6;   // utançta göz bebeği aşağı-geriye kaçar
   c.fillStyle = '#3a2420'; c.beginPath(); c.ellipse(gx, gy, rx, ry, 0, 0, GY_PI2); c.fill();
   if (ry > 1.8) {
-    c.fillStyle = '#9a5a32'; c.beginPath(); c.ellipse(gx + .3 - bk * .4, gy + ry * .4 + bk * .3, rx * .66, ry * .42, 0, 0, GY_PI2); c.fill();
-    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(gx - 1.3 - bk * .5, gy - ry * .42 + bk * .6, 1.6, 0, GY_PI2); c.fill();
-    c.beginPath(); c.arc(gx + 1.6, gy + ry * .32, .75, 0, GY_PI2); c.fill();
+    c.fillStyle = '#9a5a32'; c.beginPath(); c.ellipse(gx + .3 * rk - bk * .4, gy + ry * .4 + bk * .3, rx * .66, ry * .42, 0, 0, GY_PI2); c.fill();
+    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(gx - 1.3 * rk - bk * .5, gy - ry * .42 + bk * .6, 1.6, 0, GY_PI2); c.fill();
+    c.beginPath(); c.arc(gx + 1.6 * rk, gy + ry * .32, .75, 0, GY_PI2); c.fill();
   }
   c.strokeStyle = '#3a2420'; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(gx - 3.2, gy - ry * .78); c.lineTo(gx - 5.4, gy - ry * .78 - 2); c.moveTo(gx - 1.2, gy - ry * .97); c.lineTo(gx - 2.2, gy - ry - 2.4); c.stroke();
-  if (z > .3 || utanc > .3) { c.fillStyle = 'rgba(255,130,150,' + (.3 + .3 * utanc) + ')'; c.beginPath(); c.ellipse(gx + 2.5, gy + 7.4, 3.4, 1.8, 0, 0, GY_PI2); c.fill(); }
+  c.beginPath(); c.moveTo(gx + ls * 3.2 * rk, gy - ry * .78); c.lineTo(gx + ls * 5.4 * rk, gy - ry * .78 - 2); c.moveTo(gx + ls * 1.2 * rk, gy - ry * .97); c.lineTo(gx + ls * 2.2 * rk, gy - ry - 2.4); c.stroke();
+  if (z > .3 || utanc > .3) { c.fillStyle = 'rgba(255,130,150,' + (.3 + .3 * utanc) + ')'; c.beginPath(); c.ellipse(gx + bs * 2.5, gy + 7.4, 3.4 * rk, 1.8, 0, 0, GY_PI2); c.fill(); }
+}
+// Önden poz (dönüşün ortası; yw ∈ (-GY_ON, GY_ON)): parçalar gövde ekseni boyunca yw ile kayar (baş öne, kalça arkaya),
+// yanlara açılım cos ile daralır — gövde hiçbir zaman çizgiye inmez. Kulak/boynuz kökleri yüzün arkasında: ters yöne kayar.
+const GY_ONP = {};
+function gyOnCiz(c, sp, x, y, s, t, yw, q) {
+  const cl = Math.sqrt(Math.max(0, 1 - yw * yw)), ayw = Math.abs(yw), Y = q.Y, ga = q.ga, a0 = ga * q.alpha;
+  c.save(); c.translate(x, y); c.scale(s, s); if (q.alpha < 1) c.globalAlpha = a0;
+  // bacaklar: önce arka çift (gölgeli, içeride), sonra ön çift; tepeleri göğsün altında kalır. Hoplayışta toplanır.
+  for (let k = 0; k < 4; k++) {
+    const on = k >= 2, sag = k % 2 ? 1 : -1, i = on ? (sag > 0 ? 3 : 1) : (sag > 0 ? 2 : 0);
+    const lx = (on ? 8.2 : 5.2) * sag * cl + (on ? 10 : -12) * yw;
+    const lift = Math.max(0, Math.sin(q.ph + GY_FAZ[i])) * q.adim, kisa = 1 - .3 * q.zd - .14 * lift - q.yk * .45;
+    c.save(); c.translate(lx, GY_KY + Y); c.rotate(sag * (.05 + .1 * q.zd)); c.scale(1, kisa);
+    c.save(); c.translate(0, GY_UST); c.drawImage(on ? sp.alt : sp.altU, -5, -3, 10, 21); c.restore();
+    c.drawImage(on ? sp.ust : sp.ustU, -7, -9, 14, 28); c.restore();
+  }
+  // göğüs (nefesle kabarır); 3/4 bakışta yana doğru uzar
+  const bw = (13 * (1 - ayw) + 20.5 * ayw) / 13;
+  c.save(); c.translate(-3 * yw, Y + GY_BY + 13.8); c.scale(bw * (1 - q.nefes * .008), 1 + q.nefes * .012); c.translate(0, -(GY_BY + 13.8)); gyKoy(c, sp.govdeOn); c.restore();
+  // baş: gövde ekseninde öne (yw yönüne) kayar; utançta/koklarken iner
+  const hx = 23 * yw, ex = -yw * 3;
+  c.save(); c.translate(hx, Y + q.bak * 4 + q.utanc * 3); c.translate(0, -54); c.rotate(q.basRot * .3 + yw * .12); c.translate(0, 54);
+  for (let sg = -1; sg <= 1; sg += 2) {   // boynuzlar: iki yana açılır (sağdaki aynalı); kristaller iki boynuza bölünür
+    c.save(); c.translate(sg * 6.2 * cl + ex, -82.5); c.scale(-sg, 1); c.rotate(-.22); c.scale(.86, .86); gyKoy(c, sp.boy); gyKristaller(c, sg < 0 ? 1 : 0, t, q.kris, q.renk, q.parla, a0); c.restore();
+  }
+  for (let sg = -1; sg <= 1; sg += 2) {   // kulaklar: iki yana; biri ara sıra seğirir
+    c.save(); c.translate(sg * 9.6 * cl + ex, -76.5); c.scale(-sg, 1); c.rotate(-.05 - q.kul * .8 - (sg > 0 ? q.kirpK * .45 : 0) + Math.sin(t * 1.5 + sg) * .04); c.drawImage(sp.kulak, -17, -9, 20, 14); c.restore();
+  }
+  gyKoy(c, sp.basOn);
+  const mx = yw * 8; c.drawImage(sp.agizOn, mx - 10, -61.5 - 9, 20, 17);
+  for (let sg = -1; sg <= 1; sg += 2) gyGoz(c, t, q.yk, q.zd, q.sev, q.utanc, sg * 6.3 * cl + yw * 4.6, -72.5, sg, sg, .84 * (sg * yw > 0 ? 1 - .5 * ayw : 1));
+  if (q.buhar > .02) {   // nefes buharı: burundan öne-yukarı
+    const per = q.kos > .3 ? 1.1 : 2.8, puf = gyPufSpr();
+    for (let k = 0; k < 3; k++) {
+      const u = ((t / per) + k / 3) % 1, al = u < .12 ? u / .12 : 1 - (u - .12) / .88;
+      if (u > .62 && k > 0) continue;
+      const px = mx + yw * u * 16 + Math.sin(u * 6 + k) * 1.5, py = -60 - u * 14, r = 2.5 + u * 8;
+      c.globalAlpha = a0 * q.buhar * al * .5; c.drawImage(puf, px - r, py - r, r * 2, r * 2);
+    }
+    c.globalAlpha = a0;
+  }
+  c.restore();
+  c.globalAlpha = ga; c.restore();
 }
 GEYIK.ciz = geyikCiz;
 
@@ -411,7 +532,7 @@ function gyFenerSay() { return typeof V7 !== 'undefined' && V7 ? (V7.fener | 0) 
 TUR.kaydet('geyik', {
   kur(o) {
     o.s = o.s || 1.1; o.yon = o.yon || -1; GEYIK.o = o;
-    o.gy = { durum: 'bekle', t: (o.x * .011) % 5, yon: o.yon, yonH: o.yon, vx: 0, kos: 0, sic: null, zip: 0, utanc: 0, sev: 0, kulak: 0, bak: 0,
+    o.gy = { durum: 'bekle', t: (o.x * .011) % 5, yon: o.yon, yonH: o.yon, dn: {}, donBek: .22, vx: 0, kos: 0, sic: null, zip: 0, utanc: 0, sev: 0, kulak: 0, bak: 0,
       tanT: 0, geriT: 0, geri: false, seviyeT: 0, uzakT: 0, kris: 0, renkler: [], ucan: [], parla: 0, alpha: 1, izX: o.x, hop: 0, hopV: 0, hopT: 2,
       opt: { yon: o.yon, kos: 0, zipla: 0, kristal: 0, renkler: null, bak: 0, cek: 0, parla: 0, kulak: 0, utanc: 0, sevinc: 0, alpha: 1, faz: 0 } };
     o.gy.opt.renkler = o.gy.renkler;
@@ -426,6 +547,8 @@ TUR.kaydet('geyik', {
   guncelle(o, dt) {
     if (!(dt > 0) || !Number.isFinite(dt)) return;
     const m = o.gy; m.t += dt; m.zip = Math.max(0, m.zip - dt * 2.4); m.parla = Math.max(0, m.parla - dt * .8);
+    // dönüş: istenen yön (yonH) histerezisle; m.yon görünen bakış (1 … önden 0 … -1)
+    m.yon = gyDonAdim(m.dn, m.yonH, dt, GY_DON_SN, m.sic ? .05 : m.donBek);
     // kristaller: yanan sayısına yumuşakça yetiş (kesirli kısım sıradaki kristali yavaşça yakar)
     while (m.renkler.length < Math.min(10, gyFenerSay() - m.ucan.length)) gyKristalYak(o, null);   // olay kaçtıysa (yeniden yükleme) yedek
     m.kris = Math.min(m.kris + dt * 1.6, m.renkler.length / 10);
@@ -448,7 +571,7 @@ TUR.kaydet('geyik', {
       // utangaç: Feza yaklaşınca başını eğer, gözünü kaçırır; çok yaklaşınca bir adım geri çekilir; yanına gelince tanışır
       const d = Math.abs(dx), yak = d < 520 && Math.abs(P.y - o.y) < 260;
       m.utanc = clamp(m.utanc + (yak ? dt * 1.4 : -dt), 0, 1);
-      m.yon += ((dx > 0 ? 1 : -1) - m.yon) * Math.min(1, dt * 4);
+      if (Math.abs(dx) > 40) m.yonH = dx > 0 ? 1 : -1;
       if (!m.geri && d < 330 && !m.sic) { m.geri = true; const gx = o.x - Math.sign(dx) * 38, gyy = gyZemin(gx, o.y); if (gyy != null && Math.abs(gyy - o.y) < T * 1.5) gySicra(o, gx, gyy); }
       m.kulak = -m.utanc * .4 + Math.pow(Math.max(0, Math.sin(m.t * 1.7)), 24) * .8;   // kulağı ara sıra merakla oynar
       m.bak = m.utanc * .35 + Math.max(0, Math.sin(m.t * .9)) * .25 * m.utanc;
@@ -457,7 +580,7 @@ TUR.kaydet('geyik', {
     }
     if (m.durum === 'tanis') {
       m.tanT += dt; m.utanc = Math.max(0, m.utanc - dt * 3); m.sev = 1; m.kulak = .8; m.bak = 0;
-      m.yon += ((dx > 0 ? 1 : -1) - m.yon) * Math.min(1, dt * 6);
+      if (Math.abs(dx) > 20) m.yonH = dx > 0 ? 1 : -1;
       // üç sevinç zıplaması (yerinde, yaylı)
       const k = Math.floor(m.tanT / .55); if (k < 3 && m.tanT - k * .55 < dt && !m.sic) { m.hopV = 330 - k * 40; if (typeof drFx === 'function') { try { drFx(o.x + m.yon * 20, o.y - 90, 'heart'); } catch (er) {} } }
       gyHop(m, dt);
@@ -482,11 +605,13 @@ TUR.kaydet('geyik', {
       gySicra(o, ok ? tx : P.x, ok ? ty : P.y); return;
     }
     // yürüyüş / koşu: hedefe yaklaş (ölü bölge), Feza hızlıysa yetişmek için koşar
-    const ister = Math.abs(hdx) < 22 ? 0 : clamp(hdx * 3.2, -GY_G.KOS, GY_G.KOS);
+    // yumuşak varış: frenleme mesafesine göre hız (hedefi aşıp geri dönmez → boş yere sağa-sola dönüp durmaz)
+    const kalan = Math.abs(hdx) - 22, ister = kalan <= 0 ? 0 : Math.sign(hdx) * Math.min(GY_G.KOS, Math.sqrt(2 * GY_G.IVME * .7 * kalan));
     m.vx = ister > m.vx ? Math.min(ister, m.vx + GY_G.IVME * dt) : Math.max(ister, m.vx - GY_G.IVME * dt);
     if (Math.abs(m.vx) > 8) {
       const yn = m.vx > 0 ? 1 : -1, nx = o.x + m.vx * dt, ileri = gyZemin(nx + yn * 14, o.y);
       if (ileri != null && Math.abs(ileri - o.y) <= 4) { o.x = nx; o.y = ileri; }
+      else if (P.ground && Math.abs(o.y - P.y) < T * .5 && yn === Math.sign(o.x - P.x)) m.vx = 0;   // Feza'yla aynı seviyedeyken ondan uzaklaşmak için basamaktan inip çıkmaz (sağa-sola dönme döngüsü olmasın)
       else if (ileri != null && ileri < o.y && o.y - ileri <= 3.5 * T) {   // basamak yukarı: yumuşak zıplayış
         const kx = (Math.floor((nx + yn * 14) / T) + (yn > 0 ? 0 : 1)) * T + yn * 16, ky = gyZemin(kx, ileri + 2, 8);
         gySicra(o, kx, ky != null ? ky : ileri);
@@ -502,8 +627,8 @@ TUR.kaydet('geyik', {
       }
     }
     m.kos = lerp(m.kos, clamp(Math.abs(m.vx) / 300, 0, 1), Math.min(1, dt * 6));
-    const hedefYon = Math.abs(m.vx) > 20 ? Math.sign(m.vx) : Math.abs(dx) > 30 ? Math.sign(dx) : m.yonH;
-    m.yonH = hedefYon; m.yon += (m.yonH - m.yon) * Math.min(1, dt * 7);
+    const hedefYon = Math.abs(m.vx) > 40 ? Math.sign(m.vx) : Math.abs(m.vx) < 8 && Math.abs(dx) > 60 ? Math.sign(dx) : m.yonH;   // ölü bölge: kıpırdanmada dönmez
+    m.yonH = hedefYon;
     // karda toynak izi
     if (Math.abs(o.x - m.izX) > 26) { m.izX = o.x; if (typeof dn7Iz === 'function') { try { dn7Iz(o.x, o.y, 'geyik'); } catch (er) {} } }
     // dururken ara sıra yere eğilip karı koklar, kulak oynatır
@@ -522,7 +647,7 @@ TUR.kaydet('geyik', {
     }
     // yer gölgesi (havadayken küçülür)
     const gyer = m.sic ? lerp(m.sic.y0, m.sic.y1, Math.min(1, m.sic.u)) : o.y;
-    g.save(); g.globalAlpha = .2 * m.alpha * (1 - Math.min(.7, (havada + hop) / 120)); g.fillStyle = '#2a2a55'; g.beginPath(); g.ellipse(o.x, gyer - 1, 24 * s, 4 * s, 0, 0, GY_PI2); g.fill(); g.restore();
+    g.save(); g.globalAlpha = .2 * m.alpha * (1 - Math.min(.7, (havada + hop) / 120)); g.fillStyle = '#2a2a55'; g.beginPath(); g.ellipse(o.x, gyer - 1, (13 + 11 * Math.abs(m.yon)) * s, 4 * s, 0, 0, GY_PI2); g.fill(); g.restore();
     const op = m.opt, z = Math.max(m.zip, m.sic ? clamp(Math.sin(Math.min(1, m.sic.u) * Math.PI) * 1.3, 0, 1) : 0, clamp(hop / 14, 0, 1));
     op.yon = m.yon; op.kos = m.sic ? 0 : m.kos; op.zipla = z; op.kristal = m.kris; op.bak = m.bak; op.kulak = m.kulak; op.utanc = m.utanc; op.sevinc = m.sev;
     op.parla = Math.max(m.parla, m.dansParla || 0); op.alpha = m.alpha; op.faz = o.x * .001;
@@ -580,6 +705,6 @@ function gyDans(o, dt) {
     if (a > 3 && k1 > k0 && k1 % 8 === 4) m.yonH = -m.yonH;
     if (a > 3 && k1 > k0 && k1 % 8 === 0) m.yonH = P.x > o.x ? 1 : -1;
   }
-  m.yon += (m.yonH - m.yon) * Math.min(1, dt * 6);
+  m.donBek = 0;
   gyHop(m, dt);
 }

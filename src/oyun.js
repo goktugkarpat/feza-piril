@@ -1416,6 +1416,8 @@ const OM_COZ = {
   PENCERE: 2,           // ölçüm penceresi (oyun saniyesi)
   ASAGI: 1.2,           // pencerenin ortalama kare aralığı > yenileme × 1,2 → zorlanan pencere
   ASAGI_N: 2,           // art arda bu kadar zorlanan pencere → bir basamak düş
+  UZUN_ORAN: 0.06,      // ... ya da pencerede yenileme × 1,5'ten uzun karelerin oranı bu kadar (takılma)
+  MASA_PIKSEL: 4.6e6,   // masaüstü başlangıç bütçesi (tuval pikseli): tam ekran 14" Retina 2 → 1,75, 16" → 1,5 (bol pay varsa uyarlama yükseltir)
   RAHAT_ARALIK: 1.04,   // rahat pencere: ortalama aralık ≤ yenileme × 1,04 ...
   RAHAT_JS: 0.35,       // ... ve karenin JS süresi ≤ yenileme × 0,35
   YUKARI_N: 8,          // art arda bu kadar rahat pencere (≈16 sn) → bir basamak çık
@@ -1423,11 +1425,11 @@ const OM_COZ = {
   YASAK: 90,            // çıkıp 30 sn içinde geri düşülen basamak bu kadar sn denenmez (2. kezde hiç)
 };
 const omCoz = { taban: 1, liste: [1], i: 0, dpr: 1, zorla: 0, ilk: true, yenileme: 0, bekleT: 0, bekleyen: -1, neden: '',
-  pT: 0, pN: 0, pAralik: 0, pJs: 0, kotuN: 0, rahatN: 0, yukariT: -1e9, yasak: {}, hata: {}, log: [],
+  pT: 0, pN: 0, pAralik: 0, pJs: 0, pUzun: 0, kotuN: 0, rahatN: 0, yukariT: -1e9, yasak: {}, hata: {}, log: [],
   hz: new Float32Array(90), hzN: 0, hzMin: 1e9, sonMs: -1, uygula: false };
 { const z = parseFloat(Q.get('dpr')); if (z > 0) omCoz.zorla = clamp(z, 0.5, 3); }
 function omCozLog(m) { const s = '[çözünürlük] ' + m; omCoz.log.push((now || 0).toFixed(1) + ' ' + s); if (omCoz.log.length > 60) omCoz.log.shift(); console.info(s); }
-function omCozSifirla() { omCoz.pT = omCoz.pN = omCoz.pAralik = omCoz.pJs = 0; omCoz.kotuN = omCoz.rahatN = 0; omCoz.bekleT = now + OM_COZ.BEKLE; omCoz.sonMs = -1; }
+function omCozSifirla() { omCoz.pT = omCoz.pN = omCoz.pAralik = omCoz.pJs = omCoz.pUzun = 0; omCoz.kotuN = omCoz.rahatN = 0; omCoz.bekleT = now + OM_COZ.BEKLE; omCoz.sonMs = -1; }
 // Basamak listesi ve başlangıç (resize'da da çağrılır; o anki basamak korunur)
 function omCozSec() {
   omCoz.taban = Math.min(OM_MASA ? OM_MASA_TAVAN : OM_TABLET_TAVAN, window.devicePixelRatio || 1);
@@ -1443,6 +1445,10 @@ function omCozSec() {
     px *= omCoz.taban * omCoz.taban;
     omCoz.i = 0;
     if (!OM_MASA && px >= OM_COZ.BUYUK_EKRAN) { const k = L.indexOf(1.75); if (k > 0) omCoz.i = k; }
+    if (OM_MASA) {   // masaüstü: pencerenin tuval pikseli bütçeyi aşmayan ilk basamak (bol pay varsa uyarlama yine yükseltir)
+      const pp = innerWidth * innerHeight;
+      while (omCoz.i < L.length - 1 && pp * L[omCoz.i] * L[omCoz.i] > OM_COZ.MASA_PIKSEL) omCoz.i++;
+    }
   } else {
     let k = 0; while (k < L.length - 1 && L[k] > once + 1e-6) k++;
     omCoz.i = k;
@@ -1484,12 +1490,15 @@ function omCozOlc(ms, js) {
   if (c.bekleyen >= 0) { if (omCozSakin()) c.uygula = true; return; }   // karar verildi: sakin anı bekle (ölçme yok); değişim sonraki karenin başında (tuval silinmesin)
   const y = OM_MASA ? c.yenileme : Math.max(c.yenileme, 1000 / 60);   // tablet: hedef 60 fps · masaüstü: ekranın hızı (en çok 120)
   c.pAralik += Math.min(d, y * 4); c.pJs += js; c.pN++; c.pT += d / 1000;
+  if (d > y * 1.5) c.pUzun++;
   if (c.pT < OM_COZ.PENCERE) return;
-  const ort = c.pAralik / c.pN, ortJs = c.pJs / c.pN;
-  c.pT = c.pN = c.pAralik = c.pJs = 0;
-  const kotu = ort > y * OM_COZ.ASAGI, rahat = ort <= y * OM_COZ.RAHAT_ARALIK && ortJs <= y * OM_COZ.RAHAT_JS;
+  const ort = c.pAralik / c.pN, ortJs = c.pJs / c.pN, uzunO = c.pUzun / c.pN;
+  c.pT = c.pN = c.pAralik = c.pJs = c.pUzun = 0;
+  // zorlanan pencere: ortalama aralık yüksek YA DA karelerin ≥ %6'sı uzun (ortalama düşük kalsa da sık takılma gözle görülür)
+  const kotu = ort > y * OM_COZ.ASAGI || uzunO >= OM_COZ.UZUN_ORAN,
+    rahat = ort <= y * OM_COZ.RAHAT_ARALIK && ortJs <= y * OM_COZ.RAHAT_JS && uzunO < 0.01;
   c.kotuN = kotu ? c.kotuN + 1 : 0; c.rahatN = rahat ? c.rahatN + 1 : 0;
-  const bilgi = 'ort ' + ort.toFixed(1) + ' ms, js ' + ortJs.toFixed(1) + ' ms, yenileme ' + y.toFixed(1) + ' ms';
+  const bilgi = 'ort ' + ort.toFixed(1) + ' ms, uzun %' + (uzunO * 100).toFixed(0) + ', js ' + ortJs.toFixed(1) + ' ms, yenileme ' + y.toFixed(1) + ' ms';
   if (c.kotuN >= OM_COZ.ASAGI_N && c.i < c.liste.length - 1) { c.bekleyen = c.i + 1; c.neden = 'zorlanıyor (' + bilgi + ')'; }
   else if (c.rahatN >= OM_COZ.YUKARI_N && c.i > 0) {
     const k = c.i - 1, yasak = c.yasak[k] || 0;
@@ -1827,7 +1836,7 @@ function frame(ms) {
 // ≥ ~105 Hz (aralık ≤ 9,5 ms: 120/144 Hz) → her ikinci rAF (sayaç tabanlı, jitter yok). Arası (75-100 Hz) → birikimli zaman sınırlayıcı.
 // Fizik/animasyon zamanı frame() içinde gerçek rAF zaman damgasından (atlanan kareler dahil) hesaplanır: oyun hızı her Hz'de aynıdır.
 // Masaüstü profilinde (OM_MASA) kilit 120'dir: ≤ ~130 Hz ekranda her kare çizilir, 144 Hz+'ta zaman tabanlı en çok 120 kare/sn.
-const omLim = { buf: new Float32Array(60), n: 0, son: -1, aralik: 1000 / 60, mod: 1, par: 0, acc: 0, kare: 0, atla: 0, olc: new Float32Array(600), olcN: 0,
+const omLim = { buf: new Float32Array(60), n: 0, son: -1, sonCiz: -1, aralik: 1000 / 60, mod: 1, par: 0, acc: 0, kare: 0, atla: 0, olc: new Float32Array(600), olcN: 0,
   hedef: OM_MASA ? 1000 / 120 : 1000 / 60, masa: OM_MASA };
 function omLimGuncelle(d) {
   const L = omLim; L.buf[L.n++ % 60] = d;
@@ -1842,9 +1851,12 @@ function omDongu(ms) {
   requestAnimationFrame(omDongu);   // önce sıradaki kare: ne olursa olsun döngü durmaz
   const L = omLim, d = L.son < 0 ? 1000 / 60 : ms - L.son; L.son = ms;
   if (d > 0 && d < 250 && !document.hidden) omLimGuncelle(d);
-  if (L.mod === 2) { L.par ^= 1; if (L.par) { L.atla++; return; } }
+  if (L.mod === 2) {   // 120 Hz: son çizilen kareden bu yana ≥ hedef − yarım yenileme geçtiyse çiz. Parite sayacı geç gelen bir
+    // rAF'tan sonra fazı kaydırıp 25 ms'lik aralık (titreme) yapıyordu; zaman eşiği hep en yakın 60 Hz vuruşuna oturur.
+    if (L.sonCiz >= 0 && ms - L.sonCiz < L.hedef - L.aralik * 0.5) { L.atla++; return; }
+  }
   else if (L.mod === 3) { L.acc += d; if (L.acc < L.hedef * 0.912) { L.atla++; return; } L.acc = Math.min(L.acc - L.hedef, L.hedef); }
-  L.kare++;
+  L.kare++; L.sonCiz = ms;
   if (omCoz.uygula) { omCoz.uygula = false; try { omCozUygula(); } catch (e) { omHataBildir('cozunurluk', e); } }
   const js0 = performance.now();
   try { frame(ms); }
