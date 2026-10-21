@@ -9,6 +9,10 @@ Voice: tr-TR-EmelNeural (natural Turkish female). Key prefix chooses the deliver
   a_  narrator – slower, slightly lower, tender bedtime-story tone
   p_  Pırıl    – same voice, a little higher (+25 Hz) and a bit faster: a sweet little dragon, not a chipmunk.
                (edge-tts shifts the formants together with the pitch: measured +15 % at +25 Hz, +26 % at +38 Hz.)
+  Bölüm 8 neighbours (same voice, small natural shifts — never caricatured): kd_ kabak dede (lower, unhurried), in_ iskelet nine
+  (slow, soft), ck_ cadı kız (a child: higher, lively), kk_ kara kedi (playful), ht_ hayalet teyze (high, airy, gentle),
+  k2_ kabak ikizler (two little pumpkin kids speaking in unison: the line is recorded twice, a few Hz apart, and mixed 35 ms apart),
+  cn_ Cadı Nine (warm grandma, a touch lower), kb_ the carved pumpkin that comes alive (warm, a little deep).
 Output: sesler.js  →  window.VOICE_MP3 = {key: base64 mp3}  and  window.VOICE_DUR = {key: seconds}.
 """
 import asyncio
@@ -47,7 +51,24 @@ VOICE = "tr-TR-EmelNeural"
 STYLE = {            # prefix → (rate, pitch, volume)
     "a_": ("-18%", "-3Hz", "+0%"),
     "p_": ("-3%", "+16Hz", "+0%"),   # +16 Hz: F0 ≈ 230 Hz (measured; +25 Hz gave 245 Hz and a sharper tone): soft, cute, a little high, not shrill. Rate -3 %: unhurried and sweet.
+    "kd_": ("-5%", "-12Hz", "+0%"),   # Bölüm 8 kabak dede
+    "in_": ("-7%", "-6Hz", "+0%"),    # iskelet nine
+    "ck_": ("+6%", "+28Hz", "+0%"),    # cadı kız
+    "kk_": ("+2%", "+10Hz", "+0%"),    # kara kedi
+    "ht_": ("-3%", "+20Hz", "+0%"),    # hayalet teyze
+    "k2_": ("+6%", "+24Hz", "+0%"),    # kabak ikizler (1. ses; 2. ses CHORUS'ta)
+    "cn_": ("-10%", "-8Hz", "+0%"),    # Cadı Nine
+    "kb_": ("-6%", "-10Hz", "+0%"),    # canlanan yüz kabağı (sıcak, biraz kalın)
 }
+# Second take mixed under the first one (same rate → same timing): two children saying it together.
+CHORUS = {"k2_": ("+6%", "+38Hz", "+0%")}
+
+
+def chorus(key):
+    for pre, st in CHORUS.items():
+        if key.startswith(pre):
+            return st
+    return None
 DEFAULT = ("-5%", "+2Hz", "+0%")
 # Pırıl's "how to play" lines are said a touch slower than her happy chatter: Feza learns the controls from them.
 TEACH = {"p_merhaba", "p_zipla", "p_ciftzipla", "p_minder", "p_buyuk", "p_uyuyor", "p_sakli", "p_i_yuz", "p_i_ahtapot_yardim"}
@@ -89,7 +110,7 @@ TRIM_P = TRIM.replace("loudnorm", "treble=g=-2.5:f=4500,lowpass=f=9500,loudnorm"
 
 
 def trim_chain(key):
-    return TRIM_P if key.startswith("p_") else TRIM
+    return TRIM if key.startswith("a_") else TRIM_P   # every character voice (Pırıl, Bölüm 8 neighbours) gets the soft treble rounding
 
 
 def style(key):
@@ -114,7 +135,8 @@ def load_lines():
 
 def cache_path(key, text):
     rate, pitch, vol = style(key)
-    h = hashlib.md5(f"{VOICE}|{rate}|{pitch}|{vol}|{trim_chain(key)}|{spoken(text)}".encode("utf-8")).hexdigest()
+    ch = chorus(key)
+    h = hashlib.md5((f"{VOICE}|{rate}|{pitch}|{vol}|{trim_chain(key)}|{spoken(text)}" + (f"|koro{ch}" if ch else "")).encode("utf-8")).hexdigest()
     return os.path.join(CACHE, h + ".mp3")
 
 
@@ -154,6 +176,19 @@ async def record(key, text, sem):
                 await edge_tts.Communicate(spoken(text), VOICE, rate=rate, pitch=pitch, volume=vol).save(raw)
                 if os.path.getsize(raw) < 1000:
                     raise RuntimeError("empty audio")
+                ch = chorus(key)
+                if ch and FFMPEG:   # two voices in unison: second take 35 ms later, both a little softer
+                    raw2, mix = final + ".raw2.mp3", final + ".mix.mp3"
+                    await edge_tts.Communicate(spoken(text), VOICE, rate=ch[0], pitch=ch[1], volume=ch[2]).save(raw2)
+                    r = subprocess.run([FFMPEG, "-y", "-loglevel", "error", "-i", raw, "-i", raw2, "-filter_complex",
+                                        "[1:a]adelay=35|35[b];[0:a][b]amix=inputs=2:duration=longest:normalize=0,volume=0.7",
+                                        "-ac", "1", "-c:a", "libmp3lame", "-b:a", "96k", mix])
+                    remove_temp(raw2)
+                    if r.returncode == 0 and os.path.exists(mix) and os.path.getsize(mix) > 1000:
+                        remove_temp(raw)
+                        os.replace(mix, raw)
+                    elif os.path.exists(mix):
+                        remove_temp(mix)
                 trim(raw, final, key)
                 return True
             except Exception as e:  # network hiccup / rate limit: back off and retry

@@ -6,16 +6,26 @@
    Yerleşim (bolum*.js): nesne('miniKapi', c, yuzey(c), { bagId: <mini oyun nesnesinin id'si>, stil: 'sarki'|'takim'|'sekil' }).
    Bağlı nesnenin bittiği: sarki .sk.bitti · takim .tk.bitti · sekil .skl.bitti. Sözleşme: src/SPEC.md. */
 'use strict';
-const KP_RENK = { sarki: ['#7fe9ff', '#c9a2ff', '#ff9fd3'], takim: ['#ffe08a', '#7fe9ff', '#c9a2ff'], sekil: ['#ffb3d9', '#c9a2ff', '#ffe5a0'] };
+const KP_RENK = { sarki: ['#7fe9ff', '#c9a2ff', '#ff9fd3'], takim: ['#ffe08a', '#7fe9ff', '#c9a2ff'], sekil: ['#ffb3d9', '#c9a2ff', '#ffe5a0'], cadi: ['#ffb347', '#c39bff', '#7dffc4'] };
 const KP_YUK = 250;     // perdenin yüksekliği (zeminden yukarı)
 const KP_TUT = 220;     // perdenin ötesinde, bu kadar uzaklığa kadar "geçmiş" sayılmaz (yeniden doğan/taşınan Feza takılmasın)
-function kpBitti(b) { return !!b && !!((b.sk && b.sk.bitti) || (b.tk && b.tk.bitti) || (b.skl && b.skl.bitti) || (b.tip === 'halkaMini' && (b.done || typeof V6 !== 'undefined' && V6.mini)) || (b.tip === 'kizakMini' && (b.done || typeof V7 !== 'undefined' && V7.kizak)) || (b.tip === 'kardanMini' && (b.done || typeof V7 !== 'undefined' && V7.kardan))); }   // B6: halka kapma, B7: kardan adam bitince
+// B8: kabak yüzü / iskelet orkestrası / Cadı Nine'nin kazanı bitince (modülün V8 bayrağı, o.done ya da oyun.js'in olayla yazdığı o.om8)
+const KP_B8 = { kabakYuzMini: 'kabakYuz', iskeletMini: 'iskelet', kazanMini: 'kazan' };
+function kpBitti(b) { return !!b && !!((b.sk && b.sk.bitti) || (b.tk && b.tk.bitti) || (b.skl && b.skl.bitti) || (b.tip === 'halkaMini' && (b.done || typeof V6 !== 'undefined' && V6.mini)) || (b.tip === 'kizakMini' && (b.done || typeof V7 !== 'undefined' && V7.kizak)) || (b.tip === 'kardanMini' && (b.done || typeof V7 !== 'undefined' && V7.kardan)) ||
+  (KP_B8[b.tip] && (b.done || b.om8 || typeof V8 !== 'undefined' && V8[KP_B8[b.tip]]))); }   // B6: halka kapma, B7: kardan adam bitince
+// Asla takılmasın: bağlı nesne yoksa ya da türünün dosyası yüklenemediyse (zayıf ağ) perde açıktır. Mini oyun bir hata yüzünden hiç
+// bitmezse son çare: Feza perdenin önünde toplam KP_SABIR sn bekleyince (mini oyunların kendi Pırıl yardımı ~25 sn'de gelir) perde açılır.
+const KP_SABIR = 120;
+function kpYok(o) { return !o.bag || !(typeof TUR !== 'undefined' && TUR.al(o.bag.tip)); }
 TUR.kaydet('miniKapi', {
-  kur(o) { o.a = 1; o.acik = false; o.acT = 0; o.vur = 0; o.ph = Math.random() * 6.283; o.bag = null; o.stil = KP_RENK[o.stil] ? o.stil : 'sarki'; o.grads = null; },
+  kur(o) { o.a = 1; o.acik = false; o.acT = 0; o.vur = 0; o.ph = Math.random() * 6.283; o.bag = null; o.bekle = 0; o.stil = KP_RENK[o.stil] ? o.stil : 'sarki';
+    if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 8) o.stil = 'cadi';   // Balkabağı Gecesi: kabak turuncusu, lila, nane
+    o.grads = null; },
   guncelle(o, dt) {
-    if (!o.bag) o.bag = NESNELER.find(n => n.id === o.bagId) || null;
+    if (!o.bag && !o.bagArandi) { o.bag = NESNELER.find(n => n.id === o.bagId) || null; o.bagArandi = true; }
     o.ph += dt; o.vur = Math.max(0, o.vur - dt * 1.4);
-    if (!o.acik && kpBitti(o.bag)) {
+    if (!o.acik && (kpBitti(o.bag) || kpYok(o) || o.bekle > KP_SABIR)) {
+      if (o.bekle > KP_SABIR) console.warn('[kapi] mini oyun bitmedi, perde açıldı:', o.bagId);
       o.acik = true; o.acT = 0;
       burst(o.x, o.y - KP_YUK * 0.5, 42, KP_RENK[o.stil], 240, 1.6, 10);
       burst(o.x, o.y - KP_YUK * 0.25, 24, ['#ffffff', ...KP_RENK[o.stil]], 180, 1.3, 7);
@@ -25,6 +35,9 @@ TUR.kaydet('miniKapi', {
     if (DURUM !== 'oyun' || P.fade > 0 || P.ucus) return;
     if (P.x > o.x - 14 && P.x < o.x + KP_TUT) {   // ileri yönde perdeden geçilmez (geri yürümek serbest)
       P.x = o.x - 14; if (P.vx > 0) P.vx = 0;
+      o.bekle += dt;   // perdenin önünde geçen süre (son çare sayacı)
+      // Pırıl'ın yardımı (Bölüm 8): Feza perdeye ~5 sn dayanıp kaldıysa Pırıl mini oyunu gösterir (piril.js 'kayboldu' → yol gösterme; 10 sn'de bir)
+      if (BOLUM_NO === 8 && o.bekle - (o.ipucuT || 0) > 5 && o.bag && !kpYok(o)) { o.ipucuT = o.bekle + 5; OLAY.emit('kayboldu', o.bag); }
       if (o.vur < 0.25) {
         o.vur = 1;
         burst(o.x, P.y - 30, 5, KP_RENK[o.stil], 45, 0.5, 4);

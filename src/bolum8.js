@@ -29,6 +29,8 @@ for(const [a,b,h] of [
 
 // ── Tek yönlü platformlar (alçak çatı saçakları / dallar: normal zıplamayla oyuncak basamaklar) ──
 for(const [a,b,r] of [[84,88,14],[146,150,14],[264,268,14],[328,332,14]]) plat(a,b,r);
+// İsteğe bağlı yüksek basamaklar (dunya8: girişte ve koruda kocaman şeker mantarı, tarlada saman yığını); üstlerinde ışık tohumu
+for(const [a,b,r] of [[36,39,15],[174,178,16],[271,274,11]]) plat(a,b,r);
 
 const BOLUM={
  ad:'Balkabağı Gecesi',baslangic:{x:nx(5),y:yuzey(5)},
@@ -56,12 +58,18 @@ for(const c of [22,44,78,104,130,158,186,268,310,352,462,590])
  nesne('kabakFener',c,yuzey(c),{r:80,sira:NESNELER.filter(n=>n.tip==='kabakFener').length});
 
 // ── Saklanan hayaletçikler (5; kabak.js): saklambaç; bulununca "Ce-ee!" deyip bölüm boyunca Feza'nın peşinden süzülür. ──
+// 'agac' (292) ve 'baca' (538) saklanma yerlerini dunya8.js çizer: kovuk merkezi (kovukX, kovukY) ve baca ağzı (bacaX, bacaY)
+// kabak.js hayaletçiği oraya koyar, ardından dn8SaklanOn(tip, x, y) ile ön parçayı (kovuğun alt dudağı / baca gövdesi) önüne çizer.
+const BL8_KOVUK={x:nx(292),y:yuzey(292)-118},BL8_BACA={x:nx(538)-70,y:yuzey(538)-300};
 for(const [c,saklan] of [[58,'kabak'],[140,'cali'],[292,'agac'],[372,'cit'],[538,'baca']])
- nesne('hayaletcik',c,yuzey(c),{r:110,saklan});
+ nesne('hayaletcik',c,yuzey(c),Object.assign({r:110,saklan},saklan==='agac'?{kovukX:BL8_KOVUK.x,kovukY:BL8_KOVUK.y}:saklan==='baca'?{bacaX:BL8_BACA.x,bacaY:BL8_BACA.y}:{}));
 
 // ── Gece dostları (dekor; kabak.js): baş aşağı sallanan yarasalar, şapkalı kara kedi, uykulu baykuş. ──
-for(const [c,tur] of [[34,'yarasa'],[70,'kedi'],[116,'yarasa'],[238,'baykus'],[280,'yarasa'],[334,'yarasa'],[396,'baykus'],[452,'kedi'],[622,'kedi']])
- nesne('geceDost',c,yuzey(c),{tur});
+// yarasa / baykuş dunya8'in eğri ağacının dalına asılır: o.dalY = dalın dünya y'si (DEKOR8.agac'ta aynı sütunda ağaç var)
+// (iskelet sahnesinin baykuşu sahnenin soluna, 386'daki ağacın dalına alındı: sahnede Feza'nın üstüne binmesin)
+const BL8_DAL={34:1,116:.95,280:1.15,334:1.05,384:1.2};
+for(const [c,tur] of [[34,'yarasa'],[70,'kedi'],[116,'yarasa'],[238,'baykus'],[280,'yarasa'],[334,'yarasa'],[384,'baykus'],[452,'kedi'],[622,'kedi']])
+ nesne('geceDost',c,yuzey(c),BL8_DAL[c]?{tur,dalX:nx(c),dalY:yuzey(c)-Math.round(380*BL8_DAL[c]*.55)}:{tur});
 
 // ── Mini oyun 1: kabağa yüz yapmak (kabakyuz.js); bitene kadar ilerisinde ışık perdesi. ──
 const bl8Yuz=nesne('kabakYuzMini',224,yuzey(224),{r:150,x0:208*T,x1:241*T});
@@ -87,7 +95,37 @@ nesne('supurgeMini',646,yuzey(646),{r:120,x1:BOLUM.supurge.x1,yUst:BOLUM.supurge
 nesne('cadiMeydan',852,yuzey(852),{r:170});
 
 // ── İsteğe bağlı ışık tohumları (çatı saçakları / dallar). ──
-for(const [c,y] of [[86,14*T],[148,14*T],[266,14*T],[330,14*T]]) nesne('tohum',c,y,{r:46});
+for(const [c,y] of [[86,14*T],[148,14*T],[266,14*T],[330,14*T],[37,15*T],[176,16*T],[272,11*T]]) nesne('tohum',c,y,{r:46});
+
+// ── Dekor imzaları (yalnız görüntü; dunya8.js çizer, çarpışma yok) ──
+// agac: eğri ağaçlar [sütun, ölçek, taç rengi (0 mor, 1 turuncu, 2 deniz mavisi, 3 hardal), kovuk]. lolipop: [sütun, boy, renk].
+// ev: şeker sokağının altı evi (kapı sütunu k = sekerKapi; kapının kendisini seker.js çizer, ev o alanı boş bırakır) ve meydan evleri.
+// cit: [ilk, son sütun]. saman: [sütun, adet]. direk: sokak lambası [sütun, yön]. ip: bayrak / fener ipi [s0, dy0, s1, dy1, sarkma, adet, tür].
+const DEKOR8={
+ agac:[[1,.95,0],[34,1,1],[52,.85,2],[67,1.1,3],[96,.9,1],[116,.95,0],[166,1.05,2],[196,1,3],[203,1.15,0],
+  [247,1.2,1],[257,.95,2],[280,1.15,0],[292,1.3,3,1],[304,1,1],[318,1.2,2],[334,1.05,0],[347,1.15,3],[362,1.25,1],[378,1,2],
+  [386,1.2,3],[427,1.2,1],[606,1,0],[648,1.12,2],[806,1.15,1],[879,1.1,0]],
+ lolipop:[[11,140,0],[47,120,3],[61,150,5],[200,170,1],[252,180,0],[271,140,3],[285,160,5],[326,190,1],[334,130,4],[356,160,0],[369,140,3],[437,120,0],[640,110,4]],
+ ev:[
+  {k:448,w:360,h:270,rh:150,duvar:'#b0603e',cati:'#d8702e',cati8:'kabak',doku:'tahta',kepenk:'#5a8a4a',pstil:'kare',bacalar:[.8]},
+  {k:474,w:330,h:290,rh:170,duvar:'#8a7aa8',cati:'#4a3060',cati8:'dik',doku:'tas',kepenk:'#6a5a90',pstil:'kemer',icerik:'dantel',bacalar:[.2]},
+  {k:500,w:300,h:320,rh:210,duvar:'#7a4a9a',cati:'#3a2668',cati8:'sapka',doku:'siva',kepenk:'#ff8fc8',pstil:'kemer',egim:8},
+  {k:526,w:320,h:280,rh:150,duvar:'#3e6a82',cati:'#2a2a4e',cati8:'kedi',doku:'tahta',kepenk:'#c39bff',pstil:'kare',icerik:'kedi',kanat:{w:300,h:170,bacaX:BL8_BACA.x,bacaH:yuzey(538)-BL8_BACA.y}},
+  {k:552,w:340,h:280,rh:160,duvar:'#9a90c0',cati:'#6a5a9a',cati8:'dantel',doku:'siva',kepenk:'#8fd8ff',pstil:'yuvarlak',icerik:'dantel',bacalar:[.8]},
+  {k:578,w:350,h:260,rh:150,duvar:'#b8904a',cati:'#4a7a4a',cati8:'kubbe',doku:'tas',kepenk:'#7a4a2a',pstil:'kare',bacalar:[.25]}],
+ meydanEv:[{k:837,w:300,h:250,rh:150,duvar:'#7a5a9a',cati:'#4a2e6a',cati8:'sapka',doku:'siva',kepenk:'#ffb347',pstil:'kemer'},
+  {k:865,w:300,h:260,rh:160,duvar:'#4e7488',cati:'#2a3a5a',cati8:'kedi',doku:'tahta',kepenk:'#ff8fc8',pstil:'kare'}],
+ kule:{k:846,h:470},
+ tezgah:[{k:826,ci:0},{k:876,ci:3}],
+ kulube:{k:617},
+ ambar:{k:112},
+ degirmen:{k:180},
+ kemer:{k:3},
+ cit:[[66,76],[94,108],[124,138],[161,172],[189,200],[226,240],[630,642]],
+ saman:[[73,2],[118,1],[153,2],[198,1],[212,2],[236,1]],
+ direk:[[436,1],[486,-1],[512,1],[564,-1],[597,1],[818,1],[831,-1],[862,1],[872,-1]],
+ ip:[[846,-440,865,-262,60,12,'bayrak'],[837,-252,846,-420,40,7,'bayrak'],[846,-380,858,-200,40,8,'ampul'],[818,-200,831,-200,30,7,'fener']]
+};
 
 const FLOWERS=[];
 const TREE=null;

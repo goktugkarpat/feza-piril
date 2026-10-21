@@ -172,3 +172,28 @@ final kamerası (Bölüm 7 `kuzeyFinal` gibi `cadiFinal`), zıplama düğmesinin
 - İlerleme: `b8/ilerleme/<AJAN>.txt` dosyasına ~3 dakikada bir TEK SATIR yaz (üzerine): `yüzde | kalan dk | ne yapıyorsun`.
 - Ekran görüntüleri (ebeveyne gösterilecek; ATMOSFER ve SEVİMLİLİK önemli): `b8/ss/<AJAN>_<sıra>_<ne>.png` — ilk görüntüyü erken kaydet.
 - `b8/` = `C:\Users\gktgk\AppData\Local\Temp\claude\C--Users-gktgk-Dropbox-Game-Development\d0282e08-f18e-4d64-9193-13a89766a60d\scratchpad\b8`
+
+## CORE notları (kancalar hazır; ses harfi `c`)
+- Ses anahtarları (Pırıl `p_c_*`): `uyku`, `giris`, `kostum` (+ `_cadi|_kabak|_iskelet|_yarasa`, OLAY 'kostumSec'), `fener` (ilk) / `fener2`
+  (yarısı) / `fener_son` (12.), `hayalet` (ilk saklanan 7 kare öndeyken), `hayalet_bul` / `hayalet2` / `hayalet_son`, `kabakyuz_giris|_bitti`,
+  `iskelet_giris|_bitti`, `sokak`, `sekermi` (kapı başına bir kez; 3 kayıt sırayla: sekermi, sekermi2, sekermi3), `kazan_giris|_bitti`,
+  `supurge_giris`, `supurge` (OLAY 'supurgeAy'; yedek 26 sn), `supurge_yardim` ('supurgeYardim'), `supurge_bitti`, `final`; `p_dost_cadi`;
+  anlatıcı `a_c_final1..3` (final1 dünyadaki şenlikte, cadiFinal + 6 sn).
+- Komşu sesleri (kim:'k'; Pırıl'ın ağzı oynamaz): `kd_` kabak dede · `in_` iskelet nine · `ck_` cadı kız · `kk_` kara kedi · `ht_` hayalet
+  teyze · `k2_` kabak ikizler (iki kayıt karışık, "bir ağızdan") · `cn_` Cadı Nine. Kapıda `OLAY 'komsuSoz' {o, kim, kostum, an:'ovgu'|'veda'}`
+  → `<önek>_<kostum|genel>` / `<önek>_veda`. Cadı Nine: `kazanBasla` → `cn_merhaba`, 2. `kazanMalzeme` → `cn_malzeme`, `kazanBitti` → `cn_bitti`.
+  Tonlar gen_voice.py STYLE'da (hep tr-TR-EmelNeural, küçük doğal kaydırmalar), CHORUS (k2_) ikinci perde.
+- Sayaçlar: `SAYAC.fener/fenerTop` (kabakFener), `hayalet/hayaletTop` (hayaletBuldu), `seker` = max(V8.seker, kapı 'seker'.top + 'supurgeSeker'.n),
+  `kapi/kapiTop`, `oyun/oyunTop` (kabakYuzBitti, iskeletBitti, kazanBitti; tür yüklenmediyse sayılmaz). Sonuç kartı: kabak feneri · hayaletçik ·
+  şeker (en çok 14) · gülen altın mini oyun yıldızı. Oyun içi üst sıra: yanan fenerler ve bulunan hayaletçikler.
+- Rehber `om8Hedef`: zorunlu adımlar (kostumSec → kabakYuzMini → iskeletMini → kazanMini → supurgeMini → cadiMeydan) ve aradaki isteğe bağlı
+  fener/hayaletçik/kapı (yalnız öndekiler, ≤6 kare geride). Bitti: modül bayrağı / o.done / olayla gelen o.om8. Türü yüklenemeyen adım atlanır.
+- Kamera: yalnız `supurgeMini` uçuş kamerası (koridor BOLUM.supurge); üç mini oyun P.ucus tutsa da normal kamera (kendi omDikkat'leri).
+  Final `cadiFinal` {o, duration, box} → Bölüm 6/7 kadrajı (om6Final), sonra `cadiTamam` → 2 sn → sabah (yedek duration+1,5 sn).
+- Zıplama düğmesi gizli: P.ucus, V8.final, mini oyun 'Basla'→'Bitti' arası (om8MiniAktif), SEKER8.aktif.
+- Yedekler (asla takılmasın): miniKapi bağlı nesne/tür yoksa açık, Feza perde önünde toplam 120 sn beklerse açılır; süpürge boşluğuna
+  düşen Feza (süpürge türü yoksa ilk, varsa ikinci düşüşte) meydan girişine taşınır; cadiMeydan türü yoksa meydana varınca sabah.
+- Isıtma `dn8Isit()` her karede (true dönene kadar). Pırıl hâlesi lila + fener balı (küçük).
+- Uçtan uca başsız deneme: `b8/test/CORE/uctan_uca.py [hiz]` (ışınlanarak her bölümü oynar; mini oyunlara dokunmaz → Pırıl yardımı).
+- Kapı sahnesi kamerası: `SEKER8.aktif` doluyken ≈1,35 kat yakın kadraj (kapı + komşu + Feza), sonra yumuşak dönüş.
+- sw.js CACHE → `feza-piril-v89` (yeni dosya yok; SRC listesi zaten tam).

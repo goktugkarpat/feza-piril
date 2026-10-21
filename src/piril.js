@@ -97,7 +97,10 @@ function drSay(k, opt) { if (typeof SES !== 'undefined' && SES && SES.soyle) { t
 function drSfx(k, v) { if (typeof AU !== 'undefined' && AU && AU.sfx) { try { AU.sfx(k, v); } catch (e) {} } }
 function drFree() { return D.mode === 'follow' || D.mode === 'orbit'; }
 function drBusy() { return D.mode === 'firlat' || D.mode === 'push' || D.mode === 'tasi' || D.mode === 'dalis' || D.mode === 'nefes' || D.mode === 'yardim' || D.mode === 'sakli'; }
-function drPlaying() { return DURUM === 'oyun' && P.fade <= 0 && !(P.kilit > 0) && !(BOLUM_NO === 5 && (typeof KR5 !== 'undefined' && KR5.aktif || typeof V5 !== 'undefined' && V5.final)) && !(BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final) && !(BOLUM_NO === 7 && (typeof V7 !== 'undefined' && V7.final || typeof KARDAN !== 'undefined' && KARDAN && KARDAN.aktif)); }
+function drPlaying() { return DURUM === 'oyun' && P.fade <= 0 && !(P.kilit > 0) && !(BOLUM_NO === 5 && (typeof KR5 !== 'undefined' && KR5.aktif || typeof V5 !== 'undefined' && V5.final)) && !(BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final) && !(BOLUM_NO === 7 && (typeof V7 !== 'undefined' && V7.final || typeof KARDAN !== 'undefined' && KARDAN && KARDAN.aktif)) && !(BOLUM_NO === 8 && drB8Mesgul()); }
+// Bölüm 8: final, mini oyun ('Basla'→'Bitti', oyun.js om8MiniAktif) ya da şeker kapısı sahnesi sürerken Pırıl kendiliğinden bir şey yapmaz
+function drB8Mesgul() { return (typeof V8 !== 'undefined' && !!V8 && !!V8.final) || (typeof om8MiniAktif === 'function' && !!om8MiniAktif()) || drB8Kapi(); }
+function drB8Kapi() { return typeof SEKER8 !== 'undefined' && !!SEKER8 && !!SEKER8.aktif; }
 let DR_YK = 1;   // Feza'ya yakınken Pırıl'ın gövdesine bağlı 'lighter' ışıkların çarpanı (Feza'yı soldurmasın); drawDragon ayarlar
 function drGlow(x, col, px, py, r, a) { if (DR_YK < 1) { a *= DR_YK; r *= 0.7 + 0.3 * DR_YK; } x.globalAlpha = a; x.drawImage(glow(col), px - r, py - r, r * 2, r * 2); x.globalAlpha = 1; }
 
@@ -253,6 +256,24 @@ for (const ev of ['karFener', 'yavruUyandi', 'kardanBitti', 'kizakBitti']) {
   OLAY.on(ev, () => { if (BOLUM_NO === 7) drDokunAlkis(ev === 'karFener' ? 1.1 : 1.4); });
 }
 OLAY.on('kuzeyFinal', () => { if (BOLUM_NO === 7) setTimeout(() => { if (typeof DURUM !== 'undefined' && DURUM === 'oyun') { dragonInit(); D.danceAfter = true; } }, 2400); });
+// Bölüm 8 (Balkabağı Gecesi): kostüm seçilince, kabak feneri yanınca, hayaletçik bulununca, mini oyunlar ve süpürge bitince, kapıdan şeker
+// alınınca kısa alkış/sevinç; kostüm baloncukları belirince onlara uçup gösterir; şeker kapısında Feza'nın omzunun üstünde kapıya dönük
+// süzülür ("Şeker mi şaka mı!" derken neşeyle zıplar); meydan finalinde ('cadiFinal') 2,4 sn sonra dans
+OLAY.on('sekerKapiBasla', e => {
+  if (BOLUM_NO !== 8) return; dragonInit(); if (D.mode === 'tasi' || D.mode === 'dalis') return;
+  D.k8X = e && isFinite(e.kapiX) ? e.kapiX : e && e.o && isFinite(e.o.x) ? e.o.x : P.x + (P.f || 1) * 46; D.k8S = Math.sign(D.k8X - P.x) || P.f || 1;
+  drMode('kapi8'); D.yawnT = -1; D.beckonW = 0; D.expr = 'happy'; D.exprT = 0.5;
+});
+OLAY.on('sekerKapi', () => { if (BOLUM_NO === 8 && D.mode === 'kapi8') drMode('follow'); });
+for (const ev of ['kostumSec', 'kabakFener', 'hayaletBuldu', 'kabakYuzBitti', 'iskeletBitti', 'sekerKapi', 'kazanBitti', 'supurgeBitti']) {
+  OLAY.on(ev, () => { if (BOLUM_NO === 8) drDokunAlkis(ev === 'kabakFener' ? 1.1 : 1.4); });
+}
+OLAY.on('kostumSec', () => { if (BOLUM_NO === 8 && typeof burst === 'function') { dragonInit(); drSparkle(D.x, D.y, 10, 110); } });
+OLAY.on('kostumGoster', e => {   // kostüm baloncukları belirdi: söz bitince baloncuklara uçup ışıltıyla gösterir
+  if (BOLUM_NO !== 8) return; const o = e && (e.o || e);
+  setTimeout(() => { if (typeof DURUM !== 'undefined' && DURUM === 'oyun' && o && isFinite(o.x) && isFinite(o.y) && !(typeof V8 !== 'undefined' && V8.kostum)) { dragonInit(); if (drFree() && drPlaying()) drGuide(o); } }, 1500);
+});
+OLAY.on('cadiFinal', () => { if (BOLUM_NO === 8) setTimeout(() => { if (typeof DURUM !== 'undefined' && DURUM === 'oyun') { dragonInit(); D.danceAfter = true; } }, 2400); });
 OLAY.on('agac', () => { dragonInit(); D.danceAfter = true; });
 OLAY.on('durum', d => { dragonInit(); if (d === 'final') D.danceAfter = true; });
 OLAY.on('kayboldu', () => { dragonInit(); if (drPlaying() && drFree() && D.guideCd <= 0) drGuide(); });
@@ -289,6 +310,22 @@ function drGoalOpen(o) {
     if (o.tip === 'kuzeyTepe') return !V.final;
     return false;
   }
+  if (BOLUM_NO === 8) {   // Balkabağı Gecesi: kostüm → fenerler / hayaletçikler → kabak yüzü → iskelet → kapılar → kazan → süpürge → meydan (sıra oyun.js om8Hedef'te)
+    const V = typeof V8 !== 'undefined' ? V8 : {};
+    if (o.done || o.om8) return false;
+    switch (o.tip) {
+      case 'kostumSec': return !V.kostum;
+      case 'kabakFener': return !o.yandi && !o.lit;
+      case 'hayaletcik': return !o.bulundu && !o.takip;
+      case 'kabakYuzMini': return !V.kabakYuz;
+      case 'iskeletMini': return !V.iskelet;
+      case 'sekerKapi': return !o.bitti && !o.acildi;
+      case 'kazanMini': return !V.kazan;
+      case 'supurgeMini': return !V.supurge;
+      case 'cadiMeydan': return !V.final;
+    }
+    return false;
+  }
   return (o.tip === 'cicek' && !o.done) || (o.tip === 'buyukPofuduk' && !o.uyandi) ||
     (o.tip === 'agac' && !(typeof TREE !== 'undefined' && TREE && TREE.done)) || (o.tip === 'karanlik' && !o.lit) ||
     (o.tip === 'yildiz' && !o.done && !o.secmeli) || (o.tip === 'yildizHayvan' && !o.uyandi && o.hazir) ||
@@ -316,7 +353,9 @@ function drHedef() {
 }
 function drGoalToward(sg) { for (const o of NESNELER) if (drGoalOpen(o) && (o.x - P.x) * sg > 0 && Math.abs(o.x - P.x) < 700) return true; return false; }
 function drGoalY(h) { return h.y - (h.tip === 'buyukPofuduk' ? 170 : h.tip === 'agac' ? 230 : h.tip === 'karanlik' ? 70 : h.tip === 'yildizHayvan' ? 190 : h.tip === 'yildiz' ? 46 :
-  h.tip === 'kuzu' ? 48 : h.tip === 'ucusKapisi' ? 96 : h.tip === 'gokkusagi' ? 80 : h.tip === 'midilli' ? 70 : h.tip === 'kaleKopru' ? 90 : h.tip === 'senlikAvlu' ? 160 : h.tip === 'karFener' ? 70 : h.tip === 'karYavru' ? 60 : h.tip === 'kardanMini' ? 120 : h.tip === 'kizakMini' ? 90 : h.tip === 'kuzeyTepe' ? 160 : 40); }
+  h.tip === 'kuzu' ? 48 : h.tip === 'ucusKapisi' ? 96 : h.tip === 'gokkusagi' ? 80 : h.tip === 'midilli' ? 70 : h.tip === 'kaleKopru' ? 90 : h.tip === 'senlikAvlu' ? 160 : h.tip === 'karFener' ? 70 : h.tip === 'karYavru' ? 60 : h.tip === 'kardanMini' ? 120 : h.tip === 'kizakMini' ? 90 : h.tip === 'kuzeyTepe' ? 160 :
+  h.tip === 'kostumSec' ? 130 : h.tip === 'kabakFener' ? 55 : h.tip === 'hayaletcik' ? 60 : h.tip === 'kabakYuzMini' ? 130 : h.tip === 'iskeletMini' ? 120 :
+  h.tip === 'sekerKapi' ? 100 : h.tip === 'kazanMini' ? 120 : h.tip === 'supurgeMini' ? 90 : h.tip === 'cadiMeydan' ? 180 : 40); }
 function drGuide(h0) {
   const h = h0 || drHedef(); if (!h) return false;
   let gx = h.x, gy = drGoalY(h);
@@ -510,7 +549,7 @@ function stepDragon(dt) {
   if (BOLUM_NO === 4 && P.deniz) { drDenizAdim(dt); return; }
   D.t += dt; D.modeT += dt; if (D.flare > 0) D.flare = Math.max(0, D.flare - dt / 0.9);
   // sigorta: hiçbir Pırıl modu Feza'yı sonsuza dek kilitlemesin (yardim ≤3 sn, tasi ≤8 sn, P.kilit sürekli >2,5 sn olamaz)
-  const korKutlama = BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final || BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final || BOLUM_NO === 7 && typeof V7 !== 'undefined' && V7.final;   // Kor Çiçeği / şenlik avlusu / kuzey tepesi kutlaması
+  const korKutlama = BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final || BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final || BOLUM_NO === 7 && typeof V7 !== 'undefined' && V7.final || BOLUM_NO === 8 && (typeof V8 !== 'undefined' && V8.final || drB8Kapi());   // Kor Çiçeği / şenlik avlusu / kuzey tepesi / meydan kutlaması, şeker kapısı
   if (DURUM === 'oyun' && !korKutlama && !P.ucus && P.kilit > 0 && D.mode !== 'tasi') { D.kilitSay = (D.kilitSay || 0) + dt; if (D.kilitSay > 2.5) { P.kilit = 0; D.kilitSay = 0; if (D.mode === 'yardim') drMode('follow'); } } else D.kilitSay = 0;
   if (D.mode === 'yardim' && D.modeT > 3) { P.kilit = 0; drMode('follow'); }
   if (D.mode === 'tasi' && D.modeT > 8) { P.kilit = 0; P.fade = 0; D.tasiyor = false; drMode('follow'); }
@@ -1099,6 +1138,13 @@ function stepDragon(dt) {
     D.clapPh += dt * (on ? 13 : 0);
     if (on && Math.floor(eski / Math.PI) !== Math.floor(D.clapPh / Math.PI)) { drFx(D.x, D.y + 2, 'star'); if (D.sSq) D.sSq.v -= 0.8; }   // el çırpınca minik yıldız
     if (u >= D.alkDur || !drPlaying()) drMode('follow');
+  } else if (D.mode === 'kapi8') {     // Bölüm 8 şeker kapısı: Feza'nın omzunun üstünde kapıya dönük süzülür; konuşurken ("Şeker mi şaka mı!") neşeyle zıplar
+    const sd = D.k8S || 1;
+    tx = P.x + sd * 26 + Math.sin(D.t * 1.3) * 3; ty = P.y - 98 + Math.sin(D.t * 2.2) * 3; k = 46; damp = 11; flapW = 3.8;
+    D.ft = sd; D.faceHold = 0.15; D.expr = 'happy'; D.exprT = 0.3;
+    if (D.talkT > 0) hopW = Math.abs(Math.sin(D.modeT * 9)) * 6;
+    D.lookAt.x = isFinite(D.k8X) ? D.k8X : P.x + sd * 46; D.lookAt.y = P.y - 72; D.lookAtT = 0.2;
+    if (D.modeT > 7.5 || DURUM !== 'oyun' || P.fade > 0) drMode('follow');
   } else if (D.mode === 'dans') {      // final: Feza'nın çevresinde sekiz çizen sevinç dansı
     const a = D.modeT * 2.6;
     tx = P.x + Math.sin(a) * 74; ty = P.y - 112 + Math.sin(2 * a) * 22; k = 60; damp = 12; flapW = 5.5;
@@ -1782,6 +1828,7 @@ function drFront(x, tm, yaw) {   // önden görünüş (dönüşte yaw ile 3/4'e
   x.restore();
   ear(-1, true); ear(1, true);
   drMouthDraw(x, mx, -3.6, 3 * (1 - 0.25 * ya), true);
+  if (BOLUM_NO === 8) { x.save(); x.translate(-3.4 + yw * 3.0, -21.5); x.rotate(-0.27 + yw * 0.22); drSapka8(x, tm, 0); x.restore(); }   // Bölüm 8: minik cadı şapkası
   x.restore();
 }
 // büyük koyu yeşil yelpaze ibik: başın tepesinden arkasına uzanan üç yuvarlak taraklı dilim + ensede küçük dilim.
@@ -1946,6 +1993,7 @@ function drHeadSide(x, tm) {   // yandan kafa (sağa bakan yerel uzay; boyun ekl
   if (D.mSc && D.mSc !== 1) { x.save(); x.translate(16.6, -6); x.scale(D.mSc, D.mSc); x.translate(-16.6, 6); drMouthDraw(x, 16.6, -6, 2.8, false); x.restore(); }
   else drMouthDraw(x, 16.6, -6, 2.8, false);
   if (D.expr === 'effort' && D.mk === 'o') { x.fillStyle = 'rgba(255,255,255,0.7)'; x.beginPath(); x.arc(15, -24, 1, 0, 6.283); x.arc(17.2, -25.6, 0.6, 0, 6.283); x.fill(); }
+  if (BOLUM_NO === 8) { x.save(); x.translate(5.2, -22.4); x.rotate(-0.16); drSapka8(x, tm, 1); x.restore(); }   // Bölüm 8: minik cadı şapkası
   x.restore();   // kafa
 }
 
@@ -2127,7 +2175,42 @@ function drBack(x, tm, yaw) {
   // ibik: başın ortasından enseye inen taraklı sırt (arkadan bakınca başın ÜSTÜNDE)
   x.save(); x.translate(mid, 0.4); x.translate(0, -23); x.scale(-ys * lerp(0.36, 0.62, ya), 1); x.translate(-1.2, 23);
   drCrest(x, tm, 0.7); x.restore();
+  if (BOLUM_NO === 8) { x.save(); x.translate(mid * 0.6 + 3.2, -21.6); x.rotate(0.24); drSapka8(x, tm, 2); x.restore(); }   // Bölüm 8: minik cadı şapkası (arkadan)
   x.restore();
+}
+// ── Bölüm 8: minik mor cadı şapkası (siper, eğri uçlu külah, altın kurdele, önde yıldız); ucu ibiğin yayıyla sallanır. gor: 0 önden, 1 yandan, 2 arkadan ──
+const DR8 = { mor: '#8a5ad8', morK: '#5f39b0', morC: '#36206e', yil: '#ffd76a', yilK: '#d18f22', yilA: '#fff4bd' };
+function drYildiz8(x, cx, cy, r, rot) {
+  x.save(); x.translate(cx, cy); x.rotate(rot); x.beginPath();
+  for (let i = 0; i < 10; i++) { const a = -1.5708 + i * 0.6283, rr = i & 1 ? r * 0.45 : r; x.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+  x.closePath(); x.fill(); x.restore();
+}
+function drKulah8(x, kx, ky, tx, ty, bw) {   // külah: tabandan eğri uca incelen dolgu (feza.js fzKulahYol varsa o)
+  if (typeof fzKulahYol === 'function') { fzKulahYol(x, kx, ky, tx, ty, bw, 8); return; }
+  x.beginPath(); x.moveTo(-bw, -0.3); x.quadraticCurveTo(kx - 1.5, ky, tx, ty); x.quadraticCurveTo(kx + 1.5, ky, bw, -0.3); x.closePath();
+}
+function drSapka8(x, tm, gor) {
+  const sw = (D.sCr ? D.sCr.a : 0) * 1.5 + Math.sin(tm * 2.1) * 0.05 * (1 - (D.plush || 0));
+  const on = gor !== 1, rx = on ? 8.6 : 7.8, ry = on ? 2.2 : 1.7, bw = on ? 4.5 : 4.1;
+  x.lineJoin = 'round'; x.lineCap = 'round';
+  x.fillStyle = DR8.morK; x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, 6.283); x.fill(); x.strokeStyle = DR8.morC; x.lineWidth = 0.6; x.stroke();
+  const bend = (gor === 0 ? 0.75 : gor === 2 ? -0.75 : 1.0) + sw, kx = gor === 1 ? -0.7 : 0, ky = -9.4, L2 = 6.4;
+  const tx = kx - Math.sin(bend) * L2, ty = ky - Math.cos(bend) * L2;
+  drKulah8(x, kx, ky, tx, ty, bw); x.fillStyle = DR8.mor; x.fill();
+  x.save(); x.clip();
+  x.fillStyle = 'rgba(40,16,96,0.28)'; x.beginPath(); x.ellipse(-bw, -6, bw * 0.7, 13, 0.1, 0, 6.283); x.fill();
+  x.fillStyle = DR8.yil; x.fillRect(-9, -2.5, 18, 1.9);
+  x.restore();
+  drKulah8(x, kx, ky, tx, ty, bw); x.strokeStyle = DR8.morC; x.lineWidth = 0.6; x.stroke();
+  if (gor !== 2) {
+    const sx = kx * 0.4 + (gor === 1 ? 0.9 : 0.3);
+    x.fillStyle = DR8.yilK; drYildiz8(x, sx, -5.6, 2.0, 0.15); x.fillStyle = DR8.yil; drYildiz8(x, sx, -5.6, 1.62, 0.15);
+    x.fillStyle = DR8.yilA; x.beginPath(); x.arc(sx - 0.4, -6.1, 0.42, 0, 6.283); x.fill();
+  }
+  x.fillStyle = DR8.yil; x.beginPath(); x.arc(tx, ty, 0.7, 0, 6.283); x.fill();
+  x.fillStyle = DR8.mor; x.beginPath(); x.moveTo(rx, 0); x.ellipse(0, 0, rx, ry, 0, 0, Math.PI); x.closePath(); x.fill();
+  x.strokeStyle = DR8.morC; x.lineWidth = 0.55; x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, Math.PI); x.stroke();
+  x.strokeStyle = 'rgba(225,200,255,0.55)'; x.lineWidth = 0.4; x.beginPath(); x.ellipse(0, 0.1, rx - 0.6, ry - 0.45, 0, 0.35, Math.PI - 0.35); x.stroke();
 }
 
 // Bölüm 2 gece ortamı: ay kenar ışığı (soğuk mavi, üstten) + su yansıması (suyun üstündeyken)
@@ -2337,6 +2420,7 @@ function pirilCizPoz(ctx, x, y, olcek, poz, tm, u) {
   if (poz === 'ucus') {
     front = false; D.ph = tm * 3.4 * 6.283; D.bob = Math.sin(D.ph - 0.7) * 2.2; D.tilt = -0.05 + Math.sin(tm * 1.3) * 0.04;
     D.lookX = 1; D.lookY = 0.1; D.expr = 'happy'; halo = 1;
+    if (BOLUM_NO === 8 && u && typeof u === 'object' && u.salla > 0) { D.beckon = clamp(+u.salla || 0, 0, 1); D.lookX = 0.4; D.lookY = -0.3; }   // Bölüm 8: süpürgede aya el sallama
     let p = { x: -7, y: 6 + D.bob };
     for (let i = 0; i < DR_TAIL_N; i++) {
       drPozTail[i].x = p.x; drPozTail[i].y = p.y;
