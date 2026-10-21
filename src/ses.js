@@ -162,12 +162,31 @@ const SES = (() => {
     "p_dost_senlik": "Bu kasaba ne kadar tatlı! Seninle şenliğe gitmek çok güzel.",
     "a_f_final1": "Feza ile Pırıl, kasabanın fenerlerini yakmışlar, uyuyan midillileri uyandırmışlar. Kalenin avlusunda, rengârenk bir şenlik başlamış.",
     "a_f_final2": "Sabah Feza, yatağında gözlerini açmış. Güneş, odasına fener gibi altın ışıklar saçmış. Pırıl da ona tatlı tatlı göz kırpmış.",
-    "a_f_final3": "Ve rüyalardaki bütün dostlar, Feza'yı her gece sevgiyle bekliyormuş."
+    "a_f_final3": "Ve rüyalardaki bütün dostlar, Feza'yı her gece sevgiyle bekliyormuş.",
+    "p_k_uyku": "Bu gece, karlı ormana, Kuzey Işıkları'na gidiyoruz!",
+    "p_k_giris": "Gökyüzündeki kuzey ışıkları sönmüş, Feza. Kar fenerlerini yakalım; ışıkları birlikte geri getirelim!",
+    "p_k_fener": "Fener yandı! Bak, gökyüzünde renkli bir ışık belirdi. Öbür fenerlerin de yanından geçelim!",
+    "p_k_fener2": "Gökyüzü renklenmeye başladı! Kuzey ışıkları geri geliyor.",
+    "p_k_yavru": "Bak, karın içinde minik bir yavru uyuyor! Üstüne zıpla, onu uyandıralım.",
+    "p_k_yavru_uyan": "Günaydın, minik yavru! Bak, bizi yukarı sıçrattı!",
+    "p_k_geyik": "Merhaba, minik ren geyiği! Boynuzlarındaki kristaller sönmüş. Fenerleri yaktıkça onlar da parlayacak!",
+    "p_k_kardan_giris": "Hadi, bir kardan adam yapalım! Parmağınla kar topunu yuvarla, kocaman olsun!",
+    "p_k_kardan_top": "Toplar üst üste oldu! Şimdi burnunu, gözlerini ve atkısını takalım. Parçalara dokun!",
+    "p_k_kardan_bitti": "Kardan adam canlandı! Bak, bize el sallıyor. O da bizimle geliyor!",
+    "p_k_buz": "Göl buz tutmuş! Hadi, kayarak gidelim. Çok eğlenceli!",
+    "p_k_kizak_giris": "Ren geyiği kızağımızı çekecek! Ekrana dokun, kızak zıplasın; parlayan taneleri toplayalım!",
+    "p_k_kizak": "Çok hızlı gidiyoruz! Taneleri toplamaya devam!",
+    "p_k_kizak_bitti": "Ne güzel kaydık! İşte kuzey tepesi. Hadi, tepeye çıkalım!",
+    "p_k_final": "Bak, kuzey ışıkları geri geldi! Bütün gökyüzü rengârenk!",
+    "p_dost_kar": "Kar taneleri pamuk gibi yumuşacık! Seninle karda yürümek çok güzel.",
+    "a_k_final1": "Feza ile Pırıl, kar fenerlerini yakmışlar, uyuyan yavruları uyandırmışlar. Kuzey tepesinde, gökyüzü rengârenk ışıklarla dans etmeye başlamış.",
+    "a_k_final2": "Sabah Feza, sıcacık yatağında gözlerini açmış. Pencerenin önüne pamuk gibi kar yağmış. Pırıl da ona tatlı tatlı göz kırpmış.",
+    "a_k_final3": "Ve kuzey ışıkları, Feza'nın rüyalarında hep renk renk parlayacakmış."
 }/*SESLER-SON*/;
 
   const sesSaat = () => performance.now() / 1000;
   const ovguMu = k => /^p_aferin/.test(k);
-  const SES_SAHNE = { p_uyan: 1, p_gecis: 1, p_y_giris: 1, p_y_bitti: 1, p_secim: 1, p_y_uyku: 1, p_b_uyku: 1, p_b_giris: 1, p_b_bitti: 1, p_i_uyku: 1, p_i_giris: 1, p_i_yuz: 1, p_i_bitti: 1, p_i_inci_uyan: 1, p_i_dostlar: 1, p_i_deniz_uyandi: 1, p_f_uyku: 1, p_f_giris: 1, p_f_final: 1 };   // sahne cümleleri: öncelik 3, ağaç yandı/oyun bitti diye atılmaz
+  const SES_SAHNE = { p_uyan: 1, p_gecis: 1, p_y_giris: 1, p_y_bitti: 1, p_secim: 1, p_y_uyku: 1, p_b_uyku: 1, p_b_giris: 1, p_b_bitti: 1, p_i_uyku: 1, p_i_giris: 1, p_i_yuz: 1, p_i_bitti: 1, p_i_inci_uyan: 1, p_i_dostlar: 1, p_i_deniz_uyandi: 1, p_f_uyku: 1, p_f_giris: 1, p_f_final: 1, p_k_uyku: 1, p_k_giris: 1, p_k_final: 1 };   // sahne cümleleri: öncelik 3, ağaç yandı/oyun bitti diye atılmaz
   const anlatici = k => k.startsWith('a_') || k === 'p_v_uyku' || k === 'p_v_giris' || !!SES_SAHNE[k];
   const sesKim = k => k.startsWith('a_') ? 'a' : 'p';
   // ── cümle bilgisi: oncelik (3 sahne · 2 oyun · 1 yönlendirme · 0 övgü), acil (2 araya girer · 1 olay tepkisi), ömür (sn), konu ──
@@ -184,6 +203,10 @@ const SES = (() => {
     if (k === 'p_f_halka_giris') return { oncelik: 2, acil: 1, omur: 12, konu: null };
     if (k === 'p_f_midilli') return { oncelik: 2, acil: 1, omur: 10, konu: null };
     if (/^p_f_(fener2?|midilli_uyan|halka|halka_bitti|kopru)$/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
+    // Bölüm 7 (Kuzey Işıkları) olay tepkileri ve talimatları
+    if (k === 'p_k_kizak_giris' || k === 'p_k_kardan_giris' || k === 'p_k_kardan_top') return { oncelik: 2, acil: 1, omur: 12, konu: null };
+    if (k === 'p_k_yavru' || k === 'p_k_geyik') return { oncelik: 2, acil: 1, omur: 10, konu: null };
+    if (/^p_k_(fener2?|yavru_uyan|kardan_bitti|buz|kizak|kizak_bitti)$/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
     if (/^p_kurtar/.test(k) || /^p_yardim/.test(k)) return { oncelik: 2, acil: 2, omur: 3, konu: 'kurtar' };
     if (k === 'p_buyuk_kalk' || k === 'p_agac') return { oncelik: 2, acil: 2, omur: 12, konu: 'buyuk' };
     if (k === 'p_buyuk_goz' || k === 'p_buyuk_esne') return { oncelik: 2, acil: 1, omur: 8, konu: 'buyuk' };
@@ -279,6 +302,17 @@ const SES = (() => {
     p_f_kopru: () => typeof V6 === 'undefined' || !V6.final,
     p_f_fener2: () => typeof V6 === 'undefined' || !V6.final,
     p_dost_senlik: () => sesDostUygun(),
+    // Bölüm 7: talimatlar konusu bitince söylenmez
+    p_k_yavru: () => !(typeof SAYAC !== 'undefined' && SAYAC.yavru > 0),
+    p_k_geyik: () => typeof V7 === 'undefined' || !V7.final,
+    p_k_kardan_giris: () => typeof V7 === 'undefined' || !V7.kardan,
+    p_k_kardan_top: () => typeof V7 === 'undefined' || !V7.kardan,
+    p_k_buz: () => (typeof V7 === 'undefined' || !V7.final) && !(gP() && gP().ucus),
+    p_k_kizak_giris: () => typeof V7 === 'undefined' || !V7.kizak,
+    p_k_kizak: () => typeof V7 === 'undefined' || (!V7.kizak && !!(gP() && gP().ucus)),
+    p_k_kizak_bitti: () => typeof V7 === 'undefined' || !V7.final,
+    p_k_fener2: () => typeof V7 === 'undefined' || !V7.final,
+    p_dost_kar: () => sesDostUygun(),
     p_i_denizati: () => typeof DNZ === 'undefined' || DNZ.ati.some(o => !o.done),
     p_i_ahtapot: () => typeof DNZ === 'undefined' || !DNZ.oct || !DNZ.oct.done,
     p_i_vatoz: () => typeof DNZ === 'undefined' || !DNZ.ride || (!DNZ.ride.done && DNZ.ride.faz !== 'inis'),
@@ -326,7 +360,7 @@ const SES = (() => {
     if (sesEskidi[sesTaban(s.k)]) return 'olay eskitti';
     const durum = typeof DURUM !== 'undefined' ? DURUM : 'oyun';
     if (s.k === 'p_secim' && durum !== 'baslik') return 'seçim bitti';
-    if (/^(a_giris\d|p_[ybivf]_uyku)$/.test(s.k) && durum !== 'giris') return 'uyku sahnesi bitti';
+    if (/^(a_giris\d|p_[ybivfk]_uyku)$/.test(s.k) && durum !== 'giris') return 'uyku sahnesi bitti';
     if (anlatici(s.k)) return '';
     if (!sesSert(s)) return 'oyun bitti';
     if (agacYandi() && !ovguMu(s.k)) return 'ağaç yandı';
@@ -398,8 +432,8 @@ const SES = (() => {
   }
   function sesOnceden() {     // cümleleri boşta önceden çöz (ilk konuşmada gecikme olmasın); bu bölümün cümleleri önce
     if (!window.VOICE_MP3) return;
-    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f' }[bn] || '';
-    const baska = k => { const m = /^[pa]_([ybivf])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
+    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k' }[bn] || '';
+    const baska = k => { const m = /^[pa]_([ybivfk])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
     const ks = Object.keys(LINES).filter(k => VOICE_MP3[k]).sort((a, b) => baska(a) - baska(b));
     let i = 0;
     const adim = () => { if (i >= ks.length) return; sesCozumle(ks[i++]).then(() => setTimeout(adim, 30)); };
@@ -431,9 +465,11 @@ const SES = (() => {
   // olay cümlesi → artık eskimiş talimatlar (oturumda bir kez söylenen talimatlar; tekrarlayanlar – p_uyuyor gibi – KOSUL ile denetlenir)
   const SES_ESKITIR = { p_buyuk_kalk: ['p_buyuk', 'p_buyuk_goz', 'p_buyuk_esne'], p_y_hayvan_uyan: ['p_y_hayvan'], p_y_bitti: ['p_y_hayvan'],
     p_b_kuzu_ilk: ['p_b_kuzu'], p_cicek_ilk: ['p_merhaba'], p_b_bitti: ['p_b_tepe'],
-    p_f_midilli_uyan: ['p_f_midilli'], p_f_halka_bitti: ['p_f_halka_giris', 'p_f_halka'], p_f_kopru: ['p_f_halka'], p_f_final: ['p_f_kopru', 'p_f_fener2'] }, sesEskidi = {};
+    p_f_midilli_uyan: ['p_f_midilli'], p_f_halka_bitti: ['p_f_halka_giris', 'p_f_halka'], p_f_kopru: ['p_f_halka'], p_f_final: ['p_f_kopru', 'p_f_fener2'],
+    p_k_yavru_uyan: ['p_k_yavru'], p_k_kardan_bitti: ['p_k_kardan_giris', 'p_k_kardan_top'], p_k_kizak_bitti: ['p_k_kizak_giris', 'p_k_kizak'], p_k_final: ['p_k_kizak_bitti', 'p_k_fener2', 'p_k_buz'] }, sesEskidi = {};
   // Bölüm 6: bu cümleler tetikleyici nesne başına değil, oyun başına bir kez (harita konuşma nesnesi + olay aynı cümleyi isteyebilir)
-  const SES_TEK = { p_f_fener: 1, p_f_fener2: 1, p_f_midilli: 1, p_f_midilli_uyan: 1, p_f_halka_giris: 1, p_f_halka: 1, p_f_halka_bitti: 1, p_f_kopru: 1, p_f_final: 1 };
+  const SES_TEK = { p_f_fener: 1, p_f_fener2: 1, p_f_midilli: 1, p_f_midilli_uyan: 1, p_f_halka_giris: 1, p_f_halka: 1, p_f_halka_bitti: 1, p_f_kopru: 1, p_f_final: 1,
+    p_k_fener: 1, p_k_fener2: 1, p_k_yavru: 1, p_k_yavru_uyan: 1, p_k_geyik: 1, p_k_kardan_giris: 1, p_k_kardan_top: 1, p_k_kardan_bitti: 1, p_k_buz: 1, p_k_kizak_giris: 1, p_k_kizak: 1, p_k_kizak_bitti: 1, p_k_final: 1 };
   const SES_KURTAR = ['p_kurtar', 'p_kurtar1', 'p_kurtar2', 'p_kurtar3', 'p_kurtar4'], sesKurtarGec = [];
   const sesB2 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 2;
   const sesB3 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 3;
@@ -443,7 +479,12 @@ const SES = (() => {
       setTimeout(() => { if (typeof DNZ !== 'undefined' && DNZ.oct && !DNZ.oct.done && DURUM === 'oyun') soyle('p_i_ahtapot_yardim', { oncelik: 3 }); }, 4500);
     }
     const ko = k;   // çağıranın verdiği ad (konuşma tetikleyicisi anahtarı)
-    if (/^[ybivf]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
+    if (/^[ybivfk]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
+    if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 7) {   // Kuzey Işıkları: sahne/CORE ortak adları çağırırsa Bölüm 7 cümlesi
+      if (/^a_(y_|b_|i_|v_|f_)?final\d$/.test(k)) k = 'a_k_final' + k.slice(-1);
+      else if (k === 'p_y_uyku') k = 'p_k_uyku';
+      else if (k === 'p_y_giris' || k === 'p_uyan') k = 'p_k_giris';
+    }
     if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 6) {   // Şenlik Kalesi: sahne/CORE ortak adları çağırırsa Bölüm 6 cümlesi
       if (/^a_(y_|b_|i_|v_)?final\d$/.test(k)) k = 'a_f_final' + k.slice(-1);
       else if (k === 'p_y_uyku') k = 'p_f_uyku';
@@ -729,7 +770,7 @@ const SES = (() => {
     const t = sesSaat();
     if (t - sesOyunT < 60 || t - sesDostT < 90 || t - sesSonBitis < 50 || !sesDostUygun()) return;
     const bolum = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1;
-    const ozel = bolum === 6 ? 'p_dost_senlik' : bolum === 5 ? 'p_dost_volkan' : bolum === 4 ? 'p_dost_deniz' : bolum === 3 ? 'p_dost_bulut' : bolum === 2 ? 'p_dost_yildiz' : 'p_dost_orman';
+    const ozel = bolum === 7 ? 'p_dost_kar' : bolum === 6 ? 'p_dost_senlik' : bolum === 5 ? 'p_dost_volkan' : bolum === 4 ? 'p_dost_deniz' : bolum === 3 ? 'p_dost_bulut' : bolum === 2 ? 'p_dost_yildiz' : 'p_dost_orman';
     const aday = [ozel, 'p_dost1', 'p_dost2', 'p_dost3'].filter(k => LINES[k] && !sesSoylendi[k]);
     if (!aday.length) return;
     const k = sesDostN === 0 ? aday[0] : aday[Math.floor(Math.random() * aday.length)];
@@ -770,6 +811,45 @@ const SES = (() => {
     const p = gP(); if (!p || p.ucus || (typeof SAYAC !== 'undefined' && SAYAC.midilli > 0)) return;
     const m = gN().find(n => n.tip === 'midilli' && !n.uyandi && !n.done && n.x > p.x - 2 * T && n.x - p.x < 7 * T && Math.abs(n.y - p.y) < 5 * T);
     if (m) soyle('p_f_midilli');
+  }, 500);
+  // ── Bölüm 7 (Kuzey Işıkları) olayları (kar.js, geyik.js, kardan.js, kizak.js, oyun.js 'buzKay'): ilk fener / yarısı, ilk uyuyan yavru
+  // görülünce, uyanınca, ren geyiğiyle tanışma, kardan adam başı / toplar tamam / canlandı, buzlu göl, kızak başı / yarısı / sonu, final.
+  // Övgü ara sıra (sonraki fener/yavrularda ~üçte bir; övgü aralığı ayrıca ≥12 sn).
+  const sesB7 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 7;
+  let sesKarFenerN = 0, sesYavruN = 0;
+  OLAY.on('karFener', () => {
+    if (!sesB7()) return;
+    sesKarFenerN++;
+    const top = (typeof SAYAC !== 'undefined' && SAYAC.fenerTop) || (typeof V7 !== 'undefined' && V7.fenerTop) || 10;
+    if (sesKarFenerN === 1) soyle('p_k_fener');
+    else if (sesKarFenerN === Math.ceil(top / 2)) soyle('p_k_fener2');
+    else if (sesKarFenerN > 2) sesF6Ovgu_();
+  });
+  OLAY.on('yavruUyandi', () => { if (!sesB7()) return; if (++sesYavruN === 1) soyle('p_k_yavru_uyan'); else sesF6Ovgu_(); });
+  OLAY.on('geyikTanis', () => { if (sesB7()) soyle('p_k_geyik'); });   // geyik.js yayınlarsa; yoksa aşağıdaki yakınlık denetimi
+  OLAY.on('kardanBasla', () => { if (sesB7()) soyle('p_k_kardan_giris'); });
+  OLAY.on('kardanTop', e => { if (sesB7() && e && (e.son || e.n >= 3)) soyle('p_k_kardan_top'); });   // üç top üst üste oturunca
+  OLAY.on('kardanBitti', () => { if (sesB7()) setTimeout(() => soyle('p_k_kardan_bitti'), 500); });
+  OLAY.on('buzKay', () => { if (sesB7()) soyle('p_k_buz'); });
+  OLAY.on('kizakBasla', () => { if (sesB7()) soyle('p_k_kizak_giris'); });
+  OLAY.on('kizakTane', e => {
+    if (!sesB7()) return;
+    const n = e && isFinite(e.n) ? e.n : (typeof SAYAC !== 'undefined' ? SAYAC.kizak : 0);
+    const top = (e && isFinite(e.top) && e.top) || (typeof SAYAC !== 'undefined' && SAYAC.kizakTop) || 20;
+    if (n === Math.ceil(top / 2)) soyle('p_k_kizak');
+  });
+  OLAY.on('kizakBitti', () => { if (sesB7()) setTimeout(() => soyle('p_k_kizak_bitti'), 600); });
+  OLAY.on('kuzeyFinal', () => { if (sesB7()) soyle('p_k_final', { oncelik: 3 }); });
+  setInterval(() => {   // ilk uyuyan yavru / ren geyiği ekrana girince (harita konuşma nesnesi koymadıysa da) bir kez
+    if (!sesB7() || typeof DURUM === 'undefined' || DURUM !== 'oyun' || (typeof V7 !== 'undefined' && V7.final)) return;
+    const p = gP(); if (!p || p.ucus || p.kilit > 0) return;
+    if (!sesSoylendi.p_k_geyik) {
+      const g = gN().find(n => n.tip === 'geyik' && Math.abs(n.x - p.x) < 5 * T && Math.abs(n.y - p.y) < 5 * T);
+      if (g) { soyle('p_k_geyik'); return; }
+    }
+    if (sesSoylendi.p_k_yavru || (typeof SAYAC !== 'undefined' && SAYAC.yavru > 0)) return;
+    const m = gN().find(n => n.tip === 'karYavru' && !n.uyandi && !n.done && n.x > p.x - 2 * T && n.x - p.x < 7 * T && Math.abs(n.y - p.y) < 5 * T);
+    if (m) soyle('p_k_yavru');
   }, 500);
   OLAY.on('secim', () => { sesSecimT = sesSaat(); });
   OLAY.on('secimIlgi', () => { sesSecimT = sesSaat(); });   // boş dokunuş: yalnız sayaç sıfırlanır (ses çalmaz)

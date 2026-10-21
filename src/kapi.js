@@ -9,7 +9,7 @@
 const KP_RENK = { sarki: ['#7fe9ff', '#c9a2ff', '#ff9fd3'], takim: ['#ffe08a', '#7fe9ff', '#c9a2ff'], sekil: ['#ffb3d9', '#c9a2ff', '#ffe5a0'] };
 const KP_YUK = 250;     // perdenin yüksekliği (zeminden yukarı)
 const KP_TUT = 220;     // perdenin ötesinde, bu kadar uzaklığa kadar "geçmiş" sayılmaz (yeniden doğan/taşınan Feza takılmasın)
-function kpBitti(b) { return !!b && !!((b.sk && b.sk.bitti) || (b.tk && b.tk.bitti) || (b.skl && b.skl.bitti) || (b.tip === 'halkaMini' && (b.done || typeof V6 !== 'undefined' && V6.mini))); }   // B6: halka kapma bitince
+function kpBitti(b) { return !!b && !!((b.sk && b.sk.bitti) || (b.tk && b.tk.bitti) || (b.skl && b.skl.bitti) || (b.tip === 'halkaMini' && (b.done || typeof V6 !== 'undefined' && V6.mini)) || (b.tip === 'kizakMini' && (b.done || typeof V7 !== 'undefined' && V7.kizak)) || (b.tip === 'kardanMini' && (b.done || typeof V7 !== 'undefined' && V7.kardan))); }   // B6: halka kapma, B7: kardan adam bitince
 TUR.kaydet('miniKapi', {
   kur(o) { o.a = 1; o.acik = false; o.acT = 0; o.vur = 0; o.ph = Math.random() * 6.283; o.bag = null; o.stil = KP_RENK[o.stil] ? o.stil : 'sarki'; o.grads = null; },
   guncelle(o, dt) {

@@ -993,7 +993,7 @@ const FZ_ACT = { wave: 2.8, yawn: 2.7, stretch: 2.5, look: 2.2, nod: 3.2, sway: 
 const FZ_FIN_IK = [[-6.6, 1.6, 1], [6.6, 1.6, 1]], FZ_FIN_G = new Float64Array(4), FZ_FIN_V = new Float64Array(4);
 const FZ_FIN_SEQ = [0, 1, 2, 0, 3, 0], FZ_BAR = 2.4, FZ_BEAT = 0.6, FZ_PET = new Float64Array(2);
 function fzFinal() {
-  return (typeof DURUM !== 'undefined' && DURUM === 'final') || (typeof TREE !== 'undefined' && !!TREE && !!TREE.done && DURUM === 'oyun') || fzSenlik6();
+  return (typeof DURUM !== 'undefined' && DURUM === 'final') || (typeof TREE !== 'undefined' && !!TREE && !!TREE.done && DURUM === 'oyun') || fzSenlik6() || fzKuzey7();
 }
 // Bölüm 6 avlu şenliği (V6.final, oyun sürerken): aynı dans döngüsü; ölçü saati şenliğin müziğine (SN.avlu.age, 0,6 sn vuruş) oturur.
 // Sıra: dans · kollar havada · dans · Pırıl'a el sallama · dans · kollar havada (yaprak yakalama yok); doruk anında (25-31 sn)
@@ -1002,6 +1002,17 @@ const FZ_FIN_SEQ6 = [0, 3, 0, 1, 0, 3];
 function fzSenlik6() {
   return typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 6 && typeof V6 !== 'undefined' && !!V6 && !!V6.final && typeof DURUM !== 'undefined' && DURUM === 'oyun';
 }
+// Bölüm 7 kuzey tepesi finali (V7.final, oyun sürerken): Bölüm 6 ile aynı sıra ve havada sevinç pozları. Saat: kar.js'in 'kuzeyTepe'
+// nesnesi o.age (final başından saniye) verirse ona oturur; o.doruk true iken kollar havada, gözler gökteki kuzey ışıklarında.
+function fzKuzey7() {
+  return typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 7 && typeof V7 !== 'undefined' && !!V7 && !!V7.final && typeof DURUM !== 'undefined' && DURUM === 'oyun';
+}
+let fzTepeO;   // undefined: aranmadı
+function fzKuzeyTepe() {
+  if (fzTepeO === undefined) fzTepeO = typeof NESNELER !== 'undefined' ? NESNELER.find(o => o.tip === 'kuzeyTepe') || null : null;
+  return fzTepeO && Number.isFinite(fzTepeO.age) && Number.isFinite(fzTepeO.x) && Number.isFinite(fzTepeO.y) ? fzTepeO : null;
+}
+const fzSenlik67 = () => fzSenlik6() || fzKuzey7();
 function fzSenlikAvlu() { return typeof SN !== 'undefined' && SN && SN.avlu && SN.avlu.basla && Number.isFinite(SN.avlu.age) ? SN.avlu : null; }
 function fzPetal(i, out) {   // dunya.js drawPetals'teki i. yaprağın dünya konumu (aynı formül; yaprak ekranda kayar)
   if (typeof DN_PETALS === 'undefined' || !DN_PETALS[i] || typeof VW === 'undefined') return false;
@@ -1102,7 +1113,10 @@ function fzZemin(cx, r) { const c = cell(cx, r); return c === 1 || c === 2; }
 function fzFy(a1, a2) { return FZ_TH * Math.cos(a1) + FZ_SH * Math.cos(a1 + a2) + FZ_FT; }
 // ayak sesi olayı: tek nesne, her basışta yeniden doldurulur (dinleyici (muzik.js) yalnız o anda okur)
 const FZ_ADIM = { x: 0, y: 0, hiz: 0, inis: false };
-function fzAdim(sp, inis) { FZ_ADIM.x = P.x; FZ_ADIM.y = P.y; FZ_ADIM.hiz = sp; FZ_ADIM.inis = inis; OLAY.emit('adim', FZ_ADIM); }
+function fzAdim(sp, inis) {
+  FZ_ADIM.x = P.x; FZ_ADIM.y = P.y; FZ_ADIM.hiz = sp; FZ_ADIM.inis = inis; OLAY.emit('adim', FZ_ADIM);
+  if (typeof dn7Iz === 'function') { try { dn7Iz(P.x + (P.f || 1) * ((P.a_stepN & 1) ? 3 : -3), P.y, inis ? 'inis' : 'feza'); } catch (e) {} }   // Bölüm 7: karda ayak izi (dunya7.js)
+}
 const FZ_RAND_ACT = ['wave', 'yawn', 'stretch', 'nod', 'look', 'sway', 'peek', 'sway', 'peek'];
 function fzEsinti() {   // Bölüm 3: içinde bulunduğu yukarı hava akımının gücü (0..1)
   if (!P.a_esL) { P.a_esL = []; if (typeof NESNELER !== 'undefined') for (const o of NESNELER) if (o.tip === 'esinti') P.a_esL.push(o); }
@@ -1153,7 +1167,7 @@ function fezaUpdate(dt) {
     if (!P.a_wasCarry) { P.a_pose[FZ_I_AIR] = Math.min(P.a_pose[FZ_I_AIR], 0.15); P.a_pv[FZ_I_AIR] = Math.min(P.a_pv[FZ_I_AIR], 0); }   // ayak yere değince kalça hemen yere göre (iniş yumuşak ama gecikmesiz)
     if (!P.a_wasCarry) fzAdim(sp, true);   // parmak ucuyla yumuşak iniş
   }
-  if (!gr && P.a_wasG && vy < -300 && P.a_launch <= 0 && P.a_stomp <= 0) { P.a_take = 1; P.a_takeP = clamp(-vy / 730, 0.5, 1.25); if (fzSenlik6()) P.a_j6++; }   // ne kadar hızlı kalkarsa o kadar uzar
+  if (!gr && P.a_wasG && vy < -300 && P.a_launch <= 0 && P.a_stomp <= 0) { P.a_take = 1; P.a_takeP = clamp(-vy / 730, 0.5, 1.25); if (fzSenlik67()) P.a_j6++; }   // ne kadar hızlı kalkarsa o kadar uzar
   P.a_wasG = gr; P.a_prevVy = vy; P.a_wasCarry = carry;
   P.a_landT += dt; P.a_tadaT += dt; P.a_take = Math.max(0, P.a_take - dt / 0.18);
   if (gr) { P.a_launch = 0; P.a_stomp = 0; }
@@ -1171,8 +1185,8 @@ function fezaUpdate(dt) {
   let fk = 0, fb = 0, fbu = 0, fbt = 0, fFt = 0, fFront = false;
   if (fin) {
     P.a_finT += dt; P.a_finClk += dt;
-    const pf = typeof pfFinal !== 'undefined' && pfFinal ? pfFinal : null, av6 = fzSenlik6() ? fzSenlikAvlu() : null;
-    if (av6) P.a_finClk = av6.age;   // Bölüm 6: saat doğrudan şenliğin müziği (vuruş 0,6 sn, ölçü 2,4 sn); havada geçen süre kaymaz
+    const pf = typeof pfFinal !== 'undefined' && pfFinal ? pfFinal : null, av6 = fzSenlik6() ? fzSenlikAvlu() : fzKuzey7() ? fzKuzeyTepe() : null;
+    if (av6) P.a_finClk = av6.age;   // Bölüm 6 (ve 7): saat doğrudan şenliğin müziği (vuruş 0,6 sn, ölçü 2,4 sn); havada geçen süre kaymaz
     else if (pf && typeof pf.t === 'number') {   // Pofuduk'ların (müziğin) ölçüsüne otur: dans başlayana dek tam, sonra küçük düzeltmeler
       let d = (pf.t - (pf.faz || 0) - P.a_finClk) % FZ_BAR;
       if (d > FZ_BAR / 2) d -= FZ_BAR; else if (d < -FZ_BAR / 2) d += FZ_BAR;
@@ -1186,8 +1200,9 @@ function fezaUpdate(dt) {
     else {
       if (bar !== P.a_finBar) {   // yeni ölçü: ne yapılacak, hangi yöne
         P.a_finBar = bar;
-        let kd = fzSenlik6() ? FZ_FIN_SEQ6[(bar - P.a_finBar0) % FZ_FIN_SEQ6.length] : FZ_FIN_SEQ[(bar - P.a_finBar0) % FZ_FIN_SEQ.length];
+        let kd = fzSenlik67() ? FZ_FIN_SEQ6[(bar - P.a_finBar0) % FZ_FIN_SEQ6.length] : FZ_FIN_SEQ[(bar - P.a_finBar0) % FZ_FIN_SEQ.length];
         if (fzSenlik6()) { const av = fzSenlikAvlu(); if (av && av.age >= 23.8 && av.age < 31) kd = 3; }   // doruk (25. sn) ölçüsünden itibaren: kollar havada
+        else if (fzKuzey7()) { const tp = fzKuzeyTepe(); if (tp && tp.doruk) kd = 3; }   // Bölüm 7 doruk: kuzey ışıkları en parlak
         const pdx = D.x - P.x, pdy = D.y - (P.y - 60);
         if (kd === 1 && pdx * pdx + pdy * pdy > 240 * 240) kd = 0;   // Pırıl uzaktaysa dans
         P.a_finKind = kd; P.a_finDir = P.a_turnU < 1 ? P.a_turnTo : P.a_side;
@@ -1714,7 +1729,7 @@ function fezaUpdate(dt) {
     kmin = kmax = 18;
   }
   // Bölüm 6 şenliği, havada (vuruş zıplaması): sırayla kollar havada V + toplanmış bacaklar / yıldız zıplaması (kollar, bacaklar açık)
-  if (!gr && (st === 'rise' || st === 'apex' || st === 'fall') && !cheer && fzSenlik6()) {
+  if (!gr && (st === 'rise' || st === 'apex' || st === 'fall') && !cheer && fzSenlik67()) {
     const wv = Math.sin(t * 14), tep = 1 - clamp(Math.abs(vy) / 520, 0, 1);   // tep: tepe noktasında 1
     kmin = kmax = 26;
     T.arm = 1.15; T.hOpen = 1; T.shr = 0.7; T.happy = 1; T.mOpen = 0.9; T.mSmile = 1; T.mRound = 0; T.brow = 0.5; T.lid = 1; T.lean = -0.04;
@@ -1733,7 +1748,7 @@ function fezaUpdate(dt) {
     T.sq = 0; T.lid = 1; T.mRound = 0; T.mSmile = 1; T.breath = 0; T.spr = 0;
     FZ_FIN_IK[0][2] = FZ_FIN_IK[1][2] = 1;
     if (fk === 1) {   // ağaca hayranlık: gözler ve baş tepeye, ağız "o", eller hafifçe öne açılır; sonunda kocaman gülümser
-      const tr = typeof TREE !== 'undefined' && TREE, av6 = !tr ? fzSenlikAvlu() : null;   // Bölüm 6: kalenin üstündeki ışık tacına / göğe bakar
+      const tr = typeof TREE !== 'undefined' && TREE, av6 = !tr ? (fzKuzey7() ? fzKuzeyTepe() : fzSenlikAvlu()) : null;   // Bölüm 6: kalenin üstündeki ışık tacına / göğe bakar
       const tx = tr ? (TREE.x - P.x) * sd : av6 ? (av6.x - P.x) * sd : 40, ty = tr ? (TREE.y - 300) - (P.y - 55) : av6 ? (av6.y - 330) - (P.y - 55) : -250;
       const L = Math.hypot(tx, ty) || 1, agx = clamp(tx / L * 1.4, -1, 1), agy = clamp(ty / L * 2, -1, 0.2), sm = smooth(clamp((P.a_finT - 1.05) / 0.4, 0, 1));
       kmin = kmax = 11;
@@ -1748,6 +1763,7 @@ function fezaUpdate(dt) {
       T.happy = 1; T.mOpen = 0.9; T.brow = 0.5; T.head = -0.1; T.lean = -0.04;
       T.bob = -4.5 * hop; T.lt1 = 0.05 + 0.4 * hop; T.lt2 = -0.1 - 0.7 * hop; T.bt1 = 0.3 * hop; T.bt2 = -0.1 - 0.6 * hop;
       if (fzSenlik6()) { const av = fzSenlikAvlu(); if (av && av.age >= 24.6) { T.gy = -0.85; T.gx = 0; T.head = -0.2; } }   // doruk: gökteki ışık tacına bakar
+      else if (fzKuzey7()) { const tp = fzKuzeyTepe(); if (tp && tp.doruk) { T.gy = -0.85; T.gx = 0; T.head = -0.2; } }   // Bölüm 7: göğü kaplayan kuzey ışıklarına bakar
     } else if (fk === 3) {   // dans
       kmin = kmax = 24;
       if (fb < 2) {          // sek, sek: Pofuduk'lara dönük, yumruklar sırayla, gözler gülüyor
