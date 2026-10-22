@@ -123,11 +123,18 @@ function shKamera(fx, fy, z, tx, ty) {
 }
 function shOdaT(ctx = g) {                       // oda koordinatı + zoom
   const z = sh.zoom, a = sh.k0 * z;
-  ctx.setTransform(a, 0, 0, a, sh.tx + (W / 2 + (sh.oxp || 0) - sh.fx) * z, sh.ty - sh.fy * z);
+  ctx.setTransform(a, 0, 0, a, sh.tx + (W / 2 + (sh.oxp || 0) - sh.fx) * z, sh.ty - sh.fy * z + (sh.yDy || 0) * a);   // yDy: yatak grubunu aşağı kaydırma (oda birimi; seçim ekranında rafın altı)
 }
 function shResimT() { const z = sh.zoom; g.setTransform(z, 0, 0, z, sh.tx - sh.fx * z, sh.ty - sh.fy * z); }
 function shEkranX(x) { return sh.tx + (shPX(x) - sh.fx) * sh.zoom; }
-function shEkranY(y) { return sh.ty + (shPY(y) - sh.fy) * sh.zoom; }
+function shEkranY(y) { return sh.ty + (shPY(y) - sh.fy) * sh.zoom + (sh.yDy || 0) * sh.k0 * sh.zoom; }
+// Seçim ekranında kavanoz rafı yatağın başlığına değmesin: yatak grubu (yatak, Feza, Pırıl, battaniye) rafın altına iner.
+// Kayma ekran oranına göre hesaplanır (başlığın topuzu oda y≈40,5; rafın alt kenarı + %2,5 H boşluk), en çok 14 oda birimi.
+function shSecimDy() {
+  if (typeof shKavYer !== 'function') return 0;
+  const K = shKavYer(), alt = K.yp + K.pt + H * 0.025, sx = sh.k0 * sh.zoom, ust = sh.ty + (shPY(40.5) - sh.fy) * sh.zoom;
+  return clamp((alt - ust) / sx, 0, 14);
+}
 function shTuval() { const c = document.createElement('canvas'); c.width = Math.max(2, W); c.height = Math.max(2, H); return c; }
 // tuvalin belleğini hemen geri ver (Safari'de çöp toplamayı beklemeden); dönüş null → referansı da bırak
 function shBirak(c) { try { if (c && c.width) { c.width = 0; c.height = 0; } } catch (e) {} return null; }
@@ -1544,6 +1551,7 @@ function shGirisCiz(tm, dt) {
   if (!B3) shLamba(p, lamba, tm, true, lyan);
   if (sh.tema === 'cadi') { const uy = sh.atla >= 0 ? 1 : shEase(shSeg(t, P.uyudu - 1.0, P.uyudu + 0.4)), kg = sh.atla >= 0 ? 0 : Math.sin(Math.PI * shSeg(t, P.uyudu - 0.7, P.uyudu - 0.15)); sh8Oda(p, tm, 1 - halka, uy, kg); }   // Balkabağı Gecesi: kâğıt yarasa süsü, kabak gece lambası
   shHali(p, hali, tm);
+  sh.yDy = (sh.secDy || 0) * (1 - shEase(clamp(cerceve * 1.6, 0, 1)));   // seçimden gelen yatak kayması oda eridikçe söner
   shYatakArka(p, batt, cerceve, tm);
   // dönüşen eşyalardan akan ışık zerreleri
   if (m > 0 && m < 1 && dt > 0) {
@@ -1585,6 +1593,7 @@ function shGirisCiz(tm, dt) {
     const k = sh.k0 * sh.zoom; dglow('#f4e6ff', shEkranX(pr.x), shEkranY(pr.y), k * 9 * pr.pat, pr.pat * 0.9);
     g.globalCompositeOperation = 'source-over';
   }
+  sh.yDy = 0;
   shZerreAkit(dt, tm);
   shOnPlan(shEase(shSeg(m, 0.45, 1)), tm);
   // Zzz
@@ -2981,6 +2990,7 @@ function shSecimOda(tm, dt, sec) {   // gece odası: lamba, uyuyan Feza, parlaya
   shPerdeler(p, 0, tm, 0);
   shLamba(p, 0, tm, true, 0.85 + 0.06 * Math.sin(tm * 0.9) + 0.025 * Math.sin(tm * 2.3 + 1));
   shHali(p, 0, tm);
+  sh.secDy = shSecimDy(); sh.yDy = sh.secDy;   // yatak grubu rafın altına
   shYatakArka(p, 0, 0, tm);
   sh.fzOlc = 1.18; sh.prOlc = 1; sh.kirpK = 0;
   const S2 = sh.sec, nu = S2 ? clamp((sh.t - S2.nab) / 1.1, 0, 1) : 1;
@@ -2994,6 +3004,7 @@ function shSecimOda(tm, dt, sec) {   // gece odası: lamba, uyuyan Feza, parlaya
   const nb = 0.5 + 0.5 * Math.sin(tm * 1.1), px = shEkranX(shKucak.px), py = shEkranY(shKucak.py - 1);
   dglow('#c9a8ff', px, py, sh.k0 * (26 + 5 * nb + 10 * fl), 0.28 + 0.1 * nb + 0.25 * fl);
   g.globalCompositeOperation = 'source-over';
+  sh.yDy = 0;
   shZerreAkit(dt, tm);
 }
 // Pırıl'dan ortadaki kavanoza süzülen rüya tozu (ince ışık izi): (px, py) Pırıl, (ex, ey) kavanozun karnı, d kavanoz boyu
@@ -3166,7 +3177,7 @@ function shSecimCiz(tm, dt) {
   }
   // Pırıl'dan ortadaki kavanoza süzülen rüya tozu
   const ci = clamp(Math.round(S2.kay), 0, n - 1), bc = S2.pos[ci];
-  if (sh.oda && bc && bc.gor) { g.globalCompositeOperation = 'lighter'; shRuyaIzi(shEkranX(shKucak.px), shEkranY(shKucak.py - 2), bc.x, bc.y - bc.h * 0.3, bc.h, SH_BALON_RENK[S2.opts[ci].ikon] || '#e6d6ff', tm, ci, shSeg(t, 1.6, 3) * (1 - bc.ad) * yz * (0.85 + 0.6 * (1 - shSeg(t, S2.oturT, S2.oturT + 1.2)))); g.globalCompositeOperation = 'source-over'; }
+  if (sh.oda && bc && bc.gor) { g.globalCompositeOperation = 'lighter'; shRuyaIzi(shEkranX(shKucak.px), shEkranY(shKucak.py - 2) + (sh.secDy || 0) * sh.k0 * sh.zoom, bc.x, bc.y - bc.h * 0.3, bc.h, SH_BALON_RENK[S2.opts[ci].ikon] || '#e6d6ff', tm, ci, shSeg(t, 1.6, 3) * (1 - bc.ad) * yz * (0.85 + 0.6 * (1 - shSeg(t, S2.oturT, S2.oturT + 1.2)))); g.globalCompositeOperation = 'source-over'; }
   // kavanozlar: uzaktakiler önce, ortadaki en son (komşusunun önünde kalsın)
   const ciz = i => {
     const b = S2.pos[i]; if (!b.gor) return;
