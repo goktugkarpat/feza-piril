@@ -10,7 +10,7 @@
 'use strict';
 const DN7={sky:null,dawn:null,vig:null,mtn:[],orman:[],chunks:new Map(),prep:0,fx:{},aurBuf:null,aurC:null,
  lit:[],perde:[],renk:0,sabah:0,fin:0,finT:null,dorukT:null,tamT:null,isiklar:[],nIsik:0,dokulme:[],dokT:0,
- nefesT:0,pirNefesT:1.3,kulubeler:[],camlar:null,uzakKar:0,kare:0,zeminKare:-9,kayCi:0,gokAlt:0,aurKare:-9};
+ nefesT:0,pirNefesT:1.3,kulubeler:[],camlar:null,uzakKar:0,kare:0,zeminKare:-9,kayCi:0,gokAlt:0,aurKare:-9,durumT:null};
 const dn7Hash=v=>{const s=Math.sin(v*127.1+311.7)*43758.5453;return s-Math.floor(s);};   // sabit sözde rastgele (0..1)
 // Kuzey ışığı / fener renkleri (geyik.js GY_KUZEY ile aynı sıra: i. fener ↔ i. boynuz kristali ↔ i. gök şeridi)
 const DN7_AUR=(typeof GY_KUZEY!=='undefined'&&GY_KUZEY.length>=10)?GY_KUZEY.slice(0,10):['#7dffc4','#ff8fd0','#8fd8ff','#c39bff','#a6ffde','#ffa6c9','#6fe8ff','#e0a8ff','#b8ff9e','#9fb8ff'];
@@ -58,12 +58,14 @@ OLAY.on('kuzeyFinal',()=>{if(DN7.finT===null)DN7.finT=now;});
 OLAY.on('kuzeyDoruk',()=>{DN7.dorukT=now;});
 OLAY.on('kuzeyTamam',()=>{if(DN7.tamT===null)DN7.tamT=now;});
 function dn7Durum(){
+ // 60 Hz'deki eski geçiş süresi korunur; 120 Hz'de hızlanmaz, aynı zamanda tekrar çizilince ilerlemez.
+ const adim=DN7.durumT===null?0:clamp((now-DN7.durumT)*60,0,15);DN7.durumT=now;
  const v=dn7V7(),top=v&&v.fenerTop?v.fenerTop:10,f=v?clamp((v.fener||0)/top,0,1):0;
  // fener olayı kaçtıysa (ör. test ya da kayıttan devam) perde sayısını yetiştir
  if(v&&(v.fener||0)>DN7.perde.length&&DN7.perde.length<10)dn7PerdeEkle(DN7.perde.length%10,NaN);
  if(v&&v.final&&DN7.finT===null)DN7.finT=now;
  DN7.fin=DN7.finT===null?0:smooth(clamp((now-DN7.finT)/4,0,1));
- const hedef=Math.max(smooth(f)*.85,DN7.fin);DN7.renk+=(hedef-DN7.renk)*.03;if(Math.abs(hedef-DN7.renk)<.002)DN7.renk=hedef;
+ const hedef=Math.max(smooth(f)*.85,DN7.fin);DN7.renk+=(hedef-DN7.renk)*(1-Math.pow(.97,adim));if(adim>0&&Math.abs(hedef-DN7.renk)<.002)DN7.renk=hedef;
  // sabah: 'kuzeyTamam' ile (yoksa finalden 26 sn sonra) pembe-altın gün doğumu
  let sb=0;if(DN7.tamT!==null)sb=smooth(clamp((now-DN7.tamT)/7,0,1));if(DN7.finT!==null)sb=Math.max(sb,smooth(clamp((now-DN7.finT-26)/10,0,1)));
  DN7.sabah=sb;

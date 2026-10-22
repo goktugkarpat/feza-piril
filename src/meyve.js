@@ -80,6 +80,11 @@ function my9Sprite() {
   MY9S.agac = my9AgacCiz(r);
   MY9S.yuvaArka = my9YuvaArkaCiz(r); MY9S.yuvaOn = my9YuvaOnCiz(r);
   MY9S.balon = my9BalonCiz(1); MY9S.balon2 = my9BalonCiz(1.42); MY9S.nokta = my9NoktaCiz();
+  { const cv = MY9S.kalp = my9Cv(48 * MY9_PX, 48 * MY9_PX), q = cv.getContext('2d');
+    q.setTransform(MY9_PX, 0, 0, MY9_PX, 24 * MY9_PX, 24 * MY9_PX);
+    const gr = q.createRadialGradient(-5, -6, 1, 0, 0, 20); gr.addColorStop(0, '#ffd6e4'); gr.addColorStop(0.55, '#ff8fb4'); gr.addColorStop(1, '#f0628e');
+    my9KalpYol(q, 0, 0, 15); q.fillStyle = gr; q.fill(); q.lineWidth = 2; q.strokeStyle = '#d84a7a'; q.stroke();
+    q.fillStyle = 'rgba(255,255,255,0.8)'; q.beginPath(); q.ellipse(-7, -5, 3.2, 2.2, -0.5, 0, 6.2832); q.fill(); }
   { const cv = MY9S.golge = my9Cv(128, 32), q = cv.getContext('2d'); q.translate(64, 16); q.scale(1, 0.25);
     const gr = q.createRadialGradient(0, 0, 0, 0, 0, 64); gr.addColorStop(0, 'rgba(30,60,50,0.5)'); gr.addColorStop(0.6, 'rgba(30,60,50,0.2)'); gr.addColorStop(1, 'rgba(30,60,50,0)');
     q.fillStyle = gr; q.beginPath(); q.arc(0, 0, 64, 0, 6.2832); q.fill(); }
@@ -417,12 +422,14 @@ function my9IstekKur(k) {
   }
   k.istekler = tur;
 }
-function my9TurBasla(o) {
+function my9TurBasla(o, devam = false) {
   const k = o.my, ist = k.istekler[k.tur];
   for (let i = 0; i < 3; i++) {
-    const b = k.yv[i]; b.istek = ist[i].slice(); b.yenen = b.istek.map(() => false); b.ayr = b.istek.map(() => false); b.ik = b.istek.map(() => 1); b.ikT = b.istek.map(() => -1); b.rez = 0; b.gelen = 0; b.tok = false;
+    const b = k.yv[i], yenen = devam && b.istek.length === ist[i].length && b.istek.every((v, j) => v === ist[i][j]) ? b.yenen : null;
+    b.istek = ist[i].slice(); b.yenen = b.istek.map((_, j) => !!(yenen && yenen[j])); b.ayr = b.istek.map(() => false);
+    b.ik = b.yenen.map(y => y ? 0 : 1); b.ikT = b.yenen.map(y => y ? 1 : -1); b.rez = b.yenen.filter(Boolean).length; b.gelen = 0; b.tok = b.yenen.every(Boolean);
     b.balS = 0; b.balT = -0.28 * i - 0.15; b.balPat = -1; b.genis = b.istek.length > 1 ? 1 : 0;
-    b.durum = 'bekle'; b.dT = 0; b.ih = 0;
+    b.durum = b.tok ? 'tok' : 'bekle'; b.dT = 0; b.ih = 0;
   }
   k.idle = 0; k.helpOn = false; k.helpT = 0; k.ipucuOldu = false;
   my9Faz(o, 'oyna');
@@ -466,7 +473,7 @@ function my9Birak(o, tamam) {   // güvenli dönüş: Feza giriş yerinde, sağa
     for (const m of k.meyve) { m.durum = 'agac'; m.s = 1; m.hedef = -1; }
     for (const b of k.yv) {
       b.rez = 0; for (let j = 0; j < b.yenen.length; j++) if (b.yenen[j]) b.rez++;
-      b.gelen = 0; b.durum = b.tok ? 'tok' : 'bekle'; b.dT = 0; b.ih = 0;
+      b.gelen = 0; b.ayr.fill(false); b.durum = b.tok ? 'tok' : 'bekle'; b.dT = 0; b.ih = 0;
     }
     k.faz = 'bekle'; k.kuyruk = -1;
   }
@@ -660,6 +667,7 @@ function my9Guncelle(o, dt) {
   if (!(dt > 0) || !Number.isFinite(dt)) return;
   dt = Math.min(dt, 0.05);
   const k = o.my, fx = P.rx !== undefined ? P.rx : P.x, yakin = Math.abs(fx - o.x) < 1700;
+  if (k.aktif && DURUM !== 'oyun') return;   // mola sırasında yoldaki meyve ve yavrunun tepkisi de kaldığı yerde bekler
   if (!yakin && !k.aktif) return;   // uzaktayken hiçbir şey yapmaz
   k.t += dt; my9TozAdim(dt);
   for (const b of k.yv) my9YavruAdim(o, b, dt);
@@ -678,7 +686,7 @@ function my9Guncelle(o, dt) {
   k.fT += dt;
   if (k.faz === 'gel') {
     if (k.fT >= 0.45 && k.fT - dt < 0.45) my9Sfx('yavruCik2', 0.4);
-    if (k.fT >= MY9_GEL) my9TurBasla(o);
+    if (k.fT >= MY9_GEL) my9TurBasla(o, true);
   } else if (k.faz === 'oyna') {
     let hareket = false; for (const m of k.meyve) if (m.durum !== 'agac' && m.durum !== 'buy' && m.durum !== 'bos') hareket = true;
     let hepsi = true; for (const b of k.yv) if (!b.tok || b.durum === 'ye' || b.durum === 'dans') hepsi = false;
@@ -842,9 +850,7 @@ function my9BalonCizKare(o, b, tm, vurgu) {
     const u = clamp((tk - 0.2) / 0.35, 0, 1), hs = my9Yay(u) * (1 + 0.08 * Math.sin(tm * 7 + b.i));
     if (hs > 0.01) {
       g.save(); g.translate(0, 1); g.scale(hs, hs);
-      const gr = g.createRadialGradient(-5, -6, 1, 0, 0, 20); gr.addColorStop(0, '#ffd6e4'); gr.addColorStop(0.55, '#ff8fb4'); gr.addColorStop(1, '#f0628e');
-      my9KalpYol(g, 0, 0, 15); g.fillStyle = gr; g.fill(); g.lineWidth = 2; g.strokeStyle = '#d84a7a'; g.stroke();
-      g.fillStyle = 'rgba(255,255,255,0.8)'; g.beginPath(); g.ellipse(-7, -5, 3.2, 2.2, -0.5, 0, 6.2832); g.fill();
+      g.drawImage(MY9S.kalp, -24, -24, 48, 48);
       g.restore();
     }
   }

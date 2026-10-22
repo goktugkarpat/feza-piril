@@ -13,7 +13,7 @@
 'use strict';
 const DN8={sky:null,dawn:null,ay:null,ayYuz:null,serit:[],chunks:new Map(),prep:0,fx:{},renk:0,sabah:0,fin:0,finT:null,dorukT:null,tamT:null,
  lit:[],kare:0,zeminKare:-9,gokAlt:0,yap:null,ay8:{x:0,y:0,r:80,w:0,sx:0,sy:0,sr:80},kirpT:0,kirpAc:false,evIsik:{},serFx:[],
- cKuyruk:[],dumanT:0,uckT:0};
+ cKuyruk:[],dumanT:0,uckT:0,durumT:null};
 const dn8Hash=v=>{const s=Math.sin(v*127.1+311.7)*43758.5453;return s-Math.floor(s);};   // sabit sözde rastgele (0..1)
 // palet (sözleşme): gece mor-lacivert, ay balı, kabak turuncusu, sıcak fener ışığı, şeker pembesi, nane, limon, lila
 const DN8_GECE='#2a1f4e',DN8_AYB='#ffe7a8',DN8_FENER='#ffd27a';
@@ -49,6 +49,8 @@ OLAY.on('cadiFinal',()=>{if(DN8.finT===null)DN8.finT=now;});
 OLAY.on('cadiDoruk',()=>{DN8.dorukT=now;});
 OLAY.on('cadiTamam',()=>{if(DN8.tamT===null)DN8.tamT=now;});
 function dn8Durum(){
+ // Süreye bağlı sönüm: 60/120 Hz aynı ışık geçişi, yinelenen zaman damgasında hareket yok.
+ const adim=DN8.durumT===null?0:clamp((now-DN8.durumT)*60,0,15);DN8.durumT=now;
  const v=dn8V8(),top=v&&v.fenerTop?v.fenerTop:12,fe=v?Math.max(v.fener||0,DN8.fenerSay||0):0,f=clamp(fe/top,0,1);
  // fener olayı kaçtıysa (test ya da kayıttan devam): yanmış fenerleri ışık kaynağına ekle
  if(v&&fe>(DN8.fenerSay||0)){DN8.fenerSay=fe;let n=0;for(const o of NESNELER)if(o.tip==='kabakFener'&&(o.yandi||n<fe-(DN8.lit.length))){if(!DN8.lit.some(L=>Math.abs(L.x-o.x)<5)){dn8IsikEkle(o.x,o.y-40,'#ffb347');n++;}if(n>=fe)break;}}
@@ -56,7 +58,7 @@ function dn8Durum(){
  DN8.fin=DN8.finT===null?0:smooth(clamp((now-DN8.finT)/4,0,1));
  // mini oyunlar ve süpürge de köyü biraz daha aydınlatır
  const ek=v?((v.kabakYuz?1:0)+(v.iskelet?1:0)+(v.kazan?1:0)+(v.supurge?1:0))*.025:0;
- const hedef=Math.max(Math.min(1,smooth(f)*.86+ek),DN8.fin);DN8.renk+=(hedef-DN8.renk)*.03;if(Math.abs(hedef-DN8.renk)<.002)DN8.renk=hedef;
+ const hedef=Math.max(Math.min(1,smooth(f)*.86+ek),DN8.fin);DN8.renk+=(hedef-DN8.renk)*(1-Math.pow(.97,adim));if(adim>0&&Math.abs(hedef-DN8.renk)<.002)DN8.renk=hedef;
  // sabah: doruktan (28. sn) sonra gün ağarır, 'cadiTamam' (35. sn) ile tamamlanır: pembe-altın gün doğumu
  let sb=0;if(DN8.tamT!==null)sb=smooth(clamp((now-DN8.tamT)/3,0,1));if(DN8.finT!==null)sb=Math.max(sb,smooth(clamp((now-DN8.finT-30.5)/5.5,0,1)));   // doruktan sonra gün ağarmaya başlar
  DN8.sabah=sb;

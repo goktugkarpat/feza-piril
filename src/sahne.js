@@ -2862,6 +2862,7 @@ function shKavHi(ikon) {
   return shBalonIc(ikon, q);
 }
 function shSecimBaslat(opts, onSec) {
+  shSecimIptal();
   shOlc();
   sh.mod = 'secim'; sh.t = 0; sh.sonGorunum = false; sh.tam = true; sh.kisa = false; sh.dan = false; sh.anlar = {}; sh.sesler = {}; sh.parca.length = 0; sh.zz.length = 0; sh.tema = null;
   // ebeveyn isteği: EN YENİ rüya en başta (9, 8, 7 … 1). Liste hangi sırayla gelirse gelsin numaraya göre büyükten küçüğe dizilir.
@@ -2926,13 +2927,15 @@ function shKavFizik(S2, dt) {
 }
 function shSecimBas(e) {   // parmak / fare bastı (CSS pikseli)
   const S2 = sh.sec; if (sh.mod !== 'secim' || !S2 || S2.secili || S2.acil >= 0 || S2.el) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
   const now = performance.now(), px = e.clientX / innerWidth * W;
-  S2.el = { id: e.pointerId, x0: px, cx0: e.clientX, k0: S2.kay, son: px, sonT: now, kaydi: false };
+  S2.el = { id: e.pointerId, hedef: e.target, x0: px, cx0: e.clientX, cy0: e.clientY, k0: S2.kay, son: px, sonT: now, kaydi: false, hareket: false };
   S2.v = 0;   // parmak rafı yakalar
   try { if (e.target && e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId); } catch (_) {}
 }
 function shSecimSurukle(e) {
   const S2 = sh.sec, E = S2 && S2.el; if (!E || e.pointerId !== E.id || sh.mod !== 'secim') return;
+  if (Math.hypot(e.clientX - E.cx0, e.clientY - E.cy0) > SH_KAV_ESIK) E.hareket = true;
   if (!E.kaydi && Math.abs(e.clientX - E.cx0) > SH_KAV_ESIK) { E.kaydi = true; E.x0 = e.clientX / innerWidth * W; E.son = E.x0; E.k0 = S2.kay; }   // eşikte yakala: sıçrama olmasın
   if (!E.kaydi) return;
   const now = performance.now(), px = e.clientX / innerWidth * W, K = shKavYer(), dts = Math.max(0.004, (now - E.sonT) / 1000);
@@ -2942,15 +2945,20 @@ function shSecimSurukle(e) {
 function shSecimBirak(e, iptal) {
   const S2 = sh.sec, E = S2 && S2.el; if (!E || e.pointerId !== E.id) return;
   S2.el = null;
-  try { if (e.target && e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId); } catch (_) {}
+  try { if (E.hedef && E.hedef.releasePointerCapture) E.hedef.releasePointerCapture(E.id); } catch (_) {}
   if (sh.mod !== 'secim' || S2.secili) return;
-  if (E.kaydi || iptal) {   // atalet: bırakılan hızla biraz daha kayar, en yakın kavanoza oturur (parmak durup kalktıysa fırlatma yok)
-    if (performance.now() - E.sonT > 90) S2.v = 0;
+  // Seyrek pointermove veya dikey kaydırma da seçim sayılmaz; iptalde raf fırlamaz.
+  if (E.kaydi || E.hareket || iptal || Math.hypot(e.clientX - E.cx0, e.clientY - E.cy0) > SH_KAV_ESIK) {
+    if (iptal || performance.now() - E.sonT > 90) S2.v = 0;
     S2.v = clamp(S2.v, -14, 14);
     S2.hedef = clamp(Math.round(S2.kay + S2.v * 0.28), 0, S2.opts.length - 1);
     return;
   }
   shSecimDokun(e.clientX, e.clientY);
+}
+function shSecimIptal() {
+  const E = sh.sec && sh.sec.el;
+  if (E) shSecimBirak({ pointerId: E.id }, true);
 }
 function shSecimTus(e) {   // klavye yedeği: oklar rafı kaydırır, Enter / Boşluk ortadakini açar
   const S2 = sh.sec; if (sh.mod !== 'secim' || !S2 || S2.secili || S2.acil >= 0 || sh.t < 0.6) return;
@@ -3279,13 +3287,19 @@ if (typeof document !== 'undefined') {
     shCv.addEventListener('pointermove', e => { shMoverX = e.clientX; shMoverY = e.clientY; if (sh.mod === 'secim') shSecimSurukle(e); }, { passive: true });
     shCv.addEventListener('pointerup', e => shSecimBirak(e, false));
     shCv.addEventListener('pointercancel', e => shSecimBirak(e, true));
+    shCv.addEventListener('lostpointercapture', e => shSecimBirak(e, true));
     shCv.addEventListener('wheel', e => { if (sh.mod === 'secim') shSecimTeker(e); }, { passive: true });
   }
   addEventListener('keydown', e => { if (sh.mod === 'secim') shSecimTus(e); });
+  addEventListener('blur', shSecimIptal);
+  addEventListener('pagehide', shSecimIptal);
+  addEventListener('resize', shSecimIptal);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) shSecimIptal(); });
 }
 
 const SAHNE = {
   giris(bitince, opt) {
+    shSecimIptal();
     opt = opt || {};
     const bolum = opt.bolum || 1, kisa = opt.kisa === true || (bolum >= 2 && opt.kisa !== false);
     shBalonBirak();

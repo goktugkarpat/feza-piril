@@ -16,7 +16,7 @@
 'use strict';
 const DN9={gok:[],serit:{},serFx:{},chunks:new Map(),prep:0,fx:{},renk:0,fin:0,finT:null,dorukT:null,tamT:null,lit:[],kare:0,zeminKare:-9,
  yap:null,gun:0,gunHazir:false,pulSay:0,yavruSay:0,gunes:{x:0,y:0,r:60,sx:0,sy:0,sr:60},tab:null,ort:null,gokAlt:0,yk:0,izX:undefined,izDis:0,
- siluetS:0,onBos:null,dag:[]};
+ siluetS:0,onBos:null,dag:[],durumT:null,adim:0};
 const dn9Hash=v=>{const s=Math.sin(v*127.1+311.7)*43758.5453;return s-Math.floor(s);};   // sabit sözde rastgele (0..1)
 // palet (sözleşme): zümrüt-yeşim yeşilleri, Pırıl leylağı, fıstık yeşili, şeftali, gül, gök turkuazı, altın; kalp: lila-altın-nane
 const DN9_ZUMRUT='#3fbf8a',DN9_YESIM='#6fd8a8',DN9_KOYU='#2e8f6f',DN9_LILA='#b89cff',DN9_LILA2='#d9c8ff',DN9_FISTIK='#c8f08a',
@@ -71,6 +71,8 @@ OLAY.on('ejderFinal',()=>{if(DN9.finT===null)DN9.finT=now;});
 OLAY.on('ejderDoruk',()=>{DN9.dorukT=now;});
 OLAY.on('ejderTamam',()=>{if(DN9.tamT===null)DN9.tamT=now;});
 function dn9Durum(){
+ // 60 Hz görünümünü koruyan zaman temelli geçiş: yüksek tazelemede gök/ışık iki kat hızlanmaz.
+ const adim=DN9.durumT===null?0:clamp((now-DN9.durumT)*60,0,15);DN9.durumT=now;DN9.adim=adim;
  const v=dn9V9(),pt=v&&v.pulTop?v.pulTop:10,yt=v&&v.yavruTop?v.yavruTop:6;
  const pu=v?Math.max(v.pul||0,0):0,ya=v?Math.max(v.yavru||0,0):0;
  // olay kaçtıysa (test ya da kayıttan devam): açılmış çiçekleri ışık kaynağına ekle
@@ -81,12 +83,12 @@ function dn9Durum(){
  const f=clamp(pu/pt,0,1)*.5+clamp(ya/yt,0,1)*.5;
  // mini oyunlar ve yolculuk da vadiyi biraz daha aydınlatır
  const ek=v?((v.meyve?1:0)+(v.kanat?1:0)+(v.kolye?1:0)+(v.binis?1:0))*.025:0;
- const hedef=Math.max(Math.min(1,f*.9+ek),DN9.fin);DN9.renk+=(hedef-DN9.renk)*.03;if(Math.abs(hedef-DN9.renk)<.002)DN9.renk=hedef;
+ const hedef=Math.max(Math.min(1,f*.9+ek),DN9.fin);DN9.renk+=(hedef-DN9.renk)*(1-Math.pow(.97,adim));if(adim>0&&Math.abs(hedef-DN9.renk)<.002)DN9.renk=hedef;
  // günün saati: kameranın ortası (yumuşatılmış: ışınlanmada gök sıçramaz)
  const BI=dn9Binis();let hg=dn9GunX(cam.x+VW*.5);if(BI)hg=lerp(2.3,3.7,BI.u);
- if(!DN9.gunHazir){DN9.gun=hg;DN9.gunHazir=true;}else DN9.gun+=(hg-DN9.gun)*.04;
+ if(!DN9.gunHazir){DN9.gun=hg;DN9.gunHazir=true;}else DN9.gun+=(hg-DN9.gun)*(1-Math.pow(.96,adim));
  // yükseklik: yolculukta ve dağın tepesinde uzak dünya aşağıda kalır, bulut denizi görünür
- const cx=cam.x+VW*.5,yk=BI?1:smooth(clamp((cx-(DN9_GAP0-500))/900,0,1));DN9.yk+=(yk-DN9.yk)*.05;if(Math.abs(DN9.yk-yk)<.002)DN9.yk=yk;
+ const cx=cam.x+VW*.5,yk=BI?1:smooth(clamp((cx-(DN9_GAP0-500))/900,0,1));DN9.yk+=(yk-DN9.yk)*(1-Math.pow(.95,adim));if(adim>0&&Math.abs(DN9.yk-yk)<.002)DN9.yk=yk;
 }
 // Büyükanne yolculuğu (buyukanne.js BINIS9): etkinse {u: ilerleme 0..1, gb: gün batımı / siluet anı 0..1}
 const DN9_BI={u:0,gb:0};
@@ -979,7 +981,7 @@ function dn9Backdrop(tm){
  const A=dn9GunesHesap(tm,vw,vh);
  // siluet anı (buyukanne.js BUYUKANNE9.siluetAni 0..1): uzak katmanlar biraz alçalır, binicilerin ardında temiz gök ve güneş kalır
  let sa=DN9.yk>.5&&dn9Binis()?DN9_BI.gb:0;if(typeof BUYUKANNE9!=='undefined'&&BUYUKANNE9&&typeof BUYUKANNE9.siluetAni==='function'){try{sa=clamp(+BUYUKANNE9.siluetAni()||0,0,1);}catch(e){sa=0;}}
- DN9.siluetS+=(sa-DN9.siluetS)*.06;if(Math.abs(DN9.siluetS-sa)<.002)DN9.siluetS=sa;const aa=smooth(DN9.siluetS)*vh*.12;
+ DN9.siluetS+=(sa-DN9.siluetS)*(1-Math.pow(.94,DN9.adim));if(DN9.adim>0&&Math.abs(DN9.siluetS-sa)<.002)DN9.siluetS=sa;const aa=smooth(DN9.siluetS)*vh*.12;
  const tab=DN9.tab||(DN9.tab=[0,0,0,0,0,0]),yZ=dn9ZeminAlt(vh),sira=yk>.005?DN9_SIRAY:DN9_SIRA;
  for(let l=0;l<6;l++)tab[l]=DN9_SB[l]-cam.y*DN9_SYF[l]+yk*[40,160,720,920,0,640][l]+(l===4?(1-yk)*640-yk*30:aa);
  const ort=DN9.ort||(DN9.ort=[0,0,0,0,0,0]),gorunur=l=>l!==5||ws>.01;
@@ -1243,6 +1245,13 @@ function dn9OnBos(){
  for(const o of NESNELER){if(!/Mini$/.test(o.tip)&&o.tip!=='ejderYuva'&&o.tip!=='buyukanneBinis')continue;const a=Number.isFinite(o.x0)?o.x0:o.x-700,b=Number.isFinite(o.x1)?o.x1:o.x+700;L.push(Math.min(a,o.x-380)-220,Math.max(b,o.x+360)+220);}
  return DN9.onBos=L;
 }
+// Yaprak paralaksla kayar: uzaklık ekran üzerinde ölçülür. Çiçek ve yumurtalar da açıkta kalır.
+function dn9OnSaydamlik(sx,yar,px){
+ const L=DN9.onNes||(DN9.onNes=NESNELER.filter(o=>(o.tip==='pulCicek'||o.tip==='ejderYumurta')&&Number.isFinite(o.x)));
+ let d=Math.abs(sx-px)-yar;
+ for(const o of L){const e=Math.abs(sx-(o.x-cam.x))-yar;if(e<d)d=e;}
+ return .2+.68*smooth(clamp((d+20)/110,0,1));
+}
 function dn9Foreground(tm){
  if(!dn9Ready())return;const F=dn9FxArt(),vw=W/S,vh=H/S;dn9OnArt();
  const ucus=typeof P!=='undefined'&&!!P.ucus&&P.ucus.tip==='buyukanneBinis',gun=DN9.gun,ak=dn9AksamK(gun);
@@ -1257,9 +1266,9 @@ function dn9Foreground(tm){
   // Feza yükseğe çıkınca kamerayla birlikte yumuşakça aşağı kayıp ekrandan çıkar, inince yine yumuşakça girer (ekrana yapışıp havada kalmaz)
   const fb=1.1,left=cam.x*fb-160,right=cam.x*fb+vw+160,px=(Number.isFinite(P.rx)?P.rx:P.x);g.setTransform(S,0,0,S,-cam.x*S*fb,0);
   for(let q=Math.floor(left/680);q<=Math.ceil(right/680);q++){const R=rng(q*71+883),x=q*680+R()*200,wx=x/fb;if(wx>DN9_GAP0-200&&wx<DN9_GAP1+100)continue;
-   if(kacik(wx))continue;const near=Math.abs(wx-px)<170,k=.5+R()*.25,hk=150*k*1.35;
+   if(kacik(wx))continue;const k=.5+R()*.25,hk=150*k*1.35,al=dn9OnSaydamlik(x-cam.x*fb,140*k*1.35,px-cam.x);
    const yb=Math.min(dn9Surface(wx-120),dn9Surface(wx),dn9Surface(wx+120))+95,sy=Math.max(vh+30,vh*.85+((yb-cam.y)-vh*.85)*fb);if(sy-hk>vh+4)continue;   // en yukarı eski yerine (vh+30) çıkar: alt kenarı hiç görünmez
-   g.save();g.translate(x,sy);g.rotate(Math.sin(tm*.35+q)*.015);g.globalAlpha=near?.2:.88;g.drawImage(F.on[Math.abs(q)%2],-140*k*1.35,-hk,280*k*1.35,hk);g.restore();}
+   g.save();g.translate(x,sy);g.rotate(Math.sin(tm*.35+q)*.015);g.globalAlpha=al;g.drawImage(F.on[Math.abs(q)%2],-140*k*1.35,-hk,280*k*1.35,hk);g.restore();}
   g.globalAlpha=1;
  }
  // ekran geneli: günün ışığı (sabah altın, şelalede nane serinliği, adalarda şeftali, gün batımında turuncu, alacakaranlıkta mor) ve ışık arttıkça sıcaklık

@@ -686,13 +686,22 @@ addEventListener('pointermove', e => {
 function kdBirakE(e) {
   const o = KARDAN.aktif; if (!o || e.pointerId !== KARDAN.ptr) return; kdSahip(e);
   const k = o.kd, b = k.top;
+  // Son hareket ile bırakış aynı kareye denk gelse de kar topunun aldığı mesafe kaybolmasın.
+  const son = kdDunya(e), dx = son.x - KARDAN.px, dy = son.y - KARDAN.py, mesafe = Math.hypot(dx, dy);
+  if (Number.isFinite(mesafe) && mesafe <= 200) { KARDAN.yol += mesafe; KARDAN.ox += dx; KARDAN.oy += Math.abs(dy); }
+  if (k.faz === 'top' && b && (b.durum === 'yuvarla' || b.durum === 'git')) kdTopIlerle(o, KARDAN.ox, KARDAN.oy * 0.7);
+  KARDAN.ox = KARDAN.oy = 0;
   if (KARDAN.yol < 10 && k.t - KARDAN.pt < 0.45 && k.faz === 'top' && b && (b.durum === 'yuvarla' || b.durum === 'git')) {   // kısa dokunuş: top hafifçe itilir (yuvarlanıp büyür)
-    const p = kdDunya(e); let d = Math.sign(b.x - p.x) || 1; const [lo, hi] = kdTopSinir(o, b); if (Math.abs(b.x - p.x) < b.r + 10) d = b.x > (lo + hi) / 2 ? -1 : 1; if (b.x >= hi - 3) d = -1; else if (b.x <= lo + 3) d = 1;
-    b.v = d * 190; b.sq = 0.5;
+    if (b.durum === 'git') { b.otoBek = 0; b.sq = 0.5; }   // büyüyen top yerine giderken art arda dokunuşlar onu geri itip yerleşmeyi engellemesin
+    else {
+      const p = kdDunya(e); let d = Math.sign(b.x - p.x) || 1; const [lo, hi] = kdTopSinir(o, b); if (Math.abs(b.x - p.x) < b.r + 10) d = b.x > (lo + hi) / 2 ? -1 : 1; if (b.x >= hi - 3) d = -1; else if (b.x <= lo + 3) d = 1;
+      b.v = d * 190; b.sq = 0.5;
+    }
   }
   kdGirdiBirak();
 }
-addEventListener('pointerup', kdBirakE, true); addEventListener('pointercancel', kdBirakE, true);
+addEventListener('pointerup', kdBirakE, true);
+addEventListener('pointercancel', e => { if (e.pointerId !== KARDAN.ptr) return; kdSahip(e); kdGirdiBirak(); }, true);
 cv.addEventListener('lostpointercapture', e => { if (e.pointerId === KARDAN.ptr) kdGirdiBirak(); });
 addEventListener('blur', () => { if (KARDAN.ptr >= 0 || KARDAN.tus) kdGirdiBirak(); });
 addEventListener('pagehide', () => { if (KARDAN.ptr >= 0 || KARDAN.tus) kdGirdiBirak(); });

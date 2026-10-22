@@ -257,15 +257,18 @@ function dn2BgStars(tm) {
 // ── takımyıldızı: uyanan yıldızlar gökte yerini alır ──
 const DN2_SC = ['#fff2c8', '#cfe8ff', '#ffd0f0', '#c8fff0', '#ffe0a0', '#d8d0ff'];
 const dn2Ring = { a: 0 };
+const dn2StarStates = [], dn2ActiveStates = [];   // gök ve su geçişleri aynı geçici kayıtları yeniden kullanır
 function dn2StarState(o, i) {   // null | {age, x, y}
   const t = dn2PutT(o, i); if (t === null || now < t) return null;
-  const p = dn2SkyPt(o, {}); if (!isFinite(p.x) || !isFinite(p.y) || !isFinite(now - t)) return null; return { age: now - t, x: p.x, y: p.y };
+  const p = dn2SkyPt(o, dn2StarStates[i] || (dn2StarStates[i] = { age: 0, x: 0, y: 0 }));
+  if (!isFinite(p.x) || !isFinite(p.y) || !isFinite(now - t)) return null; p.age = now - t; return p;
 }
 function dn2Constellation(tm, hyPx, refl, rsy) {   // refl: suda yansıma (rsy = su çizgisi); değilse gökte
   const L = dn2StarList(), E = dn2EdgesGet(); if (!L.length) return;
   const F = refl ? 1 : 0, ay = refl ? 0.3 : 1;
   const my = y => refl ? hyPx + (1 - y / hyPx) * (H - hyPx) : y;
-  const st = []; for (let i = 0; i < L.length; i++) st.push(dn2StarState(L[i], i));
+  const st = dn2ActiveStates; st.length = L.length;
+  for (let i = 0; i < L.length; i++) st[i] = dn2StarState(L[i], i);
   g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
   // çizgiler: yeni yıldız eski yıldıza doğru uzanır
   for (let e = 0; e < E.length; e++) {

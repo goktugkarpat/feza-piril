@@ -675,7 +675,9 @@ function kl9Kamera(o) {
 function kl9Guncelle(o, dt) {
   if (!(dt > 0) || !Number.isFinite(dt)) return;
   dt = Math.min(dt, 0.05);
-  const k = o.kl; k.t += dt;
+  const k = o.kl;
+  if (DURUM !== 'oyun' && (k.aktif || k.faz === 'parla')) return;   // sarılma ve tamamlanma, mola/menü arkasında ilerlemesin
+  k.t += dt;
   const gorunur = typeof cam !== 'undefined' && o.x > cam.x - 800 && o.x < cam.x + VW + 800;
   kl9EfektAdim(dt);
   if (k.faz !== 'parla' && k.faz !== 'bitti') { const B = k.bn; B.x = o.x + KL9_BX; B.y = o.y; B.poz = 'otur'; B.kalk = 0; B.yon = -1; B.kanat = B.sevT > 0 ? 0.25 : 0; }
@@ -851,15 +853,20 @@ function kl9BirakE(e) {
   const o = KOLYE.aktif; if (!o || e.pointerId !== KOLYE.ptr) return; kl9Sahip(e);
   const k = o.kl, p = KOLYE.tut;
   if (p && p.durum === 'tut') {
-    const [yx, yy] = kl9Yuva(o, p.b), d = Math.hypot(yx - p.x, yy - p.y), kisa = KOLYE.yol < 14 && k.t - KOLYE.pt < 0.5;
-    let yanlis = -1, yd = KL9_YANLIS * 1.25; for (let j = 0; j < 5; j++) { if (j === p.b) continue; const [jx, jy] = kl9Yuva(o, j), dj = Math.hypot(jx - p.x, jy - p.y); if (dj < yd && dj < d) { yd = dj; yanlis = j; } }
+    // Pul parmağı yumuşakça izler. Hızlı bırakışta henüz yetişmemiş çizim yerine gerçek parmak konumunu değerlendir.
+    const q = kl9Dunya(e), sonlu = Number.isFinite(q.x) && Number.isFinite(q.y);
+    const px = sonlu ? q.x + p.hx * 0.5 : KOLYE.hx, py = sonlu ? q.y + p.hy * 0.5 : KOLYE.hy;
+    if (sonlu) KOLYE.yol += Math.hypot(q.x - KOLYE.px, q.y - KOLYE.py);
+    const [yx, yy] = kl9Yuva(o, p.b), d = Math.hypot(yx - px, yy - py), kisa = KOLYE.yol < 14 && k.t - KOLYE.pt < 0.5;
+    let yanlis = -1, yd = KL9_YANLIS * 1.25; for (let j = 0; j < 5; j++) { if (j === p.b) continue; const [jx, jy] = kl9Yuva(o, j), dj = Math.hypot(jx - px, jy - py); if (dj < yd && dj < d) { yd = dj; yanlis = j; } }
     if (kisa) kl9PulUc(o, p, 'dokun');
     else if (yanlis >= 0) { KOLYE.tut = null; kl9YanlisYuva(o, p, yanlis); }
-    else if (d < 130 || d < KOLYE.tutUzak * 0.5 || Math.hypot(k.gx - p.x, k.gy - p.y) < 120) kl9PulUc(o, p, 'birak');   // kolyeye doğru götürüldü: kendi yuvasına süzülür
+    else if (d < 130 || d < KOLYE.tutUzak * 0.5 || Math.hypot(k.gx - px, k.gy - py) < 120) kl9PulUc(o, p, 'birak');   // kolyeye doğru götürüldü: kendi yuvasına süzülür
   }
   kl9GirdiBirak();
 }
-addEventListener('pointerup', kl9BirakE, true); addEventListener('pointercancel', kl9BirakE, true);
+addEventListener('pointerup', kl9BirakE, true);
+addEventListener('pointercancel', e => { if (e.pointerId !== KOLYE.ptr) return; kl9Sahip(e); kl9GirdiBirak(); }, true);
 cv.addEventListener('lostpointercapture', e => { if (e.pointerId === KOLYE.ptr) kl9GirdiBirak(); });
 addEventListener('blur', () => { if (KOLYE.ptr >= 0) kl9GirdiBirak(); });
 addEventListener('pagehide', () => { if (KOLYE.ptr >= 0) kl9GirdiBirak(); });

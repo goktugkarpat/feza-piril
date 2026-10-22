@@ -73,10 +73,12 @@ function dugmede(x, y) {
 }
 function omYuva(id) { for (const t of OM_PARMAK) if (t.aktif && t.id === id) return t; return null; }
 cv.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
   e.preventDefault();
   if (DURUM === 'baslik') {
     // ebeveyn: sol üst köşe 3 sn basılı = kayıtları sıfırla
     if (e.clientY < 110 && e.clientX < 110) {
+      try { cv.setPointerCapture(e.pointerId); } catch (_) { /* pencere dışındaki bırakmayı da yakala */ }
       clearTimeout(omKoseT);
       omKoseT = setTimeout(() => { try { for (const k of ['fezaIsikTamam', 'fezaIsikBitti1', 'fezaIsikBolum', 'fezaIsikSon']) localStorage.removeItem(k); } catch (_) {} location.replace(location.pathname); }, 3000);
       return;
@@ -98,12 +100,25 @@ cv.addEventListener('pointerdown', e => {
 });
 let omKoseT = 0;
 function omBirak(e) { clearTimeout(omKoseT); const t = omYuva(e.pointerId); if (t) t.aktif = false; }
-cv.addEventListener('pointermove', e => { const t = omYuva(e.pointerId); if (t) { t.x = e.clientX; t.y = e.clientY; } });
+cv.addEventListener('pointermove', e => {
+  // Gizli ebeveyn köşesinden sürükleyerek çıkmak sıfırlama isteğini iptal eder.
+  if (omKoseT && (e.clientX < 0 || e.clientY < 0 || e.clientX >= 110 || e.clientY >= 110)) { clearTimeout(omKoseT); omKoseT = 0; }
+  const t = omYuva(e.pointerId); if (t) { t.x = e.clientX; t.y = e.clientY; }
+});
 cv.addEventListener('pointerup', omBirak); cv.addEventListener('pointercancel', omBirak);
 cv.addEventListener('lostpointercapture', omBirak);
 cv.addEventListener('contextmenu', e => e.preventDefault());
-function omHepsiniBirak() { for (const t of OM_PARMAK) t.aktif = false; for (const k in keys) keys[k] = false; omYon = 0; }
-OLAY.on('durum', d => { if (d !== 'oyun') for (const t of OM_PARMAK) t.aktif = false; });
+function omHepsiniBirak() {
+  // Pencere odağı kaybolduğunda bekleyen köşe sıfırlaması ve zıplama da iptal edilir.
+  // Aksi halde uygulamadan çıkarken kayıt silinebilir veya dönüşte kendiliğinden zıplanabilir.
+  clearTimeout(omKoseT); omKoseT = 0;
+  for (const t of OM_PARMAK) t.aktif = false;
+  for (const k in keys) keys[k] = false;
+  omYon = axis = 0; jumpHeld = jumpPressed = false; P.buf = 0;
+  GIRDI.eksen = 0; GIRDI.ziplaBasili = GIRDI.dugme.basili = false;
+  GIRDI.hedefX = GIRDI.hedefY = null;
+}
+OLAY.on('durum', d => { if (d !== 'oyun') omHepsiniBirak(); });
 addEventListener('blur', omHepsiniBirak);
 // Duraklatma: sekme/uygulama gizlenince parmaklar bırakılır, benzetim durur (frame'de raw=0); geri gelince ilk kare 1/60 sn
 // sayılır → zaman sıçraması yok. pageshow: iPad'de geri-ileri önbelleğinden dönüş.

@@ -1009,7 +1009,9 @@ function kz8Kamera(o) {
 function kz8Guncelle(o, dt) {
   if (!(dt > 0) || !Number.isFinite(dt)) return;
   dt = Math.min(dt, 0.05);
-  const k = o.kz; k.t += dt;
+  const k = o.kz;
+  if (DURUM !== 'oyun' && (k.aktif || k.faz === 'puf' || k.faz === 'ucus')) return;
+  k.t += dt;
   const gorunur = typeof cam !== 'undefined' && o.x > cam.x - 760 && o.x < cam.x + VW + 760;
   kz8EfektAdim(dt);
   kz8IksirAdim(o, dt, gorunur);
@@ -1189,12 +1191,17 @@ function kz8BirakE(e) {
   const o = KAZAN.aktif; if (!o || e.pointerId !== KAZAN.ptr) return; kz8Sahip(e);
   const k = o.kz, m = KAZAN.tut;
   if (m && m.durum === 'tut') {
-    const [mx, my] = kz8Kagiz(o), d = Math.hypot(mx - m.x, my - m.y), kisa = KAZAN.yol < 18;   // kıpırdamadan basılı tutup bırakmak da dokunuş sayılır (5 yaş: uzun basar)
+    // Çizim parmağı yumuşakça izler; hızlı bırakışın hedefi son parmak konumudur.
+    const q = kz8Dunya(e), sonlu = Number.isFinite(q.x) && Number.isFinite(q.y);
+    const x = sonlu ? q.x + m.hx * 0.6 : KAZAN.hx, y = sonlu ? q.y + m.hy * 0.6 : KAZAN.hy;
+    if (sonlu) KAZAN.yol += Math.hypot(q.x - KAZAN.px, q.y - KAZAN.py);
+    const [mx, my] = kz8Kagiz(o), d = Math.hypot(mx - x, my - y), kisa = KAZAN.yol < 18;   // kıpırdamadan basılı tutup bırakmak da dokunuş sayılır (5 yaş: uzun basar)
     if (kisa || d < KZ8_BIRAK || d < KAZAN.tutUzak * 0.65) kz8MalzUc(o, m, kisa ? 'dokun' : 'birak');
   }
   kz8GirdiBirak();
 }
-addEventListener('pointerup', kz8BirakE, true); addEventListener('pointercancel', kz8BirakE, true);
+addEventListener('pointerup', kz8BirakE, true);
+addEventListener('pointercancel', e => { if (e.pointerId !== KAZAN.ptr) return; kz8Sahip(e); kz8GirdiBirak(); }, true);
 cv.addEventListener('lostpointercapture', e => { if (e.pointerId === KAZAN.ptr) kz8GirdiBirak(); });
 addEventListener('blur', () => { if (KAZAN.ptr >= 0) kz8GirdiBirak(); });
 addEventListener('pagehide', () => { if (KAZAN.ptr >= 0) kz8GirdiBirak(); });

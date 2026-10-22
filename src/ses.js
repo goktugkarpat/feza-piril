@@ -621,9 +621,16 @@ const SES = (() => {
     if (!window.VOICE_MP3) return;
     const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c', 9: 'e' }[bn] || '';
     const baska = k => { if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; if (ses9Aile(k)) return harf === 'e' ? 0 : 1; const m = /^[pa]_([ybivfkce])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
-    const ks = Object.keys(LINES).filter(k => VOICE_MP3[k]).sort((a, b) => baska(a) - baska(b));
+    // Diğer rüyalar sayfa yenilenerek açılır: onların PCM kayıtlarını bu oturumda
+    // çözmek gereksiz iş ve bellektir. Beklenmeyen bir söz yine istenince çözülür.
+    const ks = Object.keys(LINES).filter(k => VOICE_MP3[k] && !baska(k));
     let i = 0;
-    const adim = () => { if (i >= ks.length) return; sesCozumle(ks[i++]).then(() => setTimeout(adim, 30)); };
+    const adim = () => {
+      if (i >= ks.length) return;
+      const ac = typeof AU !== 'undefined' && AU.baglam && AU.baglam();
+      if (document.hidden || !ac || ac.state !== 'running') { setTimeout(adim, 500); return; }
+      sesCozumle(ks[i++]).then(() => setTimeout(adim, 90));
+    };
     if (typeof AU !== 'undefined' && AU.baglam && AU.baglam()) adim();
     else if (++sesOncedenDene < 40) setTimeout(sesOnceden, 500);   // ses bağlamı henüz yok: sonra yeniden dene
   }
@@ -770,7 +777,7 @@ const SES = (() => {
     // acil cümle: çalan oyun cümlesini gerekirse yumuşakça kes
     const c = sesCalan;
     if (c && s.acil >= 2 && c.oncelik < 3 && c.acil < 2) {
-      const kalan = c.bas ? c.bas + c.sure - t : c.sure;
+      const kalan = Math.max(0, c.sure - sesGecen(c));
       const eskidi = (c.konu && c.konu === s.konu) || !!sesGecerli(Object.assign({}, c, { son: 1e9 }));
       if (kalan > SES_BEKLE && !eskidi && c.oncelik === 2 && c.acil === 0 && !c.kez && !sesKritikMi(c)) {   // kesilecek talimat sonra bir kez daha söylenir
         sesSira.push(Object.assign({}, c, { t, son: t + 12, kez: 1, bas: 0, kesZ: 0 })); sesNot('sira', c.k, 'kesilecek, yeniden');
@@ -779,7 +786,7 @@ const SES = (() => {
     } else if (c && s.acil >= 1 && c.oncelik < 3 && c.acil < 1) {
       // olay tepkisi (taze haber) geldi: çalan talimat cümle sonunda susar. Konusu bittiyse (ör. "üstüne zıpla" derken Pofuduk uyandı) bir daha
       // söylenmez; bitmediyse ve uzunsa sonra bir kez yeniden sıraya girer.
-      const kalan = c.bas ? c.bas + c.sure - t : c.sure, bitti = !!(c.o && c.o.konu && sesKonuBitti(c.o.konu)) || !!sesGecerli(Object.assign({}, c, { son: 1e9 }));
+      const kalan = Math.max(0, c.sure - sesGecen(c)), bitti = !!(c.o && c.o.konu && sesKonuBitti(c.o.konu)) || !!sesGecerli(Object.assign({}, c, { son: 1e9 }));
       if (kalan > SES_BEKLE && !bitti && c.oncelik === 2 && !c.kez && !ovguMu(c.k) && !sesKritikMi(c)) { sesSira.push(Object.assign({}, c, { t, son: t + 12, kez: 1, bas: 0, kesZ: 0 })); sesNot('sira', c.k, 'kesilecek, yeniden'); }
       sesYumusakKes((bitti ? 'eskidi: ' : 'olay: ') + k, s);
     } else if (c && oncelik >= 3 && c.oncelik < 3) sesYumusakKes('sahne', s);   // anlatıcı/sahne cümlesi gelirse oyun cümlesi cümle sonunda susar
@@ -820,16 +827,32 @@ const SES = (() => {
   const sesSirada = k => sesSira.some(q => q.k === k);
   const sesHalaGecerli = c => !sesGecerli(Object.assign({}, c, { son: 1e9 }));
   function sesKritikMi(c) { if (!c || !SES_KRITIK[c.k]) return false; try { return !!SES_KRITIK[c.k](c); } catch (e) { return false; } }
+  function sesGecen(c) {
+    // Telefon/sekme kesintisinde duvar saati ilerler, duyulan kaydın saati durur.
+    if (sesCalan === c && sesKaynak && Number.isFinite(c.sesBas)) return Math.max(0, sesKaynak.ac.currentTime - c.sesBas);
+    return c.bas ? Math.max(0, sesSaat() - c.bas) : 0;
+  }
+  function sesSinirdaKes(c, sinir, neden) {
+    if (sesCalan !== c) return;
+    const kalan = sinir - sesGecen(c);
+    if (document.hidden || (sesKaynak && sesKaynak.ac.state !== 'running') || kalan > 0.015) {
+      const bekle = document.hidden || (sesKaynak && sesKaynak.ac.state !== 'running') ? 250 : Math.max(30, Math.min(250, kalan * 1000));
+      c.kesZ = setTimeout(() => sesSinirdaKes(c, sinir, neden), bekle);
+      return;
+    }
+    c.kesZ = null;
+    sesKes(neden + ' (cümle sonunda)');
+  }
   function sesYumusakKes(neden, s, zorla) {
     const c = sesCalan; if (!c) return;
-    const t = sesSaat(), kalan = c.bas ? c.bas + c.sure - t : c.sure;
+    const t = sesSaat(), kalan = Math.max(0, c.sure - sesGecen(c));
     let ne = kalan;   // yeni cümle en geç ne zaman başlayabilir
     const kritik = !zorla && sesKritikMi(c);
     if (kalan > SES_BEKLE && !kritik) {
-      const simdi = c.bas ? t - c.bas : 0, b = sesCumleSinirlari(c).find(x => x > simdi + 0.05 && x < c.sure - 0.6);
+      const simdi = sesGecen(c), b = sesCumleSinirlari(c).find(x => x > simdi + 0.05 && x < c.sure - 0.6);
       if (b != null) {
-        ne = (c.bas || t) + b - t;
-        if (!c.kesZ) c.kesZ = setTimeout(() => { if (sesCalan === c) sesKes(neden + ' (cümle sonunda)'); }, Math.max(0, ne * 1000));
+        ne = b - simdi;
+        if (!c.kesZ) c.kesZ = setTimeout(() => sesSinirdaKes(c, b, neden), Math.max(0, ne * 1000));
       } else if (zorla) { sesKes(neden); return; }   // oyun bitti ve cümle sonu yok: yumuşakça sus
     }
     if (s) s.son = Math.max(s.son, t + ne + 2.5);
@@ -857,19 +880,20 @@ const SES = (() => {
   }
   function sesBitti() {
     if (sesBitisZ) { clearTimeout(sesBitisZ); sesBitisZ = null; }
-    if (sesCalan) { sesSonBitis = sesSaat(); if (ovguMu(sesCalan.k)) sesSonOvgu = sesSonBitis; sesSonSure = sesCalan.bas ? clamp(sesSonBitis - sesCalan.bas, 0, sesCalan.sure) : 0; }
+    if (sesCalan) { if (sesCalan.kesZ) clearTimeout(sesCalan.kesZ); sesSonBitis = sesSaat(); if (ovguMu(sesCalan.k)) sesSonOvgu = sesSonBitis; sesSonSure = clamp(sesGecen(sesCalan), 0, sesCalan.sure); }
     sesCalan = null; sesKaynak = null;
     if (typeof AU !== 'undefined' && AU.kis) AU.kis(false);
     sesTik();
   }
   // her 0,1 sn: çalanı denetle; sıradakini, nefes payı dolunca başlat
   function sesTik() {
-    if (sesCalan) { if (!sesSert(sesCalan) && !sesCalan.bitti) { sesCalan.bitti = 1; sesYumusakKes('oyun bitti', null, true); } return; }
-    if (!sesSira.length) return;
     const baglam = typeof AU !== 'undefined' && AU.baglam && AU.baglam();
-    const hazir = baglam && baglam.state === 'running';
+    const hazir = !document.hidden && baglam && baglam.state === 'running';
     // Kilitli ses cümleyi sessizlikte tüketmesin. Yer/konu/sahne koşulları yine denetlenir.
     for (const s of sesSira) if (sesSesli(s.k)) sesBeklemeSuresi(s, !hazir);
+    if (document.hidden) return;
+    if (sesCalan) { if (!sesSert(sesCalan) && !sesCalan.bitti) { sesCalan.bitti = 1; sesYumusakKes('oyun bitti', null, true); } return; }
+    if (!sesSira.length) return;
     sesSira = sesSira.filter(s => { const n = sesGecerli(s); if (n) sesNot('at', s.k, n); return !n; });
     if (!sesSira.length) return;
     sesSira.sort(sesSirala);
@@ -893,6 +917,7 @@ const SES = (() => {
     sesCalan = s;
     sesCozumle(s.k).then(buf => {
       if (sesCalan !== s) return;
+      if (document.hidden) { sesGeriBeklet(s, 'kilitli'); return; }
       const gecersiz = sesGecerli(s);
       if (gecersiz) { sesNot('at', s.k, gecersiz); sesCalan = null; sesTik(); return; }
       let ac = null;
@@ -914,6 +939,7 @@ const SES = (() => {
           src.connect(gg); gg.connect(AU.sesCikis());
           AU.kis(true, kim);
           src.start(tStart);   // müzik önce kısılsın
+          s.sesBas = tStart;
           sesKaynak = { s: src, g: gg, ac };
           sesSonu = tStart + sure + .3;
           src.onended = () => { if (sesCalan === s) sesBitti(); };
@@ -936,6 +962,9 @@ const SES = (() => {
     });
   }
   setInterval(sesTik, 100);
+  // Arka planda zamanlayıcılar tamamen durabilir; bekleme süresini gizlenme
+  // anında işaretle ki geri dönülen ilk karede talimat eskimiş sayılmasın.
+  document.addEventListener('visibilitychange', sesTik);
   OLAY.on('sesHazir', () => { for (const s of sesSira) s.sesDeneT = 0; sesTik(); });
 
   // oyun olaylarından durum

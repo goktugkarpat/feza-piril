@@ -406,7 +406,7 @@ function kn9Birak(o, tamam) {   // güvenli dönüş: Feza tepenin solunda, sağ
     fs.havada = false; fs.vx = fs.vy = 0; fs.x = kn9Kx(o); fs.y = kn9Zemin(o, fs.x); fs.rot = 0; fs.dans = 0;   // Fıstık yuvasına döner
   }
 }
-function kn9GirdiBirak() { if (typeof omHepsiniBirak === 'function') { try { omHepsiniBirak(); } catch (e) {} } }
+function kn9GirdiBirak() { KN9_PARMAK.clear(); const o = KANAT.o; if (o && o.kn) o.kn.tus = false; if (typeof omHepsiniBirak === 'function') { try { omHepsiniBirak(); } catch (e) {} } }
 
 // kanat çırpışı (çocuğun dokunuşu ya da Pırıl'ın yardımı)
 function kn9Cirp(o, yardim) {
@@ -488,7 +488,9 @@ function kn9FsAnim(o, fs, dt, t) {
 function kn9Guncelle(o, dt) {
   if (!(dt > 0) || !Number.isFinite(dt)) return;
   dt = Math.min(dt, 0.05);
-  const k = o.kn, fs = k.fs; k.t += dt; kn9ParcaAdim(dt);
+  const k = o.kn, fs = k.fs;
+  if (k.aktif && DURUM !== 'oyun') return;
+  k.t += dt; kn9ParcaAdim(dt);
   if (!KN9_S.hazir && Math.abs(P.x - o.x) < 2600) kn9HazirlaAdim();
   k.fzSev = Math.max(0, k.fzSev - dt);
   for (const c of k.cicek) {   // belirme, açılma yayı
@@ -812,7 +814,9 @@ addEventListener('pointerdown', e => {
 }, true);
 function kn9ParmakBirak(e) { KN9_PARMAK.delete(e.pointerId); }
 addEventListener('pointerup', kn9ParmakBirak, true); addEventListener('pointercancel', kn9ParmakBirak, true);
-addEventListener('blur', () => { KN9_PARMAK.clear(); const o = KANAT.o; if (o && o.kn) o.kn.tus = false; });
+addEventListener('blur', kn9GirdiBirak);
+addEventListener('pagehide', kn9GirdiBirak);
+document.addEventListener('visibilitychange', () => { if (document.hidden) kn9GirdiBirak(); });
 addEventListener('keydown', e => {
   const o = KANAT.aktif; if (!o || DURUM !== 'oyun' || e.target && /^(BUTTON|INPUT|SELECT|TEXTAREA|A)$/.test(e.target.tagName)) return;
   if (!/^(Space|Enter|KeyE|ArrowLeft|ArrowRight|ArrowUp|ArrowDown|KeyW|KeyA|KeyS|KeyD)$/.test(e.code)) return;
@@ -820,7 +824,7 @@ addEventListener('keydown', e => {
   if (/^(Space|Enter|KeyE|ArrowUp|KeyW)$/.test(e.code)) { o.kn.tus = true; if (!e.repeat) kn9Cirp(o, false); }
 }, true);
 addEventListener('keyup', e => { const o = KANAT.o; if (o && o.kn && /^(Space|Enter|KeyE|ArrowUp|KeyW)$/.test(e.code)) o.kn.tus = false; }, true);
-OLAY.on('durum', d => { if (d === 'oyun') return; const o = KANAT.aktif; if (o && d !== 'mola' && d !== 'duraklat') kn9Birak(o, false); });
+OLAY.on('durum', d => { if (d === 'oyun') return; const o = KANAT.aktif; if (o && d !== 'mola' && d !== 'duraklat') kn9Birak(o, false); kn9GirdiBirak(); });
 OLAY.on('konusma', e => { const o = KANAT.o; if (o && o.kn && e && typeof e.anahtar === 'string' && /^fs_/.test(e.anahtar)) o.kn.fs.konus = clamp(+e.sure || 2, 0.5, 6); });   // Fıstık'ın sesi (CORE): ağzı oynar
 
 // Kamera: P.ucus doluyken oyun.js "uçuş kamerası" kadrajı ezer; uçma dersinde dikkat kadrajı geçerli olsun (iskelet.js'teki
