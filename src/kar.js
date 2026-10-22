@@ -483,7 +483,10 @@ TUR.kaydet('karYavru', {
       }
     }
     if (m.durum === 'firla') {   // kardan fırlayış: yay yukarı, yığının tepesine iner, sonra silkinir
-      if (m.uyanT < dt * 1.5 && !m.sic) kySicra(o, o.x + (o.yon || 1) * 4, o.y - o.h, 95, .75);
+      if (m.uyanT < dt * 1.5 && !m.sic) {   // yığından yana, kara iner (tepede kalırsa minderden geri düşen Feza'nın ayağının altında kalıyordu)
+        const yn = -(P.f || 1), x1 = o.x + yn * (o.w * .5 + 30), zy = typeof gyZeminTam === 'function' ? gyZeminTam(x1, o.y - 10) : null;
+        if (zy != null && Math.abs(zy - o.y) < 1.5 * T) { m.yon = -yn; kySicra(o, x1, zy, 105, .8); } else kySicra(o, o.x + (o.yon || 1) * 4, o.y - o.h, 95, .75);
+      }
       if (!m.sic && m.uyanT > .8) { m.durum = 'silk'; m.silk = 1; burst(m.ax, m.ay - 14, 10, ['#ffffff', '#e8f0ff'], 80, .7, 4); }
       return;
     }
@@ -497,8 +500,8 @@ TUR.kaydet('karYavru', {
     // takip: bölüm boyunca Feza'nın arkasında, uyanma sırasına göre dizilip hop hop (kızak yolculuğunda yerinde bekler;
     // kardan adam yapılırken de motor P.ucus kurar ama Feza yerindedir: yavrular gelip arkasında izler)
     if (m.sic || DURUM !== 'oyun' || (P.ucus && P.ucus.tip !== 'kardanMini')) return;
-    const f = P.f || 1, hx = P.x - f * (60 + m.k * 38), hdx = hx - m.ax, ad = Math.abs(hdx);
-    const uzak = Math.abs(P.x - m.ax) > 470 + m.k * 38 || Math.abs(P.y - m.ay) > 6 * T;
+    const f = P.f || 1, ara = kyTakipAra(m.k), hx = P.x - f * ara, hdx = hx - m.ax, ad = Math.abs(hdx);
+    const uzak = Math.abs(P.x - m.ax) > 410 + ara || Math.abs(P.y - m.ay) > 6 * T;
     m.uzakT = uzak && P.ground ? m.uzakT + dt : 0;
     if (m.uzakT > .45 + m.k * .12) { m.uzakT = 0; kyGeriGel(o); return; }
     m.hopT -= dt;
@@ -506,7 +509,11 @@ TUR.kaydet('karYavru', {
     if (ad > 26) {   // hedefe hop: uzaksa iri ve sık adımlar (Feza'nın koşusuna yetişir)
       m.hopT = ad > 140 ? .02 + Math.random() * .05 : .08 + Math.random() * .1;
       const st = clamp(hdx, -135, 135), nx = m.ax + st, ny = kyZemin(nx, m.ay);
-      if (ny != null && Math.abs(ny - m.ay) < 3.2 * T) { kySicra(o, nx, ny, 18 + Math.abs(st) * .12 + Math.max(0, m.ay - ny) * .6 + Math.random() * 8, .26 + Math.abs(st) / 600); return; }
+      if (ny != null && Math.abs(ny - m.ay) < 3.2 * T) {
+        let h = 18 + Math.abs(st) * .12 + Math.max(0, m.ay - ny) * .6 + Math.random() * 8;
+        if (Math.abs(P.y - m.ay) < 50 && ((m.ax - P.x) * (nx - P.x) < 0 || Math.abs(nx - P.x) < 30)) h = Math.max(h, 82 + Math.random() * 12);   // Feza'nın içinden değil üstünden atlar
+        kySicra(o, nx, ny, h, .26 + Math.abs(st) / 600); return;
+      }
       // boşluk ya da yüksek basamak: ileride inilecek yer ara (yoksa bekler; çok geride kalırsa uzun sıçrayış yetiştirir)
       const yn = st > 0 ? 1 : -1;
       for (let j = 1; j <= 7; j++) {
@@ -546,8 +553,18 @@ TUR.kaydet('karYavruCiz', {
   ciz(v) { const m = v.ana.ky; if (m.durum === 'bitti' || (m.sic && (m.ax < cam.x - 200 || m.ax > cam.x + VW + 200))) return; kyYavruCiz(v.ana); },
 });
 // Çok geride kaldı / kızaktan döndü: Feza'nın arkasına ışık izli uzun sıçrayış (ekranda değilse ekran dışından gelir)
+// Takip sırası: yavrular Feza'nın arkasında eşlik eden geyiğin ve kardan adamın da arkasında, aralıklı bir dizi olur
+// (eskiden 38 birim arayla geyiğin üstüne yığılıp tek topak görünüyorlardı).
+function kyTakipAra(k) {
+  let bas = 62;
+  const gy = typeof GEYIK !== 'undefined' && GEYIK.o && GEYIK.o.gy;
+  if (gy && gy.durum === 'eslik' && gy.alpha > .3) bas = 158;
+  const kd = typeof KARDAN !== 'undefined' && KARDAN && KARDAN.takipci;
+  if (kd && !kd.gizle && !kd.gizli && (kd.alpha == null || kd.alpha > .3)) bas = 232;
+  return bas + k * 46;
+}
 function kyGeriGel(o) {
-  const m = o.ky, f = P.f || 1, tx = P.x - f * (60 + m.k * 38), vw = typeof VW !== 'undefined' ? VW : 1000;
+  const m = o.ky, f = P.f || 1, tx = P.x - f * kyTakipAra(m.k), vw = typeof VW !== 'undefined' ? VW : 1000;
   let ty = typeof gyZeminTam === 'function' ? gyZeminTam(tx, P.y) : P.y, x1 = tx;
   if (ty == null || Math.abs(ty - P.y) > T * 1.5) { x1 = P.x - f * 24; ty = P.y; }
   if (Math.abs(m.ax - P.x) > vw * .5 + 100 || Math.abs(m.ay - P.y) > 8 * T) { m.ax = P.x - f * (vw * .5 + 120 + m.k * 40); m.ay = ty - 180; }
@@ -795,7 +812,30 @@ function kyTepeBasla(o) {
   if (o.sutun.length < 3) for (let i = o.sutun.length; i < 3; i++) o.sutun.push(GY_KUZEY[i * 3 % 10]);
   burst(o.x, o.y - 120, 30, ['#7dffc4', '#ff8fd0', '#8fd8ff', '#ffffff'], 160, 1.6, 6);
   kyKadraj(o);
+  kyDansYerleri(o);
   OLAY.emit('kuzeyFinal', { o, duration: KAR_FIN.SURE, box: o.box });
+}
+// Dans yerleri: tepenin iki yanında boş noktalar (Feza'nın, yanındaki geyiğin ve birbirlerinin üstüne binmesin). Feza'yı izleyen
+// uyanık yavrular ekrandan çıkıp yerlerine başka yavrular gelmesin diye kendileri en yakın yere hoplar; kalan yerlere iki yandan
+// yavrular gelir. Kardan adam takipçisi (kardan.js) sağdaki kendi yerine kayar.
+function kyDansYerleri(o) {
+  const rK = o.rK, gx = P.x + (P.x < o.x ? -96 : 96), kdx = o.x + 335 * rK, yer = [];
+  for (const a of [-125, 125, -195, 190, -265, 250, -335, -405, -470, -60]) {
+    const x = o.x + a * rK;
+    if (Math.abs(x - P.x) < 72 || Math.abs(x - gx) < 66 || yer.some(p => Math.abs(p - x) < 52)) continue;
+    yer.push(x); if (yer.length >= o.dans.length) break;
+  }
+  for (let i = yer.length; i < o.dans.length; i++) yer.push(o.x + (i % 2 ? 1 : -1) * (150 + i * 40) * rK);
+  for (let i = 0; i < o.dans.length; i++) { const d = o.dans[i]; d.hx = yer[i]; d.yan = yer[i] < o.x ? -1 : 1; d.opt.yon = -d.yan; d.x0 = null; }
+  const bos = o.dans.slice(), izl = NESNELER.filter(n => n.tip === 'karYavru' && n.uyandi && n.ky && n.ky.durum !== 'bitti').sort((p, q) => (p.ky.k || 0) - (q.ky.k || 0));
+  for (let j = 0; j < izl.length && bos.length; j++) {
+    const n = izl[j], m = n.ky; let en = 0;
+    for (let i = 1; i < bos.length; i++) if (Math.abs(bos[i].hx - m.ax) < Math.abs(bos[en].hx - m.ax)) en = i;
+    const d = bos.splice(en, 1)[0], zy = typeof gyZeminTam === 'function' ? gyZeminTam(m.ax, m.ay - 4) : null;
+    d.hayvan = d.opt.hayvan = n.hayvan; d.x0 = m.ax; d.y0 = zy != null && Math.abs(zy - m.ay) < 2 * T ? zy : m.ay; d.t0 = .5 + j * .28; d.ek = (n.sira || 0) * 1.3;
+    m.durum = 'bitti'; m.sic = null;
+  }
+  if (typeof KARDAN !== 'undefined' && KARDAN && KARDAN.takipci && typeof KARDAN.dansEt === 'function') { try { KARDAN.dansEt(kdx, o.y); } catch (e) {} }
 }
 function kyKadraj(o) {   // senlik.js snKadraj gibi: yatayda geniş, dikeyde dar kutu
   const asp = typeof W !== 'undefined' && typeof H !== 'undefined' && H > 0 ? W / H : 1.33;
@@ -833,7 +873,7 @@ TUR.kaydet('kuzeyTepe', {
     kyKadraj(o);
     if (!ev.doruk && a >= KAR_FIN.DORUK) {
       ev.doruk = true; o.doruk = true; lightTarget = 1; OLAY.emit('kuzeyDoruk', { o });
-      ripples.push({ x: o.x, y: o.y - 300, r: 0, life: 2.6 }); burst(o.x, o.y - 320, 40, ['#7dffc4', '#ff8fd0', '#8fd8ff', '#c39bff', '#ffffff'], 220, 2, 7);
+      burst(o.x, o.y - 320, 40, ['#7dffc4', '#ff8fd0', '#8fd8ff', '#c39bff', '#ffffff'], 220, 2, 7);
     }
     if (o.doruk && a > KAR_FIN.DORUK + 4.5) o.doruk = false;
     // dorukta Feza vuruşta sevinçle zıplar (dans pozları feza.js fzKuzey7'de)
@@ -915,6 +955,17 @@ function kyTac(o, tm, a, nb) {
     const an = tm * .8 + i / 10 * KY_PI2, r = 8 * (.6 + .4 * Math.sin(tm * 4 + i)), px = x + Math.cos(an) * 90 * k, py = y + Math.sin(an) * 34 * k;
     kyIsik(GY_KUZEY[i], px, py, 18, .5 * sn); g.globalAlpha = sn; g.drawImage(isl, px - r, py - r, r * 2, r * 2); g.globalAlpha = 1;
   }
+  // doruk anında dışa açılan renkli pırıltı halkası (eskiden ince sert beyaz çember: teknik görünüyordu)
+  const hu = (a - KAR_FIN.DORUK) / 2.2;
+  if (hu > 0 && hu < 1) {
+    const e = 1 - Math.pow(1 - hu, 2.2), R = 40 + e * 320, hy = o.y - 300, tane = kyTane(), sn2 = Math.min(1, hu * 8) * (1 - hu * hu);
+    for (let i = 0; i < 30; i++) {
+      const an = i / 30 * KY_PI2 + hu * .6, px = x + Math.cos(an) * R, py = hy + Math.sin(an) * R * .78, al = sn2 * (.7 + .3 * Math.sin(i * 2.1 + tm * 6)), rr = 6 + 4 * (1 - hu);
+      kyIsik(GY_KUZEY[i % 10], px, py, 26, al * .8);
+      g.globalAlpha = al; g.save(); g.translate(px, py); g.rotate(hu * 4 + i); g.drawImage(tane, -rr, -rr, rr * 2, rr * 2); g.restore();
+    }
+    g.globalAlpha = 1;
+  }
   g.restore();
 }
 // ── Renkli kar: kamera çerçevesine sarılan, ışıkla renklenen iri kar taneleri (analitik; final boyunca yoğunlaşır)
@@ -935,12 +986,16 @@ function kyRenkliKar(o, tm, a) {
 // ── Yavrular: iki yandan hoplayarak gelir (4-6 sn), sonra vuruşta sırayla zıplar, ara ara döner; dorukta hep birlikte
 function kyYavruDans(o, tm, a, on) {
   for (const d of o.dans) {
-    const gel = smooth(clamp((a - 4 - d.i * .3) / 1.8, 0, 1)); if (gel <= 0) continue;
-    const hedefX = o.x + d.yan * d.uz * o.rK, x = lerp(o.x + d.yan * (o.gen + 260), hedefX, gel), onde = d.i % 2 === 1;
+    const hedefX = d.hx != null ? d.hx : o.x + d.yan * d.uz * o.rK, izl = d.x0 != null;
+    // izleyen yavru bulunduğu yerden hoplayarak gelir (gelmeden önce yerinde sevinçle seker); öbürleri ekranın iki yanından
+    const gel = izl ? smooth(clamp((a - d.t0) / 1.5, 0, 1)) : smooth(clamp((a - 4 - d.i * .3) / 1.8, 0, 1)); if (gel <= 0 && !izl) continue;
+    const x = lerp(izl ? d.x0 : o.x + d.yan * (o.gen + 260), hedefX, gel), onde = d.i % 2 === 1;
     if (onde !== on) continue;
-    const zy = typeof gyZeminTam === 'function' ? gyZeminTam(x, o.y) : null, y = zy != null && Math.abs(zy - o.y) < 3 * T ? zy : o.y;
-    let hop, yon = -d.yan;
-    if (gel < 1) hop = Math.abs(Math.sin(a * 7 + d.i)) * 18;   // gelirken seke seke
+    const zy = typeof gyZeminTam === 'function' ? gyZeminTam(x, o.y) : null, yz = zy != null && Math.abs(zy - o.y) < 3 * T ? zy : o.y;
+    const y = izl ? lerp(d.y0, yz, smooth(clamp(gel * 2.5, 0, 1))) : yz;
+    let hop, yon = gel < 1 && izl && Math.abs(hedefX - d.x0) > 8 ? (hedefX > d.x0 ? 1 : -1) : -d.yan;
+    if (gel <= 0) hop = Math.abs(Math.sin(a * 6 + d.i)) * 8;
+    else if (gel < 1) hop = Math.max(Math.abs(Math.sin(a * 7 + d.i)) * 18, 78 * smooth(clamp(1 - Math.abs(x - P.x) / 70, 0, 1)));   // gelirken seke seke; Feza'nın üstünden atlar (yüzünü örtmesin)
     else {
       const dor = a >= KAR_FIN.DORUK && a < KAR_FIN.DORUK + 4.5, per = KAR_FIN.VUR * 2, b = ((a - d.i * .12) % per) / per;
       hop = b < .5 ? Math.sin(b / .5 * Math.PI) * (dor ? 44 : 22 + (d.i % 2) * 8) : 0;
@@ -948,8 +1003,8 @@ function kyYavruDans(o, tm, a, on) {
     }
     const ddt = d.aT == null ? 0 : a - d.aT; d.aT = a; if (!d.dn) d.dn = {};
     const op = d.opt; op.yon = kyDon(d.dn, yon, ddt, KY_DON_SN, 0); op.zipla = clamp(hop / 20, 0, 1); op.sev = 1;
-    g.globalAlpha = .18 * (1 - Math.min(.7, hop / 60)); g.fillStyle = '#2a2a55'; g.beginPath(); g.ellipse(x, y, 11, 2.4, 0, 0, KY_PI2); g.fill(); g.globalAlpha = 1;
-    kyHayvanCiz(g, x, y - hop, 1.15, tm + d.i * 1.3, op);
+    g.globalAlpha = .18 * (1 - Math.min(.7, hop / 60)); g.fillStyle = '#2a2a55'; g.beginPath(); g.ellipse(x, y, 13, 2.8, 0, 0, KY_PI2); g.fill(); g.globalAlpha = 1;
+    kyHayvanCiz(g, x, y - hop, KY_BOY, tm + (d.ek != null ? d.ek : d.i * 1.3), op);   // izlerkenki boyla aynı (yavrular finalde küçülmesin)
   }
 }
 // ── Kardan adam (kardan.js'in çizicisi varsa): sağdan kayarak gelir, vuruşta sallanır ve kollarını açar
@@ -958,7 +1013,7 @@ function kyKardanCiz(o, tm, a, on) {
   if (typeof KARDAN !== 'undefined' && KARDAN && KARDAN.takipci) return;   // kardan.js'in takipçisi finalde zaten Feza'nın yanında dans ediyor (iki kardan adam olmasın)
   const v = kyV7(); if (v && v.kardan === false && typeof KARDAN !== 'undefined') return;   // kardan adam yapılmadıysa gelmez
   const gel = smooth(clamp((a - 4.5) / 2.2, 0, 1)); if (gel <= 0) return;
-  const x = lerp(o.x + o.gen + 300, o.x + 95 * o.rK + 220 * o.rK, gel), b = (a % (KAR_FIN.VUR * 2)) / (KAR_FIN.VUR * 2), dor = a >= KAR_FIN.DORUK && a < KAR_FIN.DORUK + 4.5;
+  const x = lerp(o.x + o.gen + 300, o.x + 335 * o.rK, gel), b = (a % (KAR_FIN.VUR * 2)) / (KAR_FIN.VUR * 2), dor = a >= KAR_FIN.DORUK && a < KAR_FIN.DORUK + 4.5;
   const hop = gel >= 1 && b < .5 ? Math.sin(b / .5 * Math.PI) * (dor ? 24 : 10) : 0, op = o.kdOpt;
   op.dans = gel >= 1 ? 1 : 0; op.yon = -1; op.zipla = clamp(hop / 20, 0, 1); op.el = .5 + .5 * Math.sin(a * Math.PI / KAR_FIN.VUR); op.mutlu = 1;
   try { kardanCiz(g, x, o.y - hop, 1, tm, op); } catch (e) {}

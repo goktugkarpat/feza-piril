@@ -24,23 +24,24 @@
 'use strict';
 const KD_R = [33, 25, 18];                       // büyük, orta, küçük top yarıçapı (s = 1)
 const KD_CY = (() => { const c0 = -(KD_R[0] - 3), c1 = c0 - (KD_R[0] + KD_R[1]) * 0.8, c2 = c1 - (KD_R[1] + KD_R[2]) * 0.82; return [c0, c1, c2]; })();   // yığında top merkezleri (tabana göre)
-const KD_R0 = 10;                                // yeni doğan kar topu
+const KD_R0 = 13;                                // yeni doğan kar topu (ekranda seçilecek kadar iri)
 const KD_YOL = [680, 520, 400];                  // tam boy için yuvarlanacak yol (birim; dikey sürükleme de sayılır)
 const KD_SITE = 60, KD_SOL = -330, KD_SAG = 230;  // kardan adamın yeri ve yuvarlama alanı (o.x'e göre)
 const KD_DOGUS = [-150, -190, -165];             // topların belirdiği yer (o.x'e göre)
 const KD_AKTIF = 420;                            // Feza o.x - 420'yi geçince etkinlik başlar
 const KD_GEL = 0.9, KD_TAM = 0.5, KD_ZIP = 0.62, KD_OTUR = 0.45, KD_CANLAN = 8.8, KD_DON = 0.8;
-const KD_IPUCU = 3.5, KD_GOSTER = 9, KD_YARDIM = 25, KD_YARDIM2 = 12;
-const KD_TAKIP_S = 0.92, KD_TAKIP_ARA = 165;     // takipçinin ölçeği ve Feza'nın ne kadar arkasında durduğu
+const KD_IPUCU = 3.5, KD_GOSTER = 6, KD_YARDIM = 25, KD_YARDIM2 = 12;
+const KD_PS = 1.75;                              // havada bekleyen parçanın ölçeği (5 yaş: iri ve kolay seçilir; yerine uçarken 1'e küçülür)
+const KD_TAKIP_S = 0.92, KD_TAKIP_ARA = 180;     // takipçinin ölçeği ve Feza'nın ne kadar arkasında durduğu
 // parçalar: ad, bit, havada süzüleceği yer (yere göre), uçacağı yer (kardan adam içinde, tabana göre), renk (ışık)
 const KD_PARCA = [
   { ad: 'sapka', bit: 1, fx: -14, fy: -232, tx: 0, ty: KD_CY[2] - KD_R[2] * 0.62, renk: '#ff9fb4' },
   { ad: 'gozler', bit: 2, fx: -104, fy: -186, tx: 2.5, ty: KD_CY[2] - 4, renk: '#c9d8ff' },
   { ad: 'burun', bit: 4, fx: 104, fy: -186, tx: 4.5, ty: KD_CY[2] + 1.5, renk: '#ffc27a' },
   { ad: 'agiz', bit: 8, fx: -132, fy: -116, tx: 3, ty: KD_CY[2] + 8.5, renk: '#c9d8ff' },
-  { ad: 'atki', bit: 64, fx: 132, fy: -116, tx: 0, ty: KD_CY[2] + KD_R[2] * 0.86, renk: '#ff8fa3' },
-  { ad: 'dugme', bit: 16, fx: -116, fy: -48, tx: 1, ty: KD_CY[1], renk: '#c9d8ff' },
-  { ad: 'kollar', bit: 32, fx: 116, fy: -48, tx: 0, ty: KD_CY[1] - 5, renk: '#e8c39a' }];
+  { ad: 'atki', bit: 64, fx: 146, fy: -122, tx: 0, ty: KD_CY[2] + KD_R[2] * 0.86, renk: '#ff8fa3' },
+  { ad: 'dugme', bit: 16, fx: -116, fy: -42, tx: 1, ty: KD_CY[1], renk: '#c9d8ff' },
+  { ad: 'kollar', bit: 32, fx: 116, fy: -42, tx: 0, ty: KD_CY[1] - 5, renk: '#e8c39a' }];
 const KD_TUM = 127;
 const KD_BOS = {};
 const KD_KAR = ['#ffffff', '#eef3ff', '#dfe8ff'];
@@ -341,7 +342,7 @@ function kdParcaKur(o) {
   const k = o.kd, sx = kdSite(o);
   if (!k.parca.length) KD_PARCA.forEach((d, i) => {
     const sol = d.fx < 0, ust = d.ad === 'sapka';
-    k.parca.push({ d, i, durum: 'gel', t: -i * 0.2, x: 0, y: 0, x0: ust ? sx - 40 : sx + (sol ? -620 : 620), y0: o.y - (ust ? 560 : 260 + Math.random() * 160), x1: 0, y1: 0, s: 1.25, rot: 0, pirilde: false });
+    k.parca.push({ d, i, durum: 'gel', t: -i * 0.2, x: 0, y: 0, x0: ust ? sx - 40 : sx + (sol ? -620 : 620), y0: o.y - (ust ? 560 : 260 + Math.random() * 160), x1: 0, y1: 0, s: KD_PS, rot: 0, pirilde: false });
   });
   for (const p of k.parca) { if (p.durum === 'bekle' || p.durum === 'gel') { p.durum = 'gel'; if (p.t > 0) p.t = 0; } if (k.mask & p.d.bit) p.durum = 'yerde'; }
 }
@@ -460,7 +461,7 @@ function kdParcaAdim(o, dt) {
     } else if (p.durum === 'uc') {
       hepsi = false; aktifYardim = aktifYardim || (p.pirilde ? p : null);
       const sure = p.pirilde ? 1.1 : 0.6, u = clamp(p.t / sure, 0, 1), e = smooth(u), tx = sx + p.d.tx, ty = o.y + p.d.ty;
-      p.x = lerp(p.x1, tx, e); p.y = lerp(p.y1, ty, e) - Math.sin(u * Math.PI) * 55; p.s = lerp(1.25, 1, e); p.rot = (1 - e) * 2.2 * (p.d.fx < 0 ? 1 : -1);
+      p.x = lerp(p.x1, tx, e); p.y = lerp(p.y1, ty, e) - Math.sin(u * Math.PI) * 55; p.s = lerp(KD_PS, 1, e); p.rot = (1 - e) * 2.2 * (p.d.fx < 0 ? 1 : -1);
       if (u >= 1) {
         p.durum = 'yerde'; k.mask |= p.d.bit; k.wob = 0.8; k.sevT = Math.max(k.sevT, 0.9);
         kdIsikSac(tx, ty, 14, 100, [p.d.renk, '#ffffff', '#bff4ff']); if (p.d.ad === 'kollar' || p.d.ad === 'atki' || p.d.ad === 'sapka') kdKarSac(tx, ty, 6, 60);
@@ -559,7 +560,7 @@ function kdCiz(o, tm) {
     let sc = 1; if (b.durum === 'dog') sc = smooth(clamp(b.t / 0.5, 0, 1)) * (1 + Math.sin(clamp(b.t / 0.5, 0, 1) * Math.PI) * 0.25);
     const r = b.r * sc;
     const parla = b.durum === 'tam' ? 1 - b.t / KD_TAM : b.durum === 'git' ? 0.35 + 0.15 * Math.sin(tm * 6) : (k.aktif && k.faz === 'top' ? clamp((k.idle - 1) / KD_IPUCU, 0, 1) * (0.28 + 0.14 * Math.sin(tm * 3)) : 0);
-    if (parla > 0.01) { kdGlow(g, '#cfeaff', b.x, b.y, r * 3.2, parla * 0.85); kdGlow(g, '#ffffff', b.x, b.y, r * 1.6, parla * 0.4); }
+    if (parla > 0.01) { kdGlow(g, '#cfeaff', b.x, b.y, Math.max(r * 3.2, 62), parla * 0.85); kdGlow(g, '#ffffff', b.x, b.y, r * 1.6, parla * 0.4); }
     if (b.durum !== 'zip') { const gw = r * 1.4; g.globalAlpha = 0.55; g.drawImage(KDS.golge, b.x - gw, o.y - 4, gw * 2, 9); g.globalAlpha = 1; }
     else { const u = clamp(b.t / KD_ZIP, 0, 1), gw = r * 1.4 * (1 - 0.4 * Math.sin(u * Math.PI)); g.globalAlpha = 0.4; g.drawImage(KDS.golge, b.x - gw, o.y + KD_CY[b.n] + r * 0.9 - 4, gw * 2, 9); g.globalAlpha = 1; }
     const sq = b.sq * 0.12 * Math.sin(b.t * 30);
@@ -583,9 +584,16 @@ function kdCizOn(o, tm) {
     const sira = kdSiradaki(o), ipucu = k.idle > KD_IPUCU;
     for (const p of k.parca) {
       if (p.durum === 'yerde' || (p.durum === 'gel' && p.t < 0)) continue;
-      if (p.durum === 'bekle') { const vurgu = p === sira && ipucu ? 0.5 + 0.25 * Math.sin(tm * 4) : 0; kdGlow(g, p.d.renk, p.x, p.y, 62 + vurgu * 26, 0.7 + vurgu * 0.3); kdGlow(g, '#ffffff', p.x, p.y, 34 + vurgu * 8, 0.62 + vurgu * 0.3); }
+      let nf = 1;
+      if (p.durum === 'bekle') {   // ışıklı bir kar baloncuğunun içinde süzülür, hafifçe "nefes alır": dokunulacak şey olduğu belli olsun
+        const vurgu = p === sira && ipucu ? 0.5 + 0.25 * Math.sin(tm * 4) : 0; nf = 1 + 0.05 * Math.sin(tm * 2.2 + p.i * 1.3) + vurgu * 0.1;
+        kdGlow(g, p.d.renk, p.x, p.y, (70 + vurgu * 26) * nf, 0.7 + vurgu * 0.3); kdGlow(g, '#ffffff', p.x, p.y, (38 + vurgu * 8) * nf, 0.55 + vurgu * 0.3);
+        const br = 33 * nf, a0 = g.globalAlpha;
+        g.globalAlpha = a0 * (0.3 + vurgu * 0.4); g.strokeStyle = '#eef8ff'; g.lineWidth = 1.6; g.beginPath(); g.arc(p.x, p.y, br, 0, 6.2832); g.stroke();
+        g.globalAlpha = a0 * (0.55 + vurgu * 0.3); g.lineWidth = 2.4; g.lineCap = 'round'; g.beginPath(); g.arc(p.x, p.y, br - 5, 3.55, 4.4); g.stroke(); g.globalAlpha = a0;
+      }
       else if (p.durum === 'uc') kdGlow(g, p.d.renk, p.x, p.y, 30, 0.4);
-      const M = g.getTransform(); g.translate(p.x, p.y); g.rotate(p.rot); kdParcaCiz(g, p.d.ad, 0, 0, p.s, tm); g.setTransform(M);
+      const M = g.getTransform(); g.translate(p.x, p.y); g.rotate(p.rot); kdParcaCiz(g, p.d.ad, 0, 0, p.s * nf, tm); g.setTransform(M);
     }
   }
   kdTozCiz(g);

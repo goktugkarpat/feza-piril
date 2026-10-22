@@ -57,15 +57,36 @@ function aileCiz(c, kim, x, y, s, t, o) {
 }
 
 // ── final saati ──
-const YU9_S = { o: null };
+const YU9_S = { o: null, yd: new Float32Array(32).fill(NaN), yh: [0, 0], yn: 0, ar: new Float32Array(8) };
 function ejderFinalAn() { const o = YU9_S.o; return o && o.basla ? o.age : 0; }
 function ejderFinalNabiz() { const o = YU9_S.o; if (!o || !o.basla) return 0; const u = (o.age % YU9.VUR) / YU9.VUR; return Math.pow(1 - u, 3); }
 function ejderFinalKutu() { const o = YU9_S.o; return o ? o.box : null; }
 function ejderKalpYer() { const o = YU9_S.o; return o ? { x: o.x, y: o.y - 100, r: 90 } : null; }
-function yu9YavruDansYer(k, n, out) {   // yavruların dans yeri: Feza'nın iki yanında, kristalin önünde yarım halka
+function yu9YavruDansYer(k, n, out) {   // yavruların dans yeri: sahnenin anına göre (yu9YavruAdim yumuşak kaydırır); Feza'nın önü hep açık
   const o = YU9_S.o; if (!o) return out;
-  const m = Math.max(1, n | 0), u = m > 1 ? k / (m - 1) : 0.5, x = o.x - 330 + u * 520 + (k % 2 ? 14 : -14);
-  out[0] = x; out[1] = o.y; return out;
+  YU9_S.yn = Math.max(YU9_S.yn, Math.min(16, (n | 0) || 1));
+  const i = k & 15; if (!(YU9_S.yd[i * 2] === YU9_S.yd[i * 2])) { yu9YavruHedef(o, i, YU9_S.yn, YU9_S.yh); YU9_S.yd[i * 2] = YU9_S.yh[0]; }
+  out[0] = YU9_S.yd[i * 2]; out[1] = o.y; return out;
+}
+function yu9Dik() { return typeof W !== 'undefined' && typeof H !== 'undefined' && H > 0 && W / H < 0.95; }
+function yu9YavruHedef(o, k, n, out) {   // aralıklara (Feza'yı, aileyi kapatmadan) eşit dağıt
+  const a = o.basla ? o.age : 0, fx = o.fx, dik = yu9Dik(), R = YU9_S.ar; let m = 0;
+  if (a < 7) { R[m++] = fx - (dik ? 170 : 230); R[m++] = fx - 55; R[m++] = o.x + 78; R[m++] = o.x + (dik ? 230 : 330); }   // kristalin iki yanı: Kalp'in parlayışı açıkta
+  else if (a < 11.4) { R[m++] = o.x + 70; R[m++] = o.x + (dik ? 260 : 340); }                        // aile solda iner: yavrular sağda
+  else if (a < 20.2) { const s = dik ? 44 : 54, h = Math.ceil(n / 2); R[m++] = fx - 165 - h * s; R[m++] = fx - 165; R[m++] = fx + (dik ? 205 : 255); R[m++] = fx + (dik ? 205 : 255) + (n - h) * s; }   // kucak çemberinin iki yanı
+  else { R[m++] = dik ? fx - 210 : o.x - 450; R[m++] = fx - 58; R[m++] = fx + 58; R[m++] = o.x + (dik ? 200 : 340); }   // dans: geniş yarım halka, Feza'nın önü boş
+  let L = 0; for (let j = 0; j < m; j += 2) L += Math.max(0, R[j + 1] - R[j]);
+  let d = (k + 0.5) / Math.max(1, n) * L; out[0] = R[0];
+  for (let j = 0; j < m; j += 2) { const w = Math.max(0, R[j + 1] - R[j]); if (d <= w) { out[0] = R[j] + d; break; } d -= w; out[0] = R[j + 1]; }
+  return out;
+}
+function yu9YavruAdim(o, dt) {   // yerleri yumuşakça kaydır (yavru.js dansta yeri doğrudan alır: sıçrama olmasın)
+  const yd = YU9_S.yd, yh = YU9_S.yh;
+  for (let k = 0; k < YU9_S.yn; k++) {
+    if (!(yd[k * 2] === yd[k * 2])) continue;
+    yu9YavruHedef(o, k, YU9_S.yn, yh); const d = yh[0] - yd[k * 2], v = clamp(d * 3, -330, 330) * dt;
+    yd[k * 2] += Math.abs(v) > Math.abs(d) ? d : v;
+  }
 }
 function yu9Sfx(ad, v) { if (typeof AU !== 'undefined' && AU && typeof AU.sfx === 'function') { try { AU.sfx(ad, v); } catch (e) {} } }
 function yu9Soyle(k) { if (typeof SES !== 'undefined' && SES && typeof SES.soyle === 'function') { try { SES.soyle(k, { oncelik: 3 }); } catch (e) {} } }
@@ -103,6 +124,16 @@ function yu9KalpSpr(parlak) {
       q.restore();
     } else { q.fillStyle = 'rgba(200,190,230,.35)'; q.save(); q.translate(0, -88); q.beginPath(); q.moveTo(0, 16); q.bezierCurveTo(-24, 0, -16, -19, 0, -10); q.bezierCurveTo(16, -19, 24, 0, 0, 16); q.fill(); q.restore(); }
   }, 2.4);
+}
+function yu9KalpIcSpr(hale) {   // atan kalp: hale (toplamalı) + doygun pembe kalp (normal çizim: parlak zeminde beyaza boğulmasın)
+  return hale ? bn9Tuval('yuKalpHale', -60, -60, 120, 120, q => {
+    q.fillStyle = bn9GR(q, 0, 0, 0, 0, 0, 58, 0, 'rgba(255,120,190,.5)', 0.55, 'rgba(255,120,190,.16)', 1, 'rgba(255,120,190,0)'); q.fillRect(-60, -60, 120, 120);
+  }, 1.5) : bn9Tuval('yuKalpIc', -40, -40, 80, 80, q => {
+    q.beginPath(); q.moveTo(0, 22); q.bezierCurveTo(-34, 0, -22, -27, 0, -13); q.bezierCurveTo(22, -27, 34, 0, 0, 22);
+    q.fillStyle = bn9GR(q, -6, -8, 1, 0, 0, 30, 0, '#ffe4f0', 0.4, '#ff8cc4', 1, '#f0609e'); q.fill();
+    q.strokeStyle = 'rgba(255,255,255,.85)'; q.lineWidth = 2.4; q.stroke();
+    q.fillStyle = 'rgba(255,255,255,.9)'; q.beginPath(); q.ellipse(-11, -9, 5, 3, -0.6, 0, 6.2832); q.fill();
+  }, 2.5);
 }
 function yu9IsinSpr() {   // dönen yumuşak ışık ışınları (merkez): 600×600
   return bn9Tuval('yuIsin', -300, -300, 600, 600, q => {
@@ -142,7 +173,7 @@ TUR.kaydet('ejderYuva', {
     if (!(dt > 0) || !Number.isFinite(dt)) return;
     dt = Math.min(dt, 0.05); o.t += dt;
     if (!o.isindi && Math.abs(P.x - o.x) < 3000) {   // yaklaşırken önbellekleri karelere yayarak ısıt
-      const L = [() => yu9KalpSpr(false), () => yu9KalpSpr(true), yu9IsinSpr, () => aileCiz(yu9IsitC(), 'anne', 0, 0, 1, 0, { poz: 'otur' }), () => aileCiz(yu9IsitC(), 'baba', 0, 0, 1, 0, { poz: 'otur' }),
+      const L = [() => yu9KalpSpr(false), () => yu9KalpSpr(true), yu9IsinSpr, () => yu9KalpIcSpr(true), () => yu9KalpIcSpr(false), () => aileCiz(yu9IsitC(), 'anne', 0, 0, 1, 0, { poz: 'otur' }), () => aileCiz(yu9IsitC(), 'baba', 0, 0, 1, 0, { poz: 'otur' }),
         () => aileCiz(yu9IsitC(), 'anne', 0, 0, 1, 0, { poz: 'ayakta' }), () => aileCiz(yu9IsitC(), 'baba', 0, 0, 1, 0, { poz: 'ayakta' }), () => aileCiz(yu9IsitC(), 'anne', 0, 0, 1, 0, { poz: 'ucus' }), () => aileCiz(yu9IsitC(), 'baba', 0, 0, 1, 0, { poz: 'ucus' })];
       if (o.isP < L.length) { try { L[o.isP](); } catch (e) {} o.isP++; } else o.isindi = true;
     }
@@ -166,9 +197,9 @@ TUR.kaydet('ejderYuva', {
     // 7: aile gelir, Pırıl'a sarılır
     if (!ev.aile && a >= 7) { ev.aile = true; OLAY.emit('ejderAile', { o }); }
     if (!ev.aileSoz && a >= 9) { ev.aileSoz = true; yu9Soyle('ea_merhaba'); }
-    if (!ev.pkucak && a >= 9.2) { ev.pkucak = true; yu9Piril('kucak', o.x - 300, o.y - 70, 2.6); }
+    if (!ev.pkucak && a >= 9.2) { ev.pkucak = true; yu9Piril('kucak', yu9P0(o), o.y - 56, 2.6); }
     // 11: herkes Feza'yı kucaklar
-    if (!ev.fkucak && a >= 11.6) { ev.fkucak = true; yu9Feza('kucak9', 3.6, { boy: 1 }); yu9Piril('kucak', o.fx + 40, o.fy - 60, 3.2); yu9Soyle('eb_merhaba'); }
+    if (!ev.fkucak && a >= 11.6) { ev.fkucak = true; yu9Feza('kucak9', 3.6, { boy: 1 }); yu9Piril('kucak', o.fx + 16, o.fy - 100, 3.4); /* Pırıl Feza'nın başının üstünde: kollar onu kapatmasın */ yu9Soyle('eb_merhaba'); }
     // 15: hediye pul
     if (!ev.hediye && a >= 15.6) { ev.hediye = true; OLAY.emit('ejderHediye', { o }); yu9Soyle('bn_hediye'); yu9Sfx('kolyeParla'); }
     if (!ev.pulKondu && a >= 19.2) { ev.pulKondu = true; burst(o.fx, o.fy - 40, 18, ['#d9c8ff', '#b89cff', '#ffffff', '#ffe6a8'], 140, 1, 6); yu9Feza('sevinc', 1.2, {}); }
@@ -186,6 +217,8 @@ TUR.kaydet('ejderYuva', {
     if (vb !== vb0 && a > 20.4) { if (vb % 2 === 0) o.an.hop = 0.01; else o.ba.hop = 0.01; if (vb % 4 === 0) o.bn.hop = 0.01; }
     for (const k of [o.an, o.ba, o.bn]) if (k.hop > 0) { k.hop += dt / 0.42; if (k.hop >= 1) k.hop = 0; }
     yu9AileAdim(o, dt, a);
+    yu9YavruAdim(o, dt);
+    yu9KadrajAdim(o, dt, a);
     yu9EjAdim(o, dt, a);
     yu9PulAdim(o, dt, a);
     if (a >= YU9.SURE && !ev.tamam) { ev.tamam = true; o.tamam = true; o.done = true; OLAY.emit('ejderTamam', { o }); }
@@ -218,7 +251,13 @@ function yu9Basla(o) {
 }
 function yu9Kadraj(o) {
   const asp = typeof W !== 'undefined' && typeof H !== 'undefined' && H > 0 ? W / H : 1.33, gen = asp >= 1.2 ? 440 : asp >= 0.95 ? 380 : 330;
-  const b = o.box; b.x0 = Math.min(o.x - gen, P.x - 120); b.x1 = Math.max(o.x + gen, P.x + 120); b.y0 = o.y - 560; b.y1 = o.y + (asp >= 0.95 ? 50 : 30);
+  const b = o.box; b.cx = NaN; b.x0 = Math.min(o.x - gen, P.x - 120); b.x1 = Math.max(o.x + gen, P.x + 120); b.y0 = o.y - 560; b.y1 = o.y + (asp >= 0.95 ? 50 : 30);
+}
+function yu9KadrajAdim(o, dt, a) {   // dikey ekranda görünen genişlik dar (~500 birim): kadraj sahnenin anına göre yumuşakça kayar
+  const b = o.box; if (!yu9Dik()) return;
+  const fx = o.fx, cx = a < 7 ? o.x - 40 : a < 11.6 ? yu9P0(o) + 12 : a < 20.4 ? fx + 22 : (Math.max(o.x + 92, fx + 190) + fx - 158) / 2 + 10;
+  if (!Number.isFinite(b.cx)) b.cx = (b.x0 + b.x1) / 2;
+  b.cx = lerp(b.cx, cx, 1 - Math.exp(-dt * 1.4)); const yg = (b.x1 - b.x0) / 2; b.x0 = b.cx - yg; b.x1 = b.cx + yg;
 }
 // Büyükanne yuvada: yolculuktan gelince Kalp'in yanında oturur (BN9_BA.yuvada); finalde rolüne göre yer değiştirir
 function yu9BnYer(o, dt) {
@@ -226,30 +265,31 @@ function yu9BnYer(o, dt) {
   if (!o.basla) { if (B && B.yuvada && B.yer === 'yuva') { o.bn.x = B.x; o.bn.y = B.y; } return; }
 }
 function yu9Git(k, x, y, dt, hiz) { const kk = 1 - Math.exp(-dt * (hiz || 2.2)); k.x = lerp(k.x, x, kk); k.y = lerp(k.y, y, kk); }
+function yu9P0(o) { return o.fx - (yu9Dik() ? 118 : 150); }   // annenin Pırıl'a sarıldığı yer (Feza'nın solunda)
 function yu9AileAdim(o, dt, a) {
-  const an = o.an, ba = o.ba, bn = o.bn, g0 = o.y;
-  // aile: 7. sn'de gökten süzülerek gelir (yandan uçuş), 8.6'da yere konar, önden durur
+  const an = o.an, ba = o.ba, bn = o.bn, g0 = o.y, dik = yu9Dik(), P0 = yu9P0(o), fx = o.fx;
+  // aile: 7. sn'de gökten süzülerek gelir (yandan uçuş), 8.8'de yere konar: anne Pırıl'ın tam arkasına (kolları onu sarsın), baba yanına
   if (a >= 7) {
     const u = smooth(clamp((a - 7) / 1.8, 0, 1));
     an.gor = Math.min(1, an.gor + dt * 2); ba.gor = Math.min(1, ba.gor + dt * 1.6);
     if (a < 8.8) {
-      an.x = lerp(o.x - 900, o.x - 250, u); an.y = lerp(o.y - 520, g0, u) - Math.sin(u * Math.PI) * 40; an.op.poz = 'ucus'; an.op.kanatF = a * 1.4 * 6.2832;
-      ba.x = lerp(o.x - 1050, o.x - 380, u); ba.y = lerp(o.y - 600, g0, u) - Math.sin(u * Math.PI) * 50; ba.op.poz = 'ucus'; ba.op.kanatF = a * 1.3 * 6.2832 + 1;
-      if (u > 0.92 && !o.ev.kondu) { o.ev.kondu = true; burst(o.x - 300, g0 - 20, 24, ['#d9c8ff', '#ffe6a8', '#ffffff'], 160, 1, 6); yu9Sfx('buyukanneKanat', 3); }
+      an.x = lerp(o.x - 900, P0, u); an.y = lerp(o.y - 520, g0, u) - Math.sin(u * Math.PI) * 40; an.op.poz = 'ucus'; an.op.kanatF = a * 1.4 * 6.2832;
+      ba.x = lerp(o.x - 1050, P0 - 92, u); ba.y = lerp(o.y - 600, g0, u) - Math.sin(u * Math.PI) * 50; ba.op.poz = 'ucus'; ba.op.kanatF = a * 1.3 * 6.2832 + 1;
+      if (u > 0.92 && !o.ev.kondu) { o.ev.kondu = true; burst(P0 - 40, g0 - 20, 24, ['#d9c8ff', '#ffe6a8', '#ffffff'], 160, 1, 6); yu9Sfx('buyukanneKanat', 3); }
     } else {
       an.op.poz = 'kucak'; ba.op.poz = 'kucak';
-      // 9–11.5: Pırıl'a sarılır; 11.6–15: Feza'nın yanına gelip kucaklar; 15–20: bakar; 20+: dans
-      if (a < 11.6) { yu9Git(an, o.x - 250, g0, dt); yu9Git(ba, o.x - 360, g0, dt); an.op.sar = smooth(clamp((a - 9.4) / 0.8, 0, 1)) * (1 - smooth(clamp((a - 11) / 0.5, 0, 1))); ba.op.sar = an.op.sar * 0.85; }
-      else if (a < 15.2) { yu9Git(an, o.fx - 110, g0, dt, 2.6); yu9Git(ba, o.fx - 210, g0, dt, 2.6); const s = smooth(clamp((a - 12.2) / 0.8, 0, 1)) * (1 - smooth(clamp((a - 14.6) / 0.5, 0, 1))); an.op.sar = s * 0.8; ba.op.sar = s * 0.6; }
-      else if (a < 20.4) { an.op.poz = 'ayakta'; ba.op.poz = 'ayakta'; an.op.sar = 0; ba.op.sar = 0; yu9Git(an, o.fx - 150, g0, dt); yu9Git(ba, o.fx - 270, g0, dt); }
-      else { an.op.poz = 'dans'; ba.op.poz = 'dans'; yu9Git(an, o.x - 260, g0, dt, 1.6); yu9Git(ba, o.x - 380, g0, dt, 1.6); }
+      // 9–11.5: Pırıl'a sarılır; 11.6–15.2: Feza'yı kucaklar (anne arkasından sarar, baba ve Büyükanne iki yandan); 15.2–20.4: bakar; 20.4+: dans
+      if (a < 11.6) { yu9Git(an, P0, g0, dt, 3); yu9Git(ba, P0 - 92, g0, dt, 3); an.op.sar = smooth(clamp((a - 9.3) / 0.7, 0, 1)) * (1 - smooth(clamp((a - 11) / 0.5, 0, 1))); ba.op.sar = an.op.sar * 0.6; }
+      else if (a < 15.2) { yu9Git(an, fx - 4, g0, dt, 2.8); yu9Git(ba, fx - (dik ? 92 : 100), g0, dt, 2.6); const s = smooth(clamp((a - 12.3) / 0.8, 0, 1)) * (1 - smooth(clamp((a - 14.6) / 0.5, 0, 1))); an.op.sar = s; ba.op.sar = s * 0.6; }
+      else if (a < 20.4) { an.op.poz = 'ayakta'; ba.op.poz = 'ayakta'; an.op.sar = 0; ba.op.sar = 0; yu9Git(an, fx - (dik ? 92 : 105), g0, dt); yu9Git(ba, fx - (dik ? 172 : 200), g0, dt); }
+      else { an.op.poz = 'dans'; ba.op.poz = 'dans'; if (dik) { yu9Git(an, fx - 82, g0, dt, 1.6); yu9Git(ba, fx - 158, g0, dt, 1.6); } else { yu9Git(an, Math.min(o.x - 260, fx - 110), g0, dt, 1.6); yu9Git(ba, Math.min(o.x - 380, fx - 230), g0, dt, 1.6); } }
     }
   }
   // Büyükanne: Kalp parlarken oturur; 11.6'da Feza'nın arkasına gelip kanatlarıyla sarar; 15–20 hediye; 20+ dans
   if (a < 11.4) { bn.op.poz = a > YU9.KALP ? 'ayakta' : 'otur'; bn.op.sar = 0; bn.op.kanat = a > YU9.KALP ? 0.5 + 0.2 * Math.sin(a * 2) : 0.2; bn.yon = -1; }
-  else if (a < 15.2) { yu9Git(bn, o.fx + 70, g0, dt, 2.4); bn.op.poz = 'kucak'; bn.op.kanat = 1; bn.op.sar = smooth(clamp((a - 12.2) / 0.9, 0, 1)) * (1 - smooth(clamp((a - 14.6) / 0.5, 0, 1))); }
-  else if (a < 20.4) { yu9Git(bn, o.fx + 170, g0, dt, 2.4); bn.op.poz = 'ayakta'; bn.op.sar = 0; bn.op.kanat = 0.4; }
-  else { yu9Git(bn, o.x + 200, g0, dt, 1.6); bn.op.poz = 'dans'; bn.op.kanat = 0.6; }
+  else if (a < 15.2) { yu9Git(bn, o.fx + 86, g0, dt, 2.4); bn.op.poz = 'kucak'; bn.op.kanat = 1; bn.op.sar = 0.7 * smooth(clamp((a - 12.2) / 0.9, 0, 1)) * (1 - smooth(clamp((a - 14.6) / 0.5, 0, 1))); }
+  else if (a < 20.4) { yu9Git(bn, o.fx + (dik ? 140 : 170), g0, dt, 2.4); bn.op.poz = 'ayakta'; bn.op.sar = 0; bn.op.kanat = 0.4; }
+  else { yu9Git(bn, dik ? Math.max(o.x + 92, o.fx + 190) : o.x + 200, g0, dt, 1.6); bn.op.poz = 'dans'; bn.op.kanat = 0.6; }
   bn.op.basEgim = a > 15.4 && a < 19.4 ? -0.12 * Math.sin(clamp((a - 15.4) / 4, 0, 1) * Math.PI) : 0;
   bn.op.kolyeMaske = o.ev.hediye ? 30 : 31;   // leylak pul (ilk yuva) hediye edildi
   bn.op.isik = Math.max(0.4, o.parla * 0.8);
@@ -283,6 +323,12 @@ function yu9Kalp(o, tm, a, nb) {
   g.globalCompositeOperation = 'source-over';
   const s1 = yu9KalpSpr(false); g.save(); g.translate(x, y); bn9Koy(g, s1);
   if (lit > 0) { g.globalAlpha = lit; bn9Koy(g, yu9KalpSpr(true)); g.globalAlpha = 1; }
+  if (lit > 0) {   // kalp atışı: kristalin içindeki kalp vuruşta pembe-altın parlar; ilk anda kocaman "pıt" diye açılır
+    const k = a - YU9.KALP, pop = k < 0.9 ? Math.sin(clamp(k / 0.9, 0, 1) * Math.PI) * 0.5 : 0, sc = 0.9 + 0.14 * nb + pop + (o.doruk ? 0.15 : 0);
+    g.translate(0, -88); g.scale(sc, sc); g.globalCompositeOperation = 'lighter'; g.globalAlpha = lit * (0.4 + 0.5 * nb);
+    g.save(); g.scale(1.3, 1.3); bn9Koy(g, yu9KalpIcSpr(true)); g.restore(); g.globalCompositeOperation = 'source-over';
+    g.globalAlpha = lit * (0.82 + 0.18 * nb); bn9Koy(g, yu9KalpIcSpr(false)); g.globalAlpha = 1;
+  }
   g.restore();
   if (lit > 0 || pa > 0.05) {   // kristalin çevresinde süzülen parıltılar
     for (let i = 0; i < 8; i++) { const u = (tm * 0.3 + i / 8) % 1, r = 4 + 2 * Math.sin(i + tm), xx = x + Math.sin(i * 2.3 + tm * 0.8) * (40 + i * 6), yy = y - 30 - u * 200; g.globalAlpha = Math.sin(u * Math.PI) * Math.max(lit, pa * 0.6); g.drawImage(bn9TozSpr(i % 6).c, xx - r, yy - r, r * 2, r * 2); }
@@ -350,8 +396,8 @@ function yu9Fistik(o, tm, a) {
 }
 function yu9PulCiz(o, tm, a) {   // hediye leylak pul (önce uçarken, sonra Feza'nın göğsünde parlar)
   if (!o.ev.hediye) return;
-  const p = o.pul, kondu = p.u >= 1, x = kondu ? o.fx + 4 : p.x, y = kondu ? o.fy - 42 + (P.y - o.fy) : p.y, r = kondu ? 6 : 9;
-  g.globalCompositeOperation = 'lighter'; dglow('#d9c8ff', x, y, kondu ? 26 + 6 * ejderFinalNabiz() : 40, kondu ? 0.45 : 0.6); g.globalCompositeOperation = 'source-over';
+  const p = o.pul, kondu = p.u >= 1, x = kondu ? o.fx + 4 : p.x, y = kondu ? o.fy - 42 + (P.y - o.fy) : p.y, r = kondu ? 7 : 13 + 3 * Math.sin(p.u * Math.PI);
+  g.globalCompositeOperation = 'lighter'; dglow('#d9c8ff', x, y, kondu ? 26 + 6 * ejderFinalNabiz() : 58, kondu ? 0.45 : 0.7); if (!kondu) dglow('#ffe6a8', x, y, 26, 0.5); g.globalCompositeOperation = 'source-over';
   if (!kondu) for (let i = 0; i < 5; i++) { const u = (tm * 1.4 + i / 5) % 1; g.globalAlpha = (1 - u) * 0.8; g.drawImage(bn9TozSpr(4).c, x - 4 - u * 14 * Math.cos(i), y - 4 + u * 20, 8, 8); }
   g.globalAlpha = 1;
   g.save(); g.translate(x, y); g.rotate(kondu ? Math.sin(tm * 2) * 0.1 : tm * 3); g.scale(r / 2, r / 2); bn9PulCiz(g, 0, 0, 2, 0, tm, 1); g.restore();

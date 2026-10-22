@@ -522,6 +522,7 @@ function dn6Petals(tm){
   for(let j=0;j<30;j++){const u=(tm*.08+j*.0333)%1,x=ax+Math.sin(j*2.3)*VW*.5+Math.sin(tm*.7+j)*30,y=ay-520+u*560;dn6Glow(DN6_FLAG[j%6],x,y,10,7,f*Math.sin(u*Math.PI)*.45);}}
  g.globalCompositeOperation='source-over';g.globalAlpha=1;
 }
+const DN6_FGK={ref:NaN,t:NaN};   // alttaki çalılar dünyaya bağlı kayar (dunya.js dnFgYerKay)
 function dn6Foreground(tm){
  if(!dn6Ready())return;const vw=W/S,vh=H/S;
  // üstte salınan şenlik flamaları (iki ip, paralaks 1,1): uyurken soluk, kasaba renklendikçe canlı
@@ -533,10 +534,12 @@ function dn6Foreground(tm){
     g.globalAlpha=town*(.8+.2*R6);g.fillStyle=col;g.beginPath();g.moveTo(x-9,y);g.lineTo(x+9,y);g.lineTo(x+sw,y+22);g.closePath();g.fill();}}}
  g.globalAlpha=1;}
  g.setTransform(S,0,0,S,0,0);dn6Bokeh(tm,vw,vh,town);
- // altta yakın çiçekli çalılar (paralaks 1,08), Feza'nın üstüne gelince saydamlaşır
+ // altta yakın çiçekli çalılar (paralaks 1,08), Feza'nın üstüne gelince yumuşakça saydamlaşır; dünyaya bağlı: Feza yükseğe çıkınca
+ // zeminle birlikte aşağı kayar, ekrana yapışık kalıp birden belirmez
+ const ky=typeof dnFgYerKay==='function'?dnFgYerKay(DN6_FGK,tm):0;
  const fb=1.08,left=cam.x*fb-160,right=cam.x*fb+vw+160,px=(Number.isFinite(P.rx)?P.rx:P.x);g.setTransform(S,0,0,S,-cam.x*S*fb,0);
- for(let q=Math.floor(left/620);q<=Math.ceil(right/620);q++){const R=rng(q*71+883),x=q*620+R()*160,wx=x/fb;if(wx>DN6_GAP0-100&&wx<DN6_GAP1+100)continue;const near=Math.abs(wx-px)<160,k=.5+R()*.25;
-  g.save();g.translate(x,vh+38);g.rotate(Math.sin(tm*.35+q)*.02);g.globalAlpha=near?.18:.62;g.drawImage(dn6BushArt(Math.abs(q)%2),-140*k*1.6,-150*k*1.6,280*k*1.6,150*k*1.6);g.restore();}
+ for(let q=Math.floor(left/620);q<=Math.ceil(right/620);q++){const R=rng(q*71+883),x=q*620+R()*160,wx=x/fb;if(wx>DN6_GAP0-100&&wx<DN6_GAP1+100)continue;const nw=1-smooth(clamp((Math.abs(wx-px)-135)/50,0,1)),k=.5+R()*.25;if(38+ky>240*k)continue;
+  g.save();g.translate(x,vh+38+ky);g.rotate(Math.sin(tm*.35+q)*.02);g.globalAlpha=.62-.44*nw;g.drawImage(dn6BushArt(Math.abs(q)%2),-140*k*1.6,-150*k*1.6,280*k*1.6,150*k*1.6);g.restore();}
  g.globalAlpha=1;
 }
 const DN6_FLAG_DIM=[];

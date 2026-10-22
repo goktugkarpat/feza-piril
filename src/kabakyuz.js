@@ -42,7 +42,7 @@ const KY8_PX = 3;                  // önbellek sprite çözünürlüğü (birim
 const KY8_GEL = 1.1, KY8_UC = 0.8, KY8_UC_P = 1.3, KY8_TEPKI = [1.9, 1.7, 1.05], KY8_CANLAN = 8.3, KY8_DON = 0.6;
 const KY8_IPUCU = 4, KY8_GOSTER = 9, KY8_YARDIM = 25, KY8_YARDIM2 = 14;
 const KY8_BR = 50;                 // baloncuk yarıçapı (dünya birimi): 5 yaş için kocaman dokunma hedefi (iPad'de ≈ 115 pt çap)
-const KY8_BYER = [[-150, -300], [0, -350], [150, -300]];   // baloncukların yeri (kabak merkezi x'ine ve zemine göre)
+const KY8_BYER = [[-205, -292], [-60, -342], [88, -292]];   // baloncukların yeri (kabak merkezi x'ine ve zemine göre); biraz sola, Feza'ya doğru: 4:3 iPad'de sağdaki ayın üstüne binmesin
 const KY8_TURLAR = ['goz', 'burun', 'agiz'];
 const KY8_SECENEK = { goz: ['yuvarlak', 'hilal', 'yildiz'], burun: ['ucgen', 'dugme', 'kalp'], agiz: ['gulus', 'disli', 'dil'] };
 const KY8_YUVA = [[0, -80], [0, -57], [0, -33]];          // göz, burun, ağız yuvası (kabak tabanına göre, s = 1)
@@ -700,6 +700,28 @@ function ky8Ciz(o, tm) {   // Feza'nın arkası: sahne, fenerler, kabak
   const q = ky8Poz(o, tm);
   if (k.aktif && k.faz === 'sec' && k.idle > KY8_IPUCU) ky8Glow(g, '#ffd27a', kx, ky8TabanY(o) - 66, 140, 115, 0.07 + 0.04 * Math.sin(tm * 2.4));
   kabakYuzCiz(g, kx + sx, ky8TabanY(o), 1, tm, q);
+  if (k.aktif && (k.faz === 'sec' || k.faz === 'uc') && k.tur < 3) ky8YuvaIpucu(o, tm, q);
+}
+// Sıradaki parçanın yeri kabağın üstünde yumuşakça nabız gibi parlar ("göz buraya"): yazısız, el işaretsiz ışık ipucu
+const KY8_YIP = [[[-50, 0, 34, 22], [50, 0, 34, 22]], [[0, 0, 30, 24]], [[0, 0, 66, 28]]];   // tur başına parıltılar: dx, dy, rx, ry
+function ky8YuvaIpucu(o, tm, q) {
+  const k = o.ky, [yx, yy] = ky8Yuva(o, k.tur), ip = k.faz === 'sec' && k.idle > KY8_IPUCU ? 1 : 0;
+  const nb = 0.5 + 0.5 * Math.sin(tm * 3.2), a = (k.faz === 'uc' ? 1 : 0.7 + 0.3 * ip) * (0.6 + 0.4 * nb), hy = -(q.hop || 0);
+  g.globalCompositeOperation = 'lighter';
+  for (const p of KY8_YIP[k.tur]) {
+    const x = yx + p[0], y = yy + p[1] + hy, w = 1 + 0.08 * nb;
+    ky8Glow(g, '#ffb347', x, y, p[2] * 1.7 * w, p[3] * 1.7 * w, a);
+    ky8Glow(g, '#ffd27a', x, y, p[2] * 1.1 * w, p[3] * 1.1 * w, a);
+    ky8Glow(g, '#fff6d8', x, y, p[2] * 0.6, p[3] * 0.6, a * 0.8);
+  }
+  g.globalCompositeOperation = 'source-over';
+  for (let i = 0; i < 8; i++) {   // çevresinde dönen minik ışık zerreleri
+    const p = KY8_YIP[k.tur][i % KY8_YIP[k.tur].length], an = tm * 1.6 + i * 1.571 + (i & 1) * 0.8, x = yx + p[0] + Math.cos(an) * p[2] * 1.05, y = yy + p[1] + hy + Math.sin(an) * p[3] * 1.15;
+    const tw = Math.max(0, Math.sin(tm * 4 + i * 1.9));
+    if (tw < 0.05) continue;
+    g.globalAlpha = tw * (0.75 + 0.25 * ip); g.fillStyle = i % 3 ? '#ffffff' : '#ffe7a8'; g.beginPath(); g.arc(x, y, 2 + tw * 1.6, 0, 6.2832); g.fill();
+  }
+  g.globalAlpha = 1;
 }
 function ky8BalonCizKare(o, b, i, tm, vurgu) {   // baloncuk: arka ışık + içindeki parça + şeffaf baloncuk
   if (b.s <= 0.01 || b.al <= 0.01) return;

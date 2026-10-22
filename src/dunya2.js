@@ -1323,12 +1323,14 @@ function dn2FgBake() {
   DN2_FG.leaf = [0, 1].map(i => mk(400, 340, 200, 40, x => {   // bulanık, odak dışı büyük yapraklar (düşük çözünürlükle boyanıp büyütülür)
     const R = rng(i * 7 + 2); x.fillStyle = '#040520'; for (let k = 0; k < 7; k++) { x.save(); x.translate((k - 3) * 38, 0); x.rotate((k - 3) * 0.3 + (R() - 0.5) * 0.3); x.beginPath(); x.ellipse(0, 90 + R() * 40, 26 + R() * 14, 110 + R() * 70, 0, 0, 6.283); x.fill(); x.restore(); } return null; }, 0.16));
 }
-const DN2_FGV = [0, 3, 1, 4, 2, 0, 3, 1];   // 8 sarkık süs, 5 tür (aynı görünüm art arda gelmesin)
+const DN2_FGV = [0, 3, 1, 4, 2, 0, 3, 1];
+const DN2_FGK = { ref: NaN, t: NaN };   // alttan sazlar dünyaya bağlı kayar (dunya.js dnFgYerKay)   // 8 sarkık süs, 5 tür (aynı görünüm art arda gelmesin)
 function dn2Foreground(tm) {
   if (!dn2Ok()) return; if (!isFinite(tm)) tm = 0;
   dn2FgBake(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
   const sc = DN2_FG.sc, span1 = 3280, span2 = 1500, dy = Math.min(0, cam.y - DN2.GREF + 0.76 * H / S);
   const pulse = 0.75 + 0.25 * Math.sin(tm * 1.3);
+  const ky = typeof dnFgYerKay === 'function' ? dnFgYerKay(DN2_FGK, tm) : 0;
   // bulanık büyük yapraklar: alt köşelerde (kontrol bölgesi) DEĞİL; yalnız üst köşelerde çok hafif
   if (false) for (let i = 0; i < 2; i++) { const sp = DN2_FG.leaf[i], sw = Math.sin(tm * 0.35 + i * 2) * 0.04; g.save(); g.translate(i ? W * 0.97 : W * 0.03, H * 1.04); g.rotate(sw + (i ? 0.25 : -0.25)); g.scale(i ? -1 : 1, 1); g.globalAlpha = 0.92; g.drawImage(sp.c, -sp.ox * sc * 1.15, -sp.oy * sc * 2.0, sp.w * sc * 1.15, sp.h * sc * 1.15); g.restore(); }
   g.globalAlpha = 1;
@@ -1347,8 +1349,8 @@ function dn2Foreground(tm) {
   for (let n = 0; n < 4; n++) {
     const sp = DN2_FG.reed[n % 3], wx = ((n * 470 + 120 - cam.x * 1.45) % span2 + span2) % span2 - 300; if (wx > VW + 200) continue;
     const swy = Math.sin(tm * 0.7 + n * 2.2) * 0.035, s = 0.6 + (n % 2) * 0.12, fl = n % 2 ? -1 : 1, fx = isFinite(P.x) ? Math.abs(wx - (P.x - cam.x)) : 999, rx = wx / VW;
-    g.globalAlpha = clamp(fx / 220, 0.18, 1) * smooth(clamp((rx - 0.1) / 0.1, 0, 1)) * smooth(clamp((0.62 - rx) / 0.1, 0, 1)); if (g.globalAlpha < 0.02) continue;   // yalnız ekranın alt-orta bölgesinde; sol/sağ alt kontrol bölgeleri boş
-    g.save(); g.translate(wx * S, (H / S + 40 - Math.min(0, dy) * 0.3) * S); g.rotate(swy); g.scale(s * fl, s);
+    g.globalAlpha = clamp(fx / 220, 0.18, 1) * smooth(clamp((rx - 0.1) / 0.1, 0, 1)) * smooth(clamp((0.62 - rx) / 0.1, 0, 1)); if (g.globalAlpha < 0.02 || ky > 150) continue;   // yalnız ekranın alt-orta bölgesinde; sol/sağ alt kontrol bölgeleri boş
+    g.save(); g.translate(wx * S, (H / S + 40 + ky) * S); g.rotate(swy); g.scale(s * fl, s);
     g.drawImage(sp.c, -sp.ox * S, -sp.oy * S, sp.w * S, sp.h * S);
     g.globalCompositeOperation = 'lighter';
     for (const f of sp.info) dn2Eg(n % 2 ? '#b9a8ff' : '#7fe8d8', f[0] * S, f[1] * S, 12 * S, 12 * S, 0.3 * pulse);

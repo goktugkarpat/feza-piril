@@ -738,7 +738,11 @@ function sp8Adim(o, dt, input) {
         const r = sp8Sonraki(o, 's') || sp8Sonraki(o); let hedef = 0;
         if (r && r.v - o.v < 1000) hedef = r.lift + (lane - sp8Serit(o, r.v));
         o.uV = lerp(o.uV, clamp((hedef - o.off) * 2.4, -120, 160), 1 - Math.exp(-dt * 4));
-      } else o.uV = Math.max(o.uV - 360 * dt, -62);
+      } else {   // bırakınca yumuşak ama belirgin alçalış (kısa dokunuşlarla tavana yapışıp kalmasın); aşağıda yakın bir şeker varsa onun hizasında yavaşlayıp süzülür
+        let alt0 = -96; const r = sp8Sonraki(o, 's');
+        if (r && r.v - o.v < 620) { const h = r.lift + (lane - sp8Serit(o, r.v)); if (o.off > h - 4) alt0 = Math.max(-96, Math.min(0, (h - o.off) * 2.2)); }
+        const nv = o.uV - 500 * dt; o.uV = nv >= alt0 ? nv : o.uV < alt0 ? lerp(o.uV, alt0, 1 - Math.exp(-dt * 6)) : alt0;   // hız sıçramasın
+      }
     }
     if (yardim && !o.olay.supurgeYardim) sp8Olay(o, 'supurgeYardim');
     if (!yardim && o.olay.supurgeYardim && o.idle < 1) o.olay.supurgeYardim = false;   // dokundu: bir dahaki yardımda yeniden
@@ -833,7 +837,7 @@ function sp8Toplar(o, dt, yardim) {
     if (r.d === 'kacti') { if (r.t > 2.2) r.d = 'bitti'; continue; }
     const dv = r.v - fx; if (dv > 900) break;   // dizi sıralı: ilerisi bekler
     const y0 = sp8ItemY(o, r), dy = fy - y0;
-    let w = 0; if (dv > -24 && dv < 180 && Math.abs(dy) < 100) w = smooth(1 - clamp(dv, 0, 180) / 180) * 0.6;   // mıknatıs: göğse doğru kayar
+    let w = 0; if (dv > -24 && dv < 220 && Math.abs(dy) < 125) w = smooth(1 - clamp(dv, 0, 220) / 220) * 0.66;   // mıknatıs: göğse doğru kayar (cömert)
     r.ek = lerp(r.ek, w, 1 - Math.exp(-dt * 6)); r.yD = y0 + dy * r.ek;
     if (yardim && dv > 0 && dv < 700) r.yardim = true;
     if (dv < 22 && dv > -30) {
@@ -1021,7 +1025,7 @@ function sp8DiziCiz(o, tm, ddx) {
     dglow(r.tip === 's' ? SP8_REN[r.ci] : '#ffd27a', x, y, (r.tip === 's' ? 30 : 24) * sc + nab * 34, (0.3 + nab * 0.45) * a);
     g.globalCompositeOperation = 'source-over';
     g.globalAlpha = a;
-    if (r.tip === 's') { const s = 0.92 * sc * (1 + 0.05 * Math.sin(tm * 4 + r.faz)); g.save(); g.translate(x, y); g.rotate(Math.sin(tm * 1.6 + r.faz) * 0.25); g.drawImage(sp8SekerArt(r.ci), -27 * s, -17 * s, 54 * s, 34 * s); g.restore(); }
+    if (r.tip === 's') { const s = 1.02 * sc * (1 + 0.05 * Math.sin(tm * 4 + r.faz)); g.save(); g.translate(x, y); g.rotate(Math.sin(tm * 1.6 + r.faz) * 0.25); g.drawImage(sp8SekerArt(r.ci), -27 * s, -17 * s, 54 * s, 34 * s); g.restore(); }
     else { const s = 0.78 * sc * (1 + 0.1 * Math.sin(tm * 5 + r.faz)); g.save(); g.translate(x, y); g.rotate(Math.sin(tm * 0.9 + r.faz) * 0.3); g.drawImage(sp8YildizArt(), -20 * s, -20 * s, 40 * s, 40 * s); g.restore(); }
     g.globalAlpha = 1;
     if (r.d === 'bekle') { const an = tm * 2.2 + r.faz; const pa = 0.5 + 0.5 * Math.cos(an); if (pa > 0.05) { g.globalAlpha = pa; g.drawImage(sp8TozArt(0), x + Math.cos(an) * 17 - 4, y + Math.sin(an) * 13 - 4, 8, 8); g.globalAlpha = 1; } }
@@ -1177,7 +1181,7 @@ TUR.kaydet('supurgeMini', {
     }
     if (o.faz === 'bitti') {   // süpürge Feza'nın önünden çekilir: arkasından süzülüp meydan yolunun kenarında dinlenir
       o.t += dt; const k = 1 - Math.exp(-dt * 1.6);
-      o.bx = lerp(o.bx, o.K.inisX + 120, k); o.by = lerp(o.by, o.K.gy - 40, k); o.x = o.bx;   // Feza'nın arkasından geçip sağında dinlenir
+      o.bx = lerp(o.bx, o.K.inisX + 160, k); o.by = lerp(o.by, o.K.gy - 46, k); o.x = o.bx;   // Feza'nın arkasından geçip sağında dinlenir (çalısı kedinin üstüne binmesin)
       sp8DumanAdim(o, dt, o.dxSon, SP8_LV - 1800, SP8_LV + 400);
       return;
     }

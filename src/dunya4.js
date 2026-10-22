@@ -238,20 +238,24 @@ function dn4Petals(tm){
  }
  g.globalAlpha=1;g.globalCompositeOperation='source-over';
 }
+// Alttaki yosunlar dünyaya bağlı: Feza yukarı yüzünce deniz tabanıyla birlikte aşağı kayar, ekrana yapışık kalıp birden belirmez (dunya.js dnFgYerKay).
+const DN4_FGK={ref:NaN,t:NaN};
 function dn4Foreground(tm){
  if(!dn4Ready())return;const f=1.08,left=cam.x*f-120,right=cam.x*f+W/S+120;g.setTransform(S,0,0,S,-cam.x*S*f,0);
+ const ky=typeof dnFgYerKay==='function'?dnFgYerKay(DN4_FGK,tm):0;if(ky>240)return;
  for(let q=Math.floor(left/790);q<=Math.ceil(right/790);q++){
   const R=rng(q*591+788),x=q*790+R()*150,h=105+R()*85,k=h/560,bm=dn4Biome(x/f);
-  let kPush=0,kClose=false;
+  let kPush=0,kClose=0;
   if(typeof P!=='undefined'){
-   const fzDx=Math.abs(x/f-P.x);
-   if(fzDx<130&&P.y>cam.y+H/S-180){
-    kClose=fzDx<95;
-    kPush=(P.x<x/f?1:-1)*(1-fzDx/130)*.14;
+   // Feza yosunun yanında ve alçaktayken yosun eğilip saydamlaşır; geçişler yumuşak (birden sönüp yanmaz)
+   const fzDx=Math.abs(x/f-P.x),yw=smooth(clamp((P.y-cam.y-(H/S+ky-200))/40,0,1));
+   if(fzDx<130&&yw>0){
+    kClose=(1-smooth(clamp((fzDx-80)/30,0,1)))*yw;
+    kPush=(P.x<x/f?1:-1)*(1-fzDx/130)*.14*yw;
    }
   }
-  g.globalAlpha=kClose?.08:.25;
-  g.save();g.translate(x,H/S+35);
+  g.globalAlpha=.25-.17*kClose;
+  g.save();g.translate(x,H/S+35+ky);
   for(let j=0;j<2;j++){
    g.rotate(Math.sin(tm*.48+q+j*.55)*(.035+j*.017)+kPush*(j+1)*.6);
    g.drawImage(dn4KelpSegment(bm%4,j),-120*k,-288*k,240*k,300*k);

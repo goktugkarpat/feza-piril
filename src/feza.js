@@ -872,6 +872,7 @@ function drawFeza(tm) {
   fzQ = P; FZ_SU_BAL_M.valid = false;
   fzKos = fz8V8Kos(); fz8M = FZ8_P; if (fzKos) { fz8IsikN = 0; fz8NkS = fz8NkA = false; }   // Bölüm 8 kostümü (yoksa null)
   const kay = P.poz === 'kayma', deniz = BOLUM_NO === 4 && P.deniz, p9 = BOLUM_NO === 9 && FZ9.poz ? FZ9.poz : null;   // p9: Bölüm 9 oyun içi poz (fezaPoz9)
+  if (BOLUM_NO === 9) fz9Gecis(p9, tm);   // Bölüm 9: poz değişirken son kareyi sakla (kısa çapraz geçiş; yandan koşudan önden kucağa sıçramasın)
   const SZ = fzKos ? 140 : 124, OY = fzKos ? SZ - 12 : SZ - 26, need = Math.ceil(SZ * S), x = fzX, R = P.a_R;   // kostümde şapka ucu için üstte daha çok yer
   // kamera yakınlaşırken S her karede biraz değişir: tuvali yalnızca yetmezse ya da çok büyük kalırsa yeniden ayır (32 px adımlarla, %15 pay)
   if (fzC.width < need || fzC.width > need * 1.3 || fzC.height !== fzC.width || fzR.width !== fzC.width || fzR.height !== fzC.width) { /* tuval varsayılanı 300x150: yükseklik de denetlenir, yoksa Feza belden kesilir */ const n = Math.ceil(need * 1.15 / 32) * 32; fzC.width = fzC.height = n; fzR.width = fzR.height = n; }
@@ -980,6 +981,7 @@ function drawFeza(tm) {
     if (bf && bs > 0.03) { const dx = bf.x - bx, dy = bf.y - 12 - (by - 30), dl = Math.hypot(dx, dy) || 1; fzRim(dx / dl, dy / dl, 0.8 * S, '#ffd9b0', 0.7 * clamp(bs * 1.4, 0, 1)); }
   }
   let a = 1; if (P.fade > 0) a = 1 - clamp((P.fade - 0.22) / 0.38, 0, 1);
+  const gk = b9 ? fz9GecisK(tm) : 1;   // Bölüm 9 çapraz geçiş: yeni poz (ve konturu) gk ile belirir, eski kare 1-gk ile söner
   if (!kay && !deniz) fzShadow(bx, by, a);
   const gx0 = (bx - cam.x - SZ / 2) * S, gy0 = (by - cam.y - OY) * S;
   // okunurluk: (1) çok hafif sıcak-krem karakter hâlesi (yavaş nefesli), (2) ince açık-krem dış kenar + ince koyu-lacivert iç hat (yumuşak, çıkartma gibi değil)
@@ -988,14 +990,19 @@ function drawFeza(tm) {
     g.globalAlpha = hv; g.drawImage(fzHaloS2(), (bx - cam.x - 36) * S, (by - cam.y - 34 - 46) * S, 72 * S, 92 * S); g.globalAlpha = 1;
     const d1 = Math.max(1, 0.26 * S), d2 = d1 + Math.max(0.9, 0.27 * S);
     if (!fzO || fzO.width !== px) { if (!fzO) { fzO = document.createElement('canvas'); fzOX = fzO.getContext('2d'); } fzO.width = fzO.height = px; }
-    fzRing(fzOX, fzO, d2, b3 ? '#a8668f' : '#fff1d6');   // Bölüm 3 (aydınlık gök): krem yerine yumuşak erik tonu dış kenar – açık zeminde de seçilsin
-    g.globalAlpha = a * (b2 ? 0.32 : b3 ? 0.24 : 0.32); g.drawImage(fzO, gx0, gy0);
-    fzRing(fzRX, fzR, d1, b3 ? '#3a1d3c' : '#0c1233');
-    g.globalAlpha = a * (b3 ? 0.55 : 0.6); g.drawImage(fzR, gx0, gy0);
+    fzRing(fzOX, fzO, d2, b3 ? '#a8668f' : b9 ? '#8a5878' : '#fff1d6');   // Bölüm 3 (aydınlık gök): krem yerine yumuşak erik tonu dış kenar – açık zeminde de seçilsin (Bölüm 9 pastel vadi de: krem kenar pijamayı zemine eritiyordu)
+    g.globalAlpha = a * (gk < 1 ? smooth(clamp(gk * 2, 0, 1)) : 1) * (b2 ? 0.32 : b3 ? 0.24 : b9 ? 0.3 : 0.32); g.drawImage(fzO, gx0, gy0);
+    fzRing(fzRX, fzR, d1, b3 ? '#3a1d3c' : b9 ? '#3a1d3c' : '#0c1233');
+    g.globalAlpha = a * (gk < 1 ? smooth(clamp(gk * 2, 0, 1)) : 1) * (b3 ? 0.55 : b9 ? 0.72 : 0.6); g.drawImage(fzR, gx0, gy0);
     fzKx = gx0; fzKy = gy0; fzKa = a; fzKb2 = b2;
   } else fzKa = 0;
-  g.globalAlpha = a;
+  if (gk < 1) {   // önce eski kare, üstüne yeni: ilk yarıda eski tam, yeni belirir; ikinci yarıda yeni tam, eski söner (gövde hiç saydamlaşmaz)
+    const k0 = S / FZ9G.S; g.globalAlpha = a * (1 - smooth(clamp(gk * 2 - 1, 0, 1)));
+    g.drawImage(fz9SnC, (FZ9G.bx - FZ9G.px + (P.rx ?? P.x) - FZ9G.sz / 2 - cam.x) * S, (FZ9G.by - FZ9G.py + (P.ry ?? P.y) - FZ9G.oy - cam.y) * S, fz9SnC.width * k0, fz9SnC.height * k0);
+  }
+  g.globalAlpha = gk < 1 ? a * smooth(clamp(gk * 2, 0, 1)) : a;
   g.drawImage(fzC, gx0, gy0);
+  if (b9) { FZ9G.lbx = bx; FZ9G.lby = by; FZ9G.lsz = SZ; FZ9G.loy = OY; FZ9G.lS = S; FZ9G.lpx = P.rx ?? P.x; FZ9G.lpy = P.ry ?? P.y; FZ9G.lt = tm; FZ9G.la = a; }   // bu karenin yeri (sonraki geçişin eski karesi)
   if (fzKos) fz8Sonra(gx0, gy0, bx, by, SZ, OY, a);   // Bölüm 8: asa/kabak yüzü ışıkları, sepet ağzının dünya konumu
   if (deniz && FZ_SU_BAL_M.valid) { const m = FZ_SU_BAL_M; g.save(); g.setTransform(m.a, m.b, m.c, m.d, m.e + gx0, m.f + gy0); fzNefesZari(g, tm, m.front); g.restore(); }
   g.globalAlpha = 1;
@@ -2240,7 +2247,9 @@ function fezaCizPoz(ctx, x, y, olcek, poz, tm, ara, opt) {
     fzSwF = 9.5; fzSwA = 1 + 4 * rz;   // tutamlar rüzgârda hızlı ve geniş titrer
     Q.a_cl = (-1.9 + 0.5 * Math.sin(tm * 13.7) + 0.3 * Math.sin(tm * 21.3)) * rz;   // gömlek eteği geriye savrulur, çırpınır
     Q.a_hx = (-4.4 + 0.5 * Math.sin(tm * 8.3)) * rz; Q.a_hy = clamp(-vy * 0.004, -2.5, 2.5) - 0.5 * rz + 0.45 * Math.sin(tm * 6.1) * rz;
-    if (poz === 'binis') {
+    const w7 = typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 7 ? fz7Karisim(poz, tm) : 0;   // Bölüm 7 kızak: binis ↔ kayma geçişi ~0,22 sn'de karışır (sıçrama olmasın)
+    const kol = pp => {
+    if (pp === 'binis') {
       Q.a_noFar = true;
       let sv;   // sevinç: kolunu kaldırıp "yihuu" (verilmezse ~5,6 sn'de bir, 1,5 sn)
       if (o.sevinc != null) sv = smooth(clamp(+o.sevinc, 0, 1));
@@ -2282,6 +2291,16 @@ function fezaCizPoz(ctx, x, y, olcek, poz, tm, ara, opt) {
       R.happy = eo ? 0 : 1; R.lid = 1.12; R.gx = 0.9; R.gy = 0.45; R.brow = eo ? 0.75 : 0.55;
       R.mSmile = 1; R.mOpen = 0.82 + 0.12 * Math.sin(tm * 4); R.mRound = eo ? 0.25 : 0; R.head = -0.08 + 0.03 * Math.sin(tm * 3.3);
     }
+    };
+    if (w7 > 0.001) {   // önce öbür poz (eski), alanları saklanır; sonra asıl poz, eskiye doğru w7 kadar karıştırılır
+      const nf = Q.a_noFar, rx0 = retX, ry0 = retY;
+      kol(poz === 'binis' ? 'kayma' : 'binis');
+      for (let i = 0; i < FZ7_KAR.length; i++) FZ7_TMP[i] = R[FZ7_KAR[i]];
+      Q.a_noFar = nf; retX = rx0; retY = ry0;
+      kol(poz);
+      for (let i = 0; i < FZ7_KAR.length; i++) R[FZ7_KAR[i]] = lerp(R[FZ7_KAR[i]], FZ7_TMP[i], w7);
+      if (poz === 'kayma' && w7 > 0.5) Q.a_noFar = true;   // binis'te uzak bacak gizli: yarıdan sonra görünür
+    } else kol(poz);
     seatT = true;
   } else if (poz === 'yuzme' || poz === 'denizBinek') {
     front = false; const o = opt || FZ_BOS, sit = poz === 'denizBinek' ? smooth(clamp(+o.otur || 0, 0, 1)) : 0;
@@ -3521,6 +3540,30 @@ function fz9Bitir() {
     if ((v === 1 || v === 2) && cell(c, r - 1) === 0 && cell(c, r - 2) === 0) { P.x = nx2; if (P.rx !== undefined) P.rx = P.x; P.safeX = P.x; }
   }
   FZ9.poz = null; FZ9.ox = 0; FZ9.src = null; FZ9.yum = false;
+}
+// poz geçişi (yalnız Bölüm 9): FZ9.poz değiştiği karede bir önceki karenin bitmiş görüntüsü (ışık dahil) saklanır, FZ9G_SURE boyunca söner
+const FZ9G = { on: undefined, t: -9, bx: 0, by: 0, sz: 0, oy: 0, S: 1, px: 0, py: 0, lpx: 0, lpy: 0, lbx: 0, lby: 0, lsz: 0, loy: 0, lS: 1, lt: -9, la: 0 }, FZ9G_SURE = 0.2;
+let fz9SnC = null;
+function fz9Gecis(p9, tm) {
+  const cur = p9 || '';
+  if (FZ9G.on !== undefined && cur !== FZ9G.on && tm - FZ9G.lt < 0.12 && FZ9G.la > 0.95 && !(P.fade > 0) && fzC.width > 0) {
+    if (!fz9SnC) fz9SnC = document.createElement('canvas');
+    if (fz9SnC.width !== fzC.width || fz9SnC.height !== fzC.height) { fz9SnC.width = fzC.width; fz9SnC.height = fzC.height; }
+    const sx = fz9SnC.getContext('2d'); sx.setTransform(1, 0, 0, 1, 0, 0); sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over';
+    sx.clearRect(0, 0, fz9SnC.width, fz9SnC.height); sx.drawImage(fzC, 0, 0);
+    FZ9G.t = tm; FZ9G.bx = FZ9G.lbx; FZ9G.by = FZ9G.lby; FZ9G.sz = FZ9G.lsz; FZ9G.oy = FZ9G.loy; FZ9G.S = FZ9G.lS; FZ9G.px = FZ9G.lpx; FZ9G.py = FZ9G.lpy;   // eski kare Feza'yla birlikte gider (geçişte yürüse de çift görüntü kalmasın)
+  }
+  FZ9G.on = cur;
+}
+function fz9GecisK(tm) { const u = (tm - FZ9G.t) / FZ9G_SURE; return fz9SnC && u >= 0 && u < 1 ? smooth(u) : 1; }
+// Bölüm 7 kızak (kizak.js havadayken 'kayma', yerde 'binis' çizer): poz değişince eski poz w ile söner (tm = çağıranın saati)
+const FZ7K = { p: null, w: 0, t: -1 }, FZ7_KAR = ['lt1', 'lt2', 'bt1', 'bt2', 'lean', 'hx', 'la1', 'la2', 'ba1', 'ba2', 'arm', 'shr', 'head', 'hOpen', 'breath'], FZ7_TMP = new Float64Array(15);
+function fz7Karisim(poz, tm) {
+  const dt = tm - FZ7K.t;
+  if (FZ7K.p === null || !(dt >= 0) || dt > 0.5) { FZ7K.p = poz; FZ7K.w = 0; FZ7K.t = tm; return 0; }
+  if (poz !== FZ7K.p) { FZ7K.p = poz; FZ7K.w = 1 - FZ7K.w; }
+  FZ7K.w = Math.max(0, FZ7K.w - dt / 0.22); FZ7K.t = tm;
+  return smooth(FZ7K.w);
 }
 function fz9Aktif() { return BOLUM_NO === 9 && (!!FZ9.poz || !!FZ9.yak); }
 function fz9Yaklas(dt) {   // yumurtanın yanına koşma (P.kilit sürerken hızı biz veririz; çarpışmayı fizik yapar)

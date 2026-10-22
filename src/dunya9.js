@@ -34,7 +34,7 @@ const dn9V9=()=>typeof V9!=='undefined'&&V9?V9:null;
 // zemin yüzeyi (dünya y'si); yolculuk boşluğunda zemin yok (ROWS*T)
 function dn9Surface(x){if(x>=DN9_GAP0&&x<DN9_GAP1)return ROWS*T;const c=Math.max(0,Math.min(COLS-1,Math.floor(x/T)));return topOf(c)*T;}
 // bölge adı (BOLUM.bolgeler): giris cayir meyve selale kanat adalar kolye yolculuk yuva
-function dn9Bolge(x){const B=typeof BOLUM!=='undefined'&&BOLUM.bolgeler;if(B)for(let i=0;i<B.length;i++)if(x>=B[i].x0&&x<B[i].x1)return B[i].ad;return 'giris';}
+function dn9Bolge(x){const B=typeof BOLUM!=='undefined'&&BOLUM.bolgeler;if(B){for(let i=0;i<B.length;i++)if(x>=B[i].x0&&x<B[i].x1)return B[i].ad;if(B.length&&x>=B[B.length-1].x1)return B[B.length-1].ad;}return 'giris';}   // dünyanın sağ ucundan ötesi yuva sayılır (gece yuvasında sabah dalları çıkmasın)
 const dn9Yk=(c,x,y,w,h,r)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h);};
 
 // ════════ Günün saati: konuma bağlı (0 sabah → 1 şelale serinliği → 2 şeftali-pembe → 3 gün batımı → 4 alacakaranlık) ════════
@@ -588,7 +588,7 @@ function dn9AdaPlat(c,p,R,Y){
 }
 // şelale kayalığı: zeminin arkasında yuvarlak yosunlu kaya duvarı, tepesinden kat kat inen su perdesi; havuz ve köpük karede canlanır
 function dn9SelaleCiz(c,b,R,Y){
- const x=b.x,y=b.y,h=b.h,w=b.w,kw=w+280,ust=y-h,tas=dn9Ton('#94b0ae',x),tasK=dn9Ton('#6c8c8c',x),tasA=dn9Ton('#bcd4cc',x),yos=dn9Ton('#44a874',x),yosA=dn9Ton('#76c890',x);
+ const x=b.x,y=b.y,h=b.h,w=b.w,kw=w+280,ust=y-h,tas=dn9Ton('#8cb8a4',x),tasK=dn9Ton('#5c887a',x),tasA=dn9Ton('#b0dac4',x),yos=dn9Ton('#44a874',x),yosA=dn9Ton('#76c890',x);
  // kaya duvarı (yuvarlak bloklar)
  c.fillStyle=tasK;c.beginPath();c.moveTo(x-kw/2,y+10);c.bezierCurveTo(x-kw*.52,ust+h*.3,x-kw*.36,ust,x-w*.4,ust-6);c.lineTo(x+w*.4,ust-6);c.bezierCurveTo(x+kw*.36,ust,x+kw*.52,ust+h*.3,x+kw/2,y+10);c.closePath();c.fill();
  for(let k=0;k<16;k++){const s=R()<.5?-1:1,bx=x+s*(w*.5+R()*kw*.35),by=ust+30+R()*(h-30),r=24+R()*40;c.fillStyle=k%3?tas:tasA;c.beginPath();c.ellipse(bx,by,r,r*.8,0,0,6.283);c.fill();
@@ -616,11 +616,15 @@ function dn9SelaleCiz(c,b,R,Y){
 // kalkış kayalığı / dağın yamacı: zemin bitince aşağı inen yuvarlak kaya yüzü (yon +1 sağa bakan kenar)
 function dn9Ucurum(c,b,R){
  const x=b.x,y=b.y,s=b.yon,tas=dn9Ton('#9a92b0',x),tasK=dn9Ton('#6e6890',x),yos=dn9Ton('#4aa878',x);
- c.fillStyle=tasK;c.beginPath();c.moveTo(x-s*60,y);c.quadraticCurveTo(x+s*24,y+20,x+s*10,y+120);c.quadraticCurveTo(x-s*10,y+260,x+s*18,y+420);c.lineTo(x-s*20,1200);c.lineTo(x-s*200,1200);c.lineTo(x-s*200,y);c.closePath();c.fill();
+ c.fillStyle=tasK;c.beginPath();c.moveTo(x-s*60,y);c.quadraticCurveTo(x+s*24,y+20,x+s*10,y+120);c.quadraticCurveTo(x-s*10,y+260,x+s*18,y+420);c.lineTo(x-s*20,1200);c.lineTo(x-s*300,1200);c.quadraticCurveTo(x-s*250,y+190,x-s*130,y+14);c.closePath();c.fill();   // iç kenar: toprağa yumuşak kavisle karışır (düz dikey kesik yok)
  for(let k=0;k<12;k++){const by=y+30+k*70+R()*30,bx=x-s*(20+R()*90),r=22+R()*30;c.fillStyle=k%2?tas:dn9Mix(tas,tasK,.4);c.beginPath();c.ellipse(bx,by,r,r*.7,0,0,6.283);c.fill();}
  c.strokeStyle=yos;c.lineWidth=2.4;c.lineCap='round';for(let k=0;k<10;k++){const px=x-s*(R()*70),py=y+6+R()*20,L=30+R()*90;c.beginPath();c.moveTo(px,py);c.bezierCurveTo(px+s*8,py+L*.4,px-s*4,py+L*.7,px+s*6,py+L);c.stroke();
   c.fillStyle=dn9Ton(DN9_CICEK[k%8],x);c.beginPath();c.arc(px+s*6,py+L,2.6,0,6.283);c.fill();}
  c.fillStyle=yos;c.beginPath();c.ellipse(x-s*20,y+4,60,12,0,0,6.283);c.fill();
+ // üstte zeminin çimeni kesintisiz sürer (kaya önde çizildiği için çimen dudağını burada yeniden kur), kenarda kıvrılıp biter
+ const ev=s<0,CZ=ev?['#4a7a62','#6aac7e','#9ad09a']:['#2e7a52','#46a46c','#7ccc8a'],DY=[9,3,-1],RX=[13,12,8],RY=[8,7.5,3];
+ for(let j=0;j<3;j++){c.fillStyle=dn9Ton(CZ[j],x);for(let k=0;k<=18;k++){const px=x-s*(140-k*8.4),w=dn9Hash(px*.37),u=k/18;c.beginPath();c.ellipse(px,y+DY[j]-1+w*2+u*u*6,(RX[j]+w*3)*(1-u*.35),RY[j]+w*1.5,0,0,6.283);c.fill();}}
+ for(let k=0;k<6;k++){const px=x-s*(20+R()*110);c.fillStyle=dn9Ton(DN9_CICEK[(k*3)%8],x);c.beginPath();c.arc(px,y-3-R()*4,2.4,0,6.283);c.fill();}
 }
 
 // ════════ Büyükanne'nin dağ yuvası: kaya ev (yuvarlak kapı, sıcak pencereler), Kalbi çerçeveleyen taş kemer, battaniyeler,
@@ -731,6 +735,10 @@ function dn9Direk(c,x,y,h){
 
 // ════════ Yerleşim: DEKOR9 + bölge kurallarıyla büyük/küçük dekor listesi (bir kez) ════════
 const DN9_CW=768,DN9_CACHE=12;
+// zemin gövdesi paletleri (üstten alta): çayır toprağı, şelale ormanının yosunlu taşı, yuva dağının lila taşı
+const DN9_ZT=['#6e6e48','#5c5240','#463e36','#302c2e'],DN9_ZS=['#6e8a84','#54706e','#3e5658','#2c3e44'],DN9_ZD=['#7a6a92','#5c4e78','#433a60','#2c2646'],DN9_ZDUR=[0,.22,.6,1];
+const dn9ZeminTas=x=>smooth(clamp((x-(241*T-90))/180,0,1))*(1-smooth(clamp((x-(381*T-90))/180,0,1)));
+const dn9ZeminDag=x=>smooth(clamp((x-(761*T-90))/180,0,1));
 function dn9Dolu(q){   // nesne sütunu ya da mini oyun alanı: önüne küçük süs konmaz
  const x=nx(q);
  for(const o of NESNELER){if(o.tip==='konusma')continue;
@@ -842,8 +850,12 @@ function dn9Chunk(i){
  if(open){p.lineTo(Rr,prev);p.lineTo(Rr,1200);p.closePath();}
  const bl=dn9Bolge(xm),tasli=bl==='selale',dag=bl==='yuva';
  const GZ=dag?['#7a6a92','#5c4e78','#433a60','#2c2646']:tasli?['#6e8a84','#54706e','#3e5658','#2c3e44']:['#6e6e48','#5c5240','#463e36','#302c2e'];
- let gr=c.createLinearGradient(0,620,0,1200);gr.addColorStop(0,dn9Ton(GZ[0],xm));gr.addColorStop(.22,dn9Ton(GZ[1],xm));gr.addColorStop(.6,dn9Ton(GZ[2],xm));gr.addColorStop(1,dn9Ton(GZ[3],xm));c.fillStyle=gr;c.fill(p);
+ // toprak boyası ince dikey şeritlerle: bölge (toprak → yosunlu taş → dağ taşı) ve günün saati sütun sütun yumuşakça geçer
+ // (parça başına tek renk iki parçanın sınırında keskin dikiş bırakıyordu; yalnız parça kurulurken bir kez çizilir)
  c.save();c.clip(p);
+ for(let x=Math.floor(L/12)*12;x<Rr;x+=12){const xx=x+6,ws=dn9ZeminTas(xx),wd=dn9ZeminDag(xx),gr=c.createLinearGradient(0,620,0,1200);
+  for(let k=0;k<4;k++)gr.addColorStop(DN9_ZDUR[k],dn9Ton(dn9Mix(dn9Mix(DN9_ZT[k],DN9_ZS[k],ws),DN9_ZD[k],wd),xx));
+  c.fillStyle=gr;c.fillRect(x,ust,12.6,1200-ust);}
  const Q=rng(i*733+61);
  // toprak katman çizgileri, yuvarlak taşlar, kökler, ışıl ışıl pul kırıntıları (ejderha pulu gibi minik parıltılar)
  c.strokeStyle=dag?'rgba(220,200,240,.12)':'rgba(220,240,200,.1)';c.lineWidth=2.5;for(let k=0;k<30;k++){const xx=L+Q()*DN9_CW,yy=dn9Surface(xx)+40+Q()*220,ww=50+Q()*140;if(yy>1190)continue;c.beginPath();c.moveTo(xx,yy);c.quadraticCurveTo(xx+ww*.5,yy+6,xx+ww,yy);c.stroke();}
@@ -853,7 +865,12 @@ function dn9Chunk(i){
  for(let k=0;k<12;k++){const xx=L+Q()*DN9_CW,yy=dn9Surface(xx)+30+Q()*260;if(yy>1190)continue;const col=DN9_KALP[k%3];c.fillStyle=dn9Mix(col,GZ[1],.35);c.beginPath();c.moveTo(xx,yy-5);c.lineTo(xx+3,yy);c.lineTo(xx,yy+5);c.lineTo(xx-3,yy);c.closePath();c.fill();}
  if(!tasli&&!dag){c.strokeStyle='rgba(120,90,60,.5)';c.lineWidth=2;c.lineCap='round';for(let k=0;k<10;k++){const xx=L+Q()*DN9_CW,yy=dn9Surface(xx)+14;if(yy>1190)continue;c.beginPath();c.moveTo(xx,yy);c.bezierCurveTo(xx+6,yy+14,xx-8,yy+24,xx+3,yy+34+Q()*20);c.stroke();}}
  // yosun çanağı (adalar arası): yumuşak, tombul yosun yastıkları
- if(bl==='adalar')for(let k=0;k<26;k++){const xx=L+Q()*DN9_CW;if(xx<453*T||xx>503*T)continue;const yy=dn9Surface(xx)+14+Q()*40,r=18+Q()*22;c.fillStyle=dn9Ton(k%2?'#5aae7a':'#4a9c6c',xx);c.beginPath();c.ellipse(xx,yy,r*1.4,r*.8,0,0,6.283);c.fill();}
+ if(bl==='adalar')for(let k=0;k<26;k++){const xx=L+Q()*DN9_CW;if(xx<453*T||xx>503*T)continue;const yy=dn9Surface(xx)+14+Q()*40,r=18+Q()*22;
+  // tombul yastık: altında yumuşak gölge, gövde, üstünde ışıklı tepe ve minik yosun benekleri (düz yapıştırma leke gibi durmasın)
+  c.fillStyle=dn9Ton('#2f6e50',xx);c.globalAlpha=.55;c.beginPath();c.ellipse(xx+2,yy+r*.28,r*1.45,r*.72,0,0,6.283);c.fill();c.globalAlpha=1;
+  c.fillStyle=dn9Ton(k%2?'#5aae7a':'#4a9c6c',xx);c.beginPath();c.ellipse(xx,yy,r*1.4,r*.8,0,0,6.283);c.fill();
+  c.fillStyle=dn9Ton(k%2?'#86cc98':'#74bc8a',xx);c.globalAlpha=.8;c.beginPath();c.ellipse(xx-r*.25,yy-r*.32,r*.85,r*.3,0,0,6.283);c.fill();
+  c.fillStyle='#d8f8d0';c.globalAlpha=.35;for(let j=0;j<3;j++){c.beginPath();c.arc(xx+(Q()-.5)*r*1.8,yy+(Q()-.6)*r*.6,1.6+Q()*1.6,0,6.283);c.fill();}c.globalAlpha=1;}
  for(let x=Math.floor(L/16)*16;x<Rr;x+=16){const y=dn9Surface(x);if(y>=1200)continue;c.fillStyle=dag?'rgba(60,50,80,.25)':'rgba(40,70,40,.28)';c.beginPath();c.ellipse(x+8,y+14,14,12,0,0,6.283);c.fill();}
  for(let k=0;k<110;k++){const xx=L+Q()*DN9_CW,yy=dn9Surface(xx)+8+Q()*120;c.fillStyle='rgba(255,250,230,'+(.06+Q()*.16)+')';c.fillRect(xx,yy,1.2,1.2);}
  c.restore();
@@ -912,7 +929,7 @@ function dn9Terrain(){
  const ya=cam.y-2,yb=cam.y+H/S+2;DN9.zeminKare=DN9.kare;
  for(let i=a;i<=b;i++){const cv=dn9Chunk(i),o=cv.ust,y0=Math.max(o,Math.floor(ya)),y1=Math.min(1200,Math.ceil(yb));if(y1>y0)g.drawImage(cv,0,y0-o,cv.width,y1-y0,i*DN9_CW-2,y0,cv.width,y1-y0);}
  // bir sonraki parça (yürüme yönünde) önceden boyanır: karede en çok bir tane
- const yon=(typeof P!=='undefined'&&P.vx<-20)?-1:1,next=yon>0?b+1:a-1;if(next>=0&&next*DN9_CW<COLS*T&&!DN9.chunks.has(next))dn9Chunk(next);
+ const yon=(typeof P!=='undefined'&&P.vx<-20)?-1:1,next=yon>0?b+1:a-1;if(next>=0&&next*DN9_CW<COLS*T&&!DN9.chunks.has(next))dn9Yukle(dn9Chunk(next));   // minicik çizim: boyama + GPU yüklemesi de şimdiden
 }
 // zemin parçalarının kesin örttüğü en üst ekran y'si (son karede zemin çizildiyse)
 function dn9ZeminAlt(vh){
@@ -1007,7 +1024,7 @@ function dn9Backdrop(tm){
  dn9Glow(hc,A.sx,tab[1]-40,vw*.7,120,.1+R9*.08+ak*.08);dn9Glow('#ffd8a0',vw*.5,tab[2]-30,vw*.8,90,(.03+R9*.06+fin*.08));
  g.globalCompositeOperation='source-over';
  // solgunluk: Kalp sönükken uzak vadi biraz griye çalar (ışık geldikçe açılır)
- const sg=(1-R9)*.16*(1-fin);if(sg>.004){g.globalAlpha=sg;g.drawImage(F.solgun,0,0,8,128,0,Math.min(gokAlt,vh)-vh*.3,vw,vh*.3+Math.max(0,yZ-gokAlt)+2);g.globalAlpha=1;}
+ const sg=(1-R9)*.2*(1-fin);if(sg>.004){g.globalAlpha=sg;g.drawImage(F.solgun,0,0,8,128,0,Math.min(gokAlt,vh)-vh*.3,vw,vh*.3+Math.max(0,yZ-gokAlt)+2);g.globalAlpha=1;}
 }
 // şerit ışıltıları: uzak şelalelerin akışı (doku kayar), yuvaların sıcak minik ışığı
 function dn9SeritFx(tm,l,off,y0,alt,wl){
@@ -1143,7 +1160,9 @@ function dn9World(tm){
  if(!dn9Ready())return;dn9Yapilar();dn9Terrain();
  const F=DN9.fx;g.setTransform(1,0,0,1,0,0);
  // solgunluk örtüsü: Kalp sönükken vadinin alt kısmı hafif soluk (pul çiçekleri ve yavrularla açılır); akşamda sıcak altın
- const sg=.13*(1-DN9.renk)*(1-DN9.fin);if(sg>.004){g.globalAlpha=sg;g.drawImage(F.solgun,0,0,8,128,0,H*.3,W,H*.7+1);}
+ const sg=.17*(1-DN9.renk)*(1-DN9.fin);if(sg>.004){g.globalAlpha=sg;g.drawImage(F.solgun,0,0,8,128,0,H*.3,W,H*.7+1);}
+ // ışık geldikçe (çiçekler + yavrular) vadinin altı ılık altınla parlar: Feza ışığı geri getirdiğini görür
+ const isk=DN9.renk*.08*(1-DN9.fin*.5);if(isk>.004){g.globalCompositeOperation='lighter';g.globalAlpha=isk;g.drawImage(F.sicak,0,0,8,128,0,H*.35,W,H*.65+1);g.globalCompositeOperation='source-over';}
  const ak=dn9AksamK(DN9.gun);if(ak>.01){g.globalAlpha=ak*.12;g.drawImage(F.sicak,0,0,8,128,0,H*.25,W,H*.75+1);}g.globalAlpha=1;
  g.setTransform(S,0,0,S,-cam.x*S,-cam.y*S);
  dn9Selaleler(tm);dn9AdaSulari(tm);dn9Dereler(tm);dn9Isiltilar(tm);dn9Fenerler(tm);dn9Yapraklar(tm);dn9KendiIz();dn9Izler(tm);
@@ -1234,11 +1253,13 @@ function dn9Foreground(tm){
    for(let q=Math.floor(left/span);q<=Math.ceil(right/span);q++){const x=q*span+dn9Hash(q*3)*400,wx=x/f+vw*.4,b=dn9Bolge(wx);if(!(b==='giris'||b==='cayir'||b==='adalar'))continue;if(kacik(wx))continue;
     const sol=dn9Hash(q*7)<.5,k=.55+dn9Hash(q)*.2;g.save();g.translate(x,-30);g.rotate(Math.sin(tm*.4+q)*.012);g.scale(sol?k:-k,k);g.globalAlpha=.95;g.drawImage(dal,sol?-40:-700,-10,900,260);g.restore();}
    g.globalAlpha=1;}
-  // alt: yakın iri yapraklar; Feza'nın üstüne gelince saydamlaşır
+  // alt: yakın iri yapraklar; Feza'nın üstüne gelince saydamlaşır. Dünyaya bağlı (zeminin hemen önünde, x ve y'de hafif paralaks):
+  // Feza yükseğe çıkınca kamerayla birlikte yumuşakça aşağı kayıp ekrandan çıkar, inince yine yumuşakça girer (ekrana yapışıp havada kalmaz)
   const fb=1.1,left=cam.x*fb-160,right=cam.x*fb+vw+160,px=(Number.isFinite(P.rx)?P.rx:P.x);g.setTransform(S,0,0,S,-cam.x*S*fb,0);
   for(let q=Math.floor(left/680);q<=Math.ceil(right/680);q++){const R=rng(q*71+883),x=q*680+R()*200,wx=x/fb;if(wx>DN9_GAP0-200&&wx<DN9_GAP1+100)continue;
-   if(kacik(wx))continue;const near=Math.abs(wx-px)<170,k=.5+R()*.25;
-   g.save();g.translate(x,vh+30);g.rotate(Math.sin(tm*.35+q)*.015);g.globalAlpha=near?.2:.88;g.drawImage(F.on[Math.abs(q)%2],-140*k*1.35,-150*k*1.35,280*k*1.35,150*k*1.35);g.restore();}
+   if(kacik(wx))continue;const near=Math.abs(wx-px)<170,k=.5+R()*.25,hk=150*k*1.35;
+   const yb=Math.min(dn9Surface(wx-120),dn9Surface(wx),dn9Surface(wx+120))+95,sy=Math.max(vh+30,vh*.85+((yb-cam.y)-vh*.85)*fb);if(sy-hk>vh+4)continue;   // en yukarı eski yerine (vh+30) çıkar: alt kenarı hiç görünmez
+   g.save();g.translate(x,sy);g.rotate(Math.sin(tm*.35+q)*.015);g.globalAlpha=near?.2:.88;g.drawImage(F.on[Math.abs(q)%2],-140*k*1.35,-hk,280*k*1.35,hk);g.restore();}
   g.globalAlpha=1;
  }
  // ekran geneli: günün ışığı (sabah altın, şelalede nane serinliği, adalarda şeftali, gün batımında turuncu, alacakaranlıkta mor) ve ışık arttıkça sıcaklık
@@ -1255,16 +1276,20 @@ function dn9Vignette(){if(!dn9Ready())return;const F=dn9FxArt(),kx=W/200,ky=H/16
  for(const [x,y,w,h] of DN9_VIG){const dx=Math.round(x*kx),dy=Math.round(y*ky);g.drawImage(F.vig,x,y,w,h,dx,dy,Math.round((x+w)*kx)-dx,Math.round((y+h)*ky)-dy);}g.globalAlpha=1;}
 
 // ════════ Isıtma: önbellekleri kareye yayarak hazırla (uyku girişi / karanlık altında) ════════
+// hazırlanan önbellek tuvalini ana tuvale neredeyse görünmez minicik bir kez çiz: GPU doku yüklemesi oyunun ortasında (ilk göründüğü
+// karede ~40 ms sıçrama) değil, açılış karartmasının altında olur (arayuz.js uiIsit gibi)
+function dn9Yukle(v){if(!v)return v;if(v.getContext||v instanceof HTMLImageElement){g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=.004;g.drawImage(v,0,0,2,2);g.restore();}
+ else if(Array.isArray(v))for(const a of v)dn9Yukle(a);else if(typeof v==='object')for(const k in v)if(v[k]&&v[k].getContext)dn9Yukle(v[k]);return v;}
 function dn9Isit(){
  if(!dn9Ready())return false;const p=DN9.prep;
- if(p<5){dn9GokArt(p);DN9.prep++;return false;}
- if(p===5){dn9FxArt();dn9BulutArt(0);dn9BulutArt(1);DN9.prep++;return false;}
- if(p<12){dn9Serit(p-6,0);DN9.prep++;return false;}
- if(p<17){dn9Serit(p-12,1);DN9.prep++;return false;}
- if(p===17){dn9DagArt(0);dn9DagArt(1);DN9.prep++;return false;}
- if(p===18){dn9EjderArt(0);dn9EjderArt(1);for(let v=0;v<3;v++){dn9AdaArt(v,0);dn9AdaArt(v,1);}DN9.prep++;return false;}
- if(p===19){dn9OnArt();dn9DalArt();dn9Yapilar();DN9.prep++;return false;}
- if(p<23){const i=Math.max(0,Math.floor(((typeof cam!=='undefined'?cam.x:0))/DN9_CW))+(p-20);dn9Chunk(i);DN9.prep++;return false;}
+ if(p<5){dn9Yukle(dn9GokArt(p));DN9.prep++;return false;}
+ if(p===5){dn9Yukle(dn9FxArt());dn9Yukle(dn9BulutArt(0));dn9Yukle(dn9BulutArt(1));DN9.prep++;return false;}
+ if(p<12){dn9Yukle(dn9Serit(p-6,0));DN9.prep++;return false;}
+ if(p<17){dn9Yukle(dn9Serit(p-12,1));DN9.prep++;return false;}
+ if(p===17){dn9Yukle(dn9DagArt(0));dn9Yukle(dn9DagArt(1));DN9.prep++;return false;}
+ if(p===18){dn9Yukle(dn9EjderArt(0));dn9Yukle(dn9EjderArt(1));for(let v=0;v<3;v++){dn9Yukle(dn9AdaArt(v,0));dn9Yukle(dn9AdaArt(v,1));}DN9.prep++;return false;}
+ if(p===19){dn9Yukle(dn9OnArt());dn9Yukle(dn9DalArt());dn9Yapilar();DN9.prep++;return false;}
+ if(p<23){const i=Math.max(0,Math.floor(((typeof cam!=='undefined'?cam.x:0))/DN9_CW))+(p-20);dn9Yukle(dn9Chunk(i));DN9.prep++;return false;}
  for(const c of ['#fff2c0','#e8fff0','#ffd8c4','#ff9a74','#ff8a70','#fffbe8','#f4fff8','#fff0dc','#ffd49a','#ffb27e','#c8a8ff','#ffd27a','#9ff0c8','#ffd8a0','#fff0c0',
   '#e8ffff','#f0ffff','#c8ffd8','#ffc870','#ffa8c8','#fff2d0','#ffffff','#ffe8c0','#fff4e0','#ffe2b0','#e8d8ff','#c8ffe8','#ffe8a8','#d9c8ff','#b8ffd8','#ffd0e0','#fff4d0','#c8f08a','#ffc29a','#bfefff'])glow(c);
  DN9.warm=true;return true;

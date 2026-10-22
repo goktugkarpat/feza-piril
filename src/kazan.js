@@ -39,17 +39,18 @@ const KZ8_IRX = 46, KZ8_IRY = 8.8;       // iksir yüzeyinin yarı eksenleri
 const KZ8_AKTIF = 400;                   // Feza o.x - 400'ü geçince etkinlik başlar
 const KZ8_GIR0 = -470, KZ8_GIR1 = -300;  // Feza'nın oyun boyunca durduğu yerin sınırları (o.x'e göre)
 const KZ8_GEL = 1.1, KZ8_CIK = 1.15, KZ8_IPUCU = 3.5, KZ8_GOSTER = 9, KZ8_YARDIM = 25, KZ8_YARDIM2 = 12;
+const KZ8_BS = 1.24;                     // havada bekleyen malzeme baloncuğunun ölçeği (5 yaş parmağı için iri, Kabak Yüzü baloncuklarına yakın)
 const KZ8_YAKALA = 78, KZ8_BIRAK = 165;  // sürüklenen malzemeyi kazan bu uzaklıkta kendisi yakalar · bırakınca kazana gider
 const KZ8_SUP_YER = { x: 25860, y: 676 };   // süpürgenin bekleyeceği yer (sütun 646; kur'da yeniden hesaplanır)
 // iksir renkleri: başta uykulu mor-mavi → altın → pembe → nane → lila → (puf sonrası) gökkuşağı
 const KZ8_RENK = ['#9a88f0', '#ffd25a', '#ff8fc8', '#7dffc4', '#c39bff', '#ffbfe6'];
 const KZ8_GOK = ['#ff8fa3', '#ffb347', '#ffe27a', '#7dffc4', '#7fc8ff', '#c39bff'];   // gökkuşağı
-// malzemeler: ad, havada süzüleceği yer (o.x, o.y'ye göre), ışık rengi
+// malzemeler: ad, havada süzüleceği yer (o.x, o.y'ye göre; yay biraz sola/aşağı: 4:3 iPad'de sağ üstteki ayın üstüne binmesin), ışık rengi
 const KZ8_MALZ = [
-  { ad: 'yildiz', fx: -305, fy: -192, renk: '#ffe27a' },
-  { ad: 'seker', fx: -212, fy: -268, renk: '#ff9fd3' },
-  { ad: 'kabak', fx: -102, fy: -300, renk: '#ffb35c' },
-  { ad: 'ayCicegi', fx: 8, fy: -268, renk: '#d9c8ff' }];
+  { ad: 'yildiz', fx: -318, fy: -190, renk: '#ffe27a' },
+  { ad: 'seker', fx: -232, fy: -262, renk: '#ff9fd3' },
+  { ad: 'kabak', fx: -136, fy: -290, renk: '#ffb35c' },
+  { ad: 'ayCicegi', fx: -44, fy: -248, renk: '#d9c8ff' }];
 const KZ8_BOS = {};
 const KAZAN = {
   o: null, ptr: -1, px: 0, py: 0, pt: 0, yol: 0, tut: null, tutUzak: 0,
@@ -818,20 +819,20 @@ function kz8MalzAdim(o, dt) {
       m.t += dt; if (m.t < 0) { m.x = mx; m.y = my; continue; }
       const u = clamp(m.t / KZ8_CIK, 0, 1), e = 1 - Math.pow(1 - u, 3);
       m.x = lerp(mx, fx, e) + Math.sin(u * Math.PI) * (fx < mx ? -30 : 30); m.y = lerp(my - 10, fy, e) - Math.sin(u * Math.PI) * 50;
-      m.s = 0.3 + 0.7 * smooth(Math.min(1, u * 1.5)); m.rot = (1 - e) * 2.4 * (fx < mx ? -1 : 1);
+      m.s = 0.3 + (KZ8_BS - 0.3) * smooth(Math.min(1, u * 1.5)); m.rot = (1 - e) * 2.4 * (fx < mx ? -1 : 1);
       if (u >= 1) { m.durum = 'bekle'; m.t = 0; kz8IsikSac(m.x, m.y, 5, 40, [m.d.renk, '#ffffff']); }
     } else if (m.durum === 'bekle') {
       m.t += dt; const tt = k.t, w = Math.sin(m.sal * 9) * m.sal;
-      m.x = fx + Math.sin(tt * 1.1 + m.i * 1.7) * 5 + w * 6; m.y = fy + Math.sin(tt * 1.5 + m.i) * 7 - m.sal * 6; m.s += (1 + m.sal * 0.12 - m.s) * (1 - Math.exp(-dt * 6)); m.rot = Math.sin(tt * 1.2 + m.i * 2) * 0.12 + w * 0.2;
+      m.x = fx + Math.sin(tt * 1.1 + m.i * 1.7) * 5 + w * 6; m.y = fy + Math.sin(tt * 1.5 + m.i) * 7 - m.sal * 6; m.s += (KZ8_BS * (1 + m.sal * 0.12) - m.s) * (1 - Math.exp(-dt * 6)); m.rot = Math.sin(tt * 1.2 + m.i * 2) * 0.12 + w * 0.2;
     } else if (m.durum === 'tut') {
       const kk = 1 - Math.exp(-dt * 20), ox = m.x; m.x += (KAZAN.hx - m.x) * kk; m.y += (KAZAN.hy - m.y) * kk;
-      m.s += (1.15 - m.s) * (1 - Math.exp(-dt * 10)); m.rot += (clamp((m.x - ox) / Math.max(dt, 1e-3) * 0.0012, -0.5, 0.5) - m.rot) * (1 - Math.exp(-dt * 8));
+      m.s += (KZ8_BS * 1.12 - m.s) * (1 - Math.exp(-dt * 10)); m.rot += (clamp((m.x - ox) / Math.max(dt, 1e-3) * 0.0012, -0.5, 0.5) - m.rot) * (1 - Math.exp(-dt * 8));
       const d = Math.hypot(mx - m.x, my - 20 - m.y); yakin = Math.max(yakin, 1 - clamp((d - KZ8_YAKALA) / 260, 0, 1));
       if (Math.abs(m.x - ox) > 0.4 && Math.random() < dt * 24) kz8Toz(Math.random() < 0.3 ? 3 : 1, m.x + (Math.random() - 0.5) * 30, m.y + (Math.random() - 0.5) * 30, 0, 10, 0.7, 5 + Math.random() * 3, m.d.renk);   // sürüklerken ışık izi
       if (d < KZ8_YAKALA) kz8MalzUc(o, m, 'yakala');
     } else if (m.durum === 'geri') {
       m.t += dt; const u = clamp(m.t / 0.7, 0, 1), e = smooth(u);
-      m.x = lerp(m.x1, fx, e); m.y = lerp(m.y1, fy, e) - Math.sin(u * Math.PI) * 14; m.s += (1 - m.s) * (1 - Math.exp(-dt * 6)); m.rot *= Math.exp(-dt * 5);
+      m.x = lerp(m.x1, fx, e); m.y = lerp(m.y1, fy, e) - Math.sin(u * Math.PI) * 14; m.s += (KZ8_BS - m.s) * (1 - Math.exp(-dt * 6)); m.rot *= Math.exp(-dt * 5);
       if (u >= 1) { m.durum = 'bekle'; m.t = 0; }
     } else if (m.durum === 'pir') {
       const pr = k.pr; m.x = pr.x + pr.f * 3; m.y = pr.y + 27; m.s += (0.9 - m.s) * (1 - Math.exp(-dt * 6)); m.rot = Math.sin(k.t * 5) * 0.15;
@@ -1171,8 +1172,9 @@ addEventListener('pointerdown', e => {
   const [mx, my] = kz8Kagiz(o), [nx0, ny0] = kz8NineYer(o);
   if (Math.abs(p.x - mx) < 100 && p.y > my - 95 && p.y < o.y + 12) { const s = kz8Siradaki(o); if (s) kz8MalzUc(o, s, 'dokun'); k.wob = Math.max(k.wob, 0.45); kz8Sfx('kazanFokur', 0.5); return; }
   if (Math.abs(p.x - nx0) < 58 && p.y > ny0 - 190 && p.y < o.y + 10) { k.nine.elT = 1.8; k.nine.sevT = 0.7; const s = kz8Siradaki(o); if (s) kz8MalzUc(o, s, 'dokun'); return; }
-  let en = null, ed = 240; for (const q of k.malz) if (q.durum === 'bekle') { const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < ed) { ed = d; en = q; } }   // boşluğa dokunuş: en yakın malzeme "buradayım" diye hoplar
-  if (en) en.sal = 1;
+  let en = null, ed = 240; for (const q of k.malz) if (q.durum === 'bekle') { const d = Math.hypot(q.x - p.x, q.y - p.y); if (d < ed) { ed = d; en = q; } }
+  if (en && ed < 150 * Math.max(1, 0.6 * DPR / Math.max(S, 0.001))) { en.sal = 1; kz8MalzUc(o, en, 'dokun'); return; }   // baloncuğun yanına (ıska) dokunuş: o malzeme yine kazana uçar
+  if (en) en.sal = 1;   // daha uzak boşluk: en yakın malzeme "buradayım" diye hoplar
 }, true);
 addEventListener('pointermove', e => {
   const o = KAZAN.aktif; if (!o || e.pointerId !== KAZAN.ptr) return; kz8Sahip(e);
@@ -1187,7 +1189,7 @@ function kz8BirakE(e) {
   const o = KAZAN.aktif; if (!o || e.pointerId !== KAZAN.ptr) return; kz8Sahip(e);
   const k = o.kz, m = KAZAN.tut;
   if (m && m.durum === 'tut') {
-    const [mx, my] = kz8Kagiz(o), d = Math.hypot(mx - m.x, my - m.y), kisa = KAZAN.yol < 14 && k.t - KAZAN.pt < 0.5;
+    const [mx, my] = kz8Kagiz(o), d = Math.hypot(mx - m.x, my - m.y), kisa = KAZAN.yol < 18;   // kıpırdamadan basılı tutup bırakmak da dokunuş sayılır (5 yaş: uzun basar)
     if (kisa || d < KZ8_BIRAK || d < KAZAN.tutUzak * 0.65) kz8MalzUc(o, m, kisa ? 'dokun' : 'birak');
   }
   kz8GirdiBirak();

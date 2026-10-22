@@ -910,6 +910,7 @@ function dn3FgBake() {
     return { c, w, h };
   });
 }
+const DN3_FGK = { ref: NaN, t: NaN };   // alt kenar bulutları dünyaya bağlı kayar (dunya.js dnFgYerKay)
 function dn3Foreground(tm) {
   if (!dn3Ok() || !DN3.reg) return; if (!isFinite(tm)) tm = 0;
   dn3FgBake(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over';
@@ -923,11 +924,12 @@ function dn3Foreground(tm) {
     if (a < 0.02) continue; g.globalAlpha = a; g.save(); g.translate(wx * S, (-44 - n * 8) * S); g.scale(s, -s * 0.8); g.drawImage(sp.c, 0, -300 * S, 520 * S, 300 * S); g.restore();
   }
   // alt kenar: kontrol bölgeleri (sol alt düğme) boş; orta-sağ
-  for (let n = 0; n < 3; n++) {
+  const ky = typeof dnFgYerKay === 'function' ? dnFgYerKay(DN3_FGK, tm) : 0;
+  if (ky < 160) for (let n = 0; n < 3; n++) {   // (ky ≥ 160: tamamen ekranın altında)
     const sp = DN3_FG.puff[(n + 1) % 3], span = 2000, wx = ((n * 690 + 400 - cam.x * 1.5 - tm * 9) % span + span) % span - 520; if (wx > VW + 40) continue;
     const s = 0.75 + (n % 2) * 0.2, cxs = (wx + 260 * s) * S, rx = cxs / W;
     let a = 0.6 * smooth(clamp((rx - 0.26) / 0.12, 0, 1)) * smooth(clamp((1.02 - rx) / 0.12, 0, 1)) * (0.25 + 0.75 * dn3Foc(cxs, H - 60 * S)) * open;
-    if (a < 0.02) continue; g.globalAlpha = a; g.drawImage(sp.c, wx * S, H - 150 * s * S + 20 * S, 520 * s * S, 300 * s * S);
+    if (a < 0.02) continue; g.globalAlpha = a; g.drawImage(sp.c, wx * S, H - 150 * s * S + (20 + ky) * S, 520 * s * S, 300 * s * S);
   }
   // uçuşta: yanından hızla geçen büyük sis bulutları (hız hissi), Feza'nın üstüne gelmez
   if (fly > 0.05) for (let n = 0; n < 3; n++) {

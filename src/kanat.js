@@ -29,7 +29,8 @@ const KN9_GIRIS = 300;                       // Feza o.x - 300'de durur
 const KN9_TX = -172, KN9_TW = 104, KN9_TH = 30;   // tümsek (Fıstık'ın yaprak yuvası): o.x'e göre orta, yarı genişlik, yükseklik
 const KN9_CICEK = [[-66, -112], [28, -170], [118, -232], [202, -296], [280, -362]];   // çiçek-bulutçuklar (o.x, o.y'ye göre; alçaktan yükseğe)
 const KN9_RENK = ['#ff9fc0', '#ffc29a', '#ffd27a', '#7fe0f0', '#b89cff'];               // gül, şeftali, altın, gök turkuazı, Pırıl leylağı
-const KN9_OLC = 1;                           // Fıstık'ın genel ölçek çarpanı (≈ 37 birim boy, gövde ortası yerden ≈ 18; Feza ≈ 80, Pırıl'dan biraz küçük)
+const KN9_OLC = 1.2, KN9_KOKX = 6 + 10 * (KN9_OLC - 1), KN9_KOKY = 27 + 40 * (KN9_OLC - 1);   // P9C: Pırıl'ın tuttuğu kanat kökü (Fıstık büyüyünce Pırıl başının arkasında kalmasın)
+// KN9_OLC — P9C: 1 → 1.2 (mini oyunun yıldızı ekranda daha iyi seçilsin). Fıstık'ın genel ölçek çarpanı (1 iken ≈ 37 birim boy, gövde ortası yerden ≈ 18; Feza ≈ 80, Pırıl'dan biraz küçük)
 const KN9_ITKI = 172, KN9_YERC = 270, KN9_SUZ = 40, KN9_SUZ_TUT = 21, KN9_TAVAN = -450;   // kanat itkisi, yerçekimi, süzülme hızı (bırakınca / basılıyken), tavan
 const KN9_CIRP = 0.42;                       // bir kanat çırpışı (sn)
 const KN9_IPUCU = 7, KN9_YARDIM = 20, KN9_YARDIM2 = 10;   // boşta bekleme eşikleri (sn)
@@ -535,6 +536,11 @@ function kn9UcAdim(o, dt) {
   // boşta bekleme: ipucu → Pırıl'ın yardımı
   if (!k.helpOn) {
     const i0 = k.idle; k.idle += dt;
+    // P9C davet: yerde beklerken Fıstık arada bir kanatlarını çırpıp minik hoplar, sıradaki çiçeğe doğru ışık tozu yollar ("uçalım mı?")
+    if (!fs.havada && k.idle > 2.2) { k.davetT = (k.davetT || 0) - dt; if (k.davetT <= 0) { k.davetT = 2.3;
+      fs.cirpT = 0; fs.sqv -= 1.4; kn9Kivilcim(fs.x - 6, fs.y - 26, 4, '#e8ffd0', 45);
+      const dx = h.x - fs.x, dy = h.y - (fs.y - 26); for (let i = 0; i < 10; i++) { const f = 0.45 + i * 0.13; kn9Toz(i % 2, fs.x + 4, fs.y - 26, dx * f, dy * f + 10 * f, 1.2 + i * 0.05, i % 2 ? 6.5 : 5, i % 2 ? '#ffffff' : KN9_RENK[h.i]); } } }
+    else k.davetT = 0.6;
     if (i0 < KN9_IPUCU && k.idle >= KN9_IPUCU) { k.ipucuN++; OLAY.emit('kanatIpucu', { o, n: k.ipucuN }); }
     if (k.idle >= (k.helpN > 0 ? KN9_YARDIM2 : KN9_YARDIM)) { k.helpOn = true; k.helpZor = false; k.helpT = 0; k.helpN++; k.otoT = 0.35; k.tutuyor = false; OLAY.emit('kanatYardim', { o, n: k.helpN }); }
     else if (k.ilerT > 18) { k.helpOn = true; k.helpZor = true; k.helpT = 0; k.helpN++; k.otoT = 0.35; k.tutuyor = false; OLAY.emit('kanatYardim', { o, n: k.helpN, zor: true }); }   // dokunuyor ama yetişemiyor: birlikte uçalım
@@ -670,7 +676,7 @@ function kn9PirilAdim(o, dt) {
   } else if (k.faz === 'uc') {
     const h = k.cicek[Math.min(k.sira, 4)];
     if (k.helpOn) {
-      const hx = fs.x - 6 - k.patiX, hy = fs.y - 27 - k.patiY + Math.sin(k.t * 6.8) * 1.2;   // Pırıl'ın patisi Fıstık'ın kanat kökünde
+      const hx = fs.x - KN9_KOKX - k.patiX, hy = fs.y - KN9_KOKY - k.patiY + Math.sin(k.t * 6.8) * 1.2;   // Pırıl'ın patisi Fıstık'ın kanat kökünde
       if (k.tutuyor) { pr.x = hx; pr.y = hy; pr.f = 1; return; }
       tx = hx; ty = hy; hiz = 6.5;
       if (Math.hypot(pr.x - hx, pr.y - hy) < 16 && k.helpT > 0.5) { k.tutuyor = true; kn9Kivilcim(fs.x - 8, fs.y - 30, 6, '#e2ccff', 50); }
@@ -758,7 +764,7 @@ function kn9PirilCiz(o, tm) {
   const k = o.kn, pr = k.pr, fs = k.fs, U = KN9_PU;
   let poz = 'ucus';
   U.sevinc = k.fzSev > 0 ? 0.8 : 0; U.bakX = clamp((fs.x - pr.x) / 80, -1, 1) * pr.f; U.bakY = clamp((fs.y - 20 - pr.y) / 80, -1, 1); U.yon = pr.f; U.salla = 0;
-  if (k.faz === 'uc' && (k.tutuyor || k.helpOn && Math.hypot(pr.x + k.patiX - fs.x + 6, pr.y + k.patiY - fs.y + 27) < 40)) poz = 'tut9';
+  if (k.faz === 'uc' && (k.tutuyor || k.helpOn && Math.hypot(pr.x + k.patiX - fs.x + KN9_KOKX, pr.y + k.patiY - fs.y + KN9_KOKY) < 40)) poz = 'tut9';
   else if (k.faz === 'uc' && k.idle > KN9_IPUCU && !k.helpOn && pr.f < 0) poz = 'goster9';
   else if (k.faz === 'goster' && k.fT > 0.9 && k.fT < 3.4) U.sevinc = 0.6;
   else if (k.faz === 'son') { if (k.fT > 2.2 && k.fT < 3.3) poz = 'sevinc9'; U.sevinc = 1; if (k.fT > 6.6) U.salla = 1; }

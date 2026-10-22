@@ -113,7 +113,7 @@ const DEKOR8={
   {k:526,w:320,h:280,rh:150,duvar:'#3e6a82',cati:'#2a2a4e',cati8:'kedi',doku:'tahta',kepenk:'#c39bff',pstil:'kare',icerik:'kedi',kanat:{w:300,h:170,bacaX:BL8_BACA.x,bacaH:yuzey(538)-BL8_BACA.y}},
   {k:552,w:340,h:280,rh:160,duvar:'#9a90c0',cati:'#6a5a9a',cati8:'dantel',doku:'siva',kepenk:'#8fd8ff',pstil:'yuvarlak',icerik:'dantel',bacalar:[.8]},
   {k:578,w:350,h:260,rh:150,duvar:'#b8904a',cati:'#4a7a4a',cati8:'kubbe',doku:'tas',kepenk:'#7a4a2a',pstil:'kare',bacalar:[.25]}],
- meydanEv:[{k:837,w:300,h:250,rh:150,duvar:'#7a5a9a',cati:'#4a2e6a',cati8:'sapka',doku:'siva',kepenk:'#ffb347',pstil:'kemer'},
+ meydanEv:[{k:837,w:300,h:250,rh:150,duvar:'#8a5aa0',cati:'#34205e',cati8:'sapka',doku:'siva',kepenk:'#ffb347',pstil:'kemer'},
   {k:865,w:300,h:260,rh:160,duvar:'#4e7488',cati:'#2a3a5a',cati8:'kedi',doku:'tahta',kepenk:'#ff8fc8',pstil:'kare'}],
  kule:{k:846,h:470},
  tezgah:[{k:826,ci:0},{k:876,ci:3}],

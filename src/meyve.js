@@ -48,7 +48,7 @@ const MY9_BR = 36;                 // baloncuk yarıçapı
 const MY9_GEL = 1.3, MY9_TURSON = 1.7, MY9_KALK = 6.4, MY9_DON = 0.5;
 const MY9_EL = 1.2;                // 'meyveUzat' pozunun süresi (sn): .3'te meyve elde, .42'de bırakır
 const MY9_UC = 0.82, MY9_UC_P = 1.0, MY9_YE = 0.95, MY9_DANS = 1.35, MY9_RED = 1.0, MY9_GERI = 1.05, MY9_BUY = 0.95;
-const MY9_IPUCU = 4, MY9_GOSTER = 9, MY9_YARDIM = 25, MY9_YARDIM2 = 6, MY9_YARDIM3 = 1.6;
+const MY9_IPUCU = 4, MY9_GOSTER = 9, MY9_YARDIM = 20, MY9_YARDIM2 = 6, MY9_YARDIM3 = 1.1;   // P9C: ilk yardım 25 → 20 sn, art arda yardım arası 1.6 → 1.1 sn (dokunmadan oyun uzamasın)
 const MY9_ISIK = ['#ffd27a', '#fff2c0', '#b89cff', '#6fd8a8', '#ff9fc0', '#7fe0f0', '#ffffff'];
 const MY9_ALTIN = ['#ffd27a', '#ffe9a8', '#ffffff', '#c8f08a'];
 const MY9_BOS = {};
@@ -379,7 +379,8 @@ function my9TozCiz(c) {
   const a0 = c.globalAlpha, op0 = c.globalCompositeOperation;
   for (let i = 0; i < MY9_TZ.length; i++) {
     const p = MY9_TZ[i]; if (!p.a) continue; const u = p.t / p.max, f = 1 - u; c.globalAlpha = a0;
-    if (p.tip === 7) { const w = Math.sin(u * Math.PI); c.globalCompositeOperation = 'lighter'; my9Glow(c, p.col, p.x, p.y, p.s * 1.6, p.s * 1.6, 0.8 * w); my9Glow(c, '#ffffff', p.x, p.y, p.s * 0.6, p.s * 0.6, 0.7 * w); c.globalCompositeOperation = op0; continue; }
+    if (p.tip === 7) { const w = Math.sin(u * Math.PI); c.globalCompositeOperation = 'lighter'; my9Glow(c, p.col, p.x, p.y, p.s * 1.6, p.s * 1.6, 0.8 * w); my9Glow(c, '#ffffff', p.x, p.y, p.s * 0.6, p.s * 0.6, 0.7 * w); c.globalCompositeOperation = op0;
+      c.globalAlpha = 0.9 * w; const r = p.s * 0.55; c.drawImage(MY9S.pirilti, p.x - r, p.y - r, r * 2, r * 2); c.globalAlpha = 1; continue; }   // P9C: açık gökte de seçilsin diye beyaz yıldızcık
     if (p.tip === 0 || p.tip === 1) { const tw = p.tip === 1 ? 0.7 + 0.3 * Math.sin(p.r * 4) : 1, gs = p.s * (0.6 + f * 0.6); c.globalCompositeOperation = 'lighter'; my9Glow(c, p.col, p.x, p.y, gs, gs, f * 0.9 * tw * Math.min(1, u * 8)); c.globalCompositeOperation = op0; c.globalAlpha = a0 * f; c.fillStyle = '#ffffff'; c.beginPath(); c.arc(p.x, p.y, 1.3, 0, 6.2832); c.fill(); }
     else if (p.tip === 2) { const sc = p.s * (0.5 + 0.5 * Math.sin(Math.min(1, u * 1.6) * Math.PI)); c.globalCompositeOperation = 'lighter'; my9Glow(c, p.col, p.x, p.y, sc * 1.2, sc * 1.2, f * 0.6); c.globalCompositeOperation = op0; const M = c.getTransform(); c.translate(p.x, p.y); c.rotate(p.r * 0.5); c.globalAlpha = a0 * Math.min(1, f * 1.5); c.drawImage(MY9S.pirilti, -sc, -sc, sc * 2, sc * 2); c.setTransform(M); }
     else if (p.tip === 3) { c.globalAlpha = a0 * f * 0.85; c.strokeStyle = p.col; c.lineWidth = 3 * f + 0.5; c.beginPath(); c.arc(p.x, p.y, p.s * (1 + u * 0.6), 0, 6.2832); c.stroke(); }
@@ -706,7 +707,7 @@ function my9IzAdim(o, dt) {   // ipucu: istenen meyveden yavrunun baloncuğuna a
     const b = k.yv[i]; if (b.tok || b.balS < 0.9) continue;
     for (let j = 0; j < b.istek.length; j++) {
       const ti = b.istek[j], m = k.meyve[ti]; if (b.yenen[j] || b.ayr[j] || m.durum !== 'agac' || !(k.idle > MY9_GOSTER || m.isaret > 0)) continue;
-      if (Math.random() < dt * 7) { const [bx, by] = my9BalonYer(o, i), p = my9Toz(7, m.x, m.y, bx, by, 1.25, 6 + Math.random() * 3, Math.random() < 0.5 ? MY9_TON[ti] : '#fff2c0'); if (p) p.r = Math.random() * 6.28; }
+      if (Math.random() < dt * 12) { const [bx, by] = my9BalonYer(o, i), p = my9Toz(7, m.x, m.y, bx, by, 1.25, 10 + Math.random() * 4, Math.random() < 0.6 ? MY9_TON[ti] : '#fff2c0'); if (p) p.r = Math.random() * 6.28; }   // P9C: iz daha sık ve iri (görünür olsun)
     }
   }
 }
@@ -835,6 +836,17 @@ function my9BalonCizKare(o, b, tm, vurgu) {
     const ms = MY9S.meyve[b.istek[j]], ic = 0.78 * b.ik[j], ixh = b.istek.length > 1 ? (j === 0 ? -1 : 1) * 22 * b.genisS : 0; sira++;
     const bob = Math.sin(tm * 2.3 + j * 1.7 + b.i) * 1.5;
     g.save(); g.translate(ixh, 2 + bob); g.rotate(Math.sin(tm * 1.4 + j + b.i) * 0.08); g.scale(ic, ic); g.drawImage(ms, -ms.ox, -ms.oy + 4, ms.bw, ms.bh); g.restore();
+  }
+  if (!n && b.yenen.length && b.yenen.every(Boolean)) {   // doydu: boş baloncuk kalmasın; içinde atan pembe bir kalp belirir (baloncuk sönene kadar)
+    let tk = 9; for (let j = 0; j < b.ikT.length; j++) if (b.ikT[j] >= 0) tk = Math.min(tk, b.ikT[j]);
+    const u = clamp((tk - 0.2) / 0.35, 0, 1), hs = my9Yay(u) * (1 + 0.08 * Math.sin(tm * 7 + b.i));
+    if (hs > 0.01) {
+      g.save(); g.translate(0, 1); g.scale(hs, hs);
+      const gr = g.createRadialGradient(-5, -6, 1, 0, 0, 20); gr.addColorStop(0, '#ffd6e4'); gr.addColorStop(0.55, '#ff8fb4'); gr.addColorStop(1, '#f0628e');
+      my9KalpYol(g, 0, 0, 15); g.fillStyle = gr; g.fill(); g.lineWidth = 2; g.strokeStyle = '#d84a7a'; g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.8)'; g.beginPath(); g.ellipse(-7, -5, 3.2, 2.2, -0.5, 0, 6.2832); g.fill();
+      g.restore();
+    }
   }
   g.setTransform(M);
 }

@@ -1317,7 +1317,7 @@ function omDikkatHesap(dt, snap, px, py) {
   const aktif = !!omDk.fn && (omDk.final || now < omDk.bitis);
   const hw = aktif ? clamp(omDk.guc, 0, 1) : 0;
   if (snap || !(dt > 0)) { omDk.w = hw; omDk.wv = 0; }
-  else { omDk.w = omSD(omDk.w, hw, omDk.wv, aktif ? 0.5 : 0.85, dt); omDk.wv = omSdV; if (!aktif && omDk.w < 0.002) { omDk.w = 0; omDk.wv = 0; } }
+  else { omDk.w = omSD(omDk.w, hw, omDk.wv, aktif ? 0.5 : BOLUM_NO >= 7 && omZ.z < OM_TABAN_ZOOM * 0.75 ? 1.4 : 0.85, dt); omDk.wv = omSdV; if (!aktif && omDk.w < 0.002) { omDk.w = 0; omDk.wv = 0; } }   // B7-9: çok uzaklaşmış kadraj (mini oyun sonu → sıradaki yer) normale daha yavaş döner (zoom sıçramasın)
   omDk.w = clamp(omDk.w, 0, 1);
   if (omDk.w <= 0 || !omDk.fn) { if (!aktif) omDk.fn = null; return; }
   // kutu: Feza (başı dahil) + andaki şeyler
@@ -1530,9 +1530,11 @@ function stepCam(dt, snap) {
   omC.kenar = (snap || omC.kenar === undefined) ? kenarHedef : lerp(omC.kenar, kenarHedef, 1 - Math.exp(-(dt || 0) * 1.5));   // yumuşak (kamera sıçramasın)
   // dikkat çerçevesi: kutunun ortasına bak; kutu sığmadıysa özne öncelikli, ama Feza ekranda kalır
   const dw = omDk.w > 0 ? smooth(omDk.w) : 0;
+  let dikGok = false;   // dikey ekranda B7-9 dikkat kadrajı: gök (dünyanın tepesinin üstü) de görünebilir (finallerdeki gibi)
   if (dw > 0) {
     let dx = omDk.cx - VW / 2, dy = omDk.cy - VHg / 2;
     if (om6Final()) dy = Math.min(omDk.o6.y - VHg * (1 - OM6_DUVAR), omDk.y0 - 50);   // şenlik: avlu zemini ekranın alttan ~%22'sinde, fişeklerin tepesi görünür
+    else if (BOLUM_NO >= 7 && W < H && omDk.ad !== 'hayvan') { dy = Math.min(dy, omDk.y1 - VHg * 0.8); dikGok = true; }   // dikey iPad (B7-9 mini oyunları): kutu genişliğe göre sığınca zemin ekranın alttan ~%22'sinde (altta boş toprak kalmasın)
     if (!omDk.fezaYok) { dx = clamp(dx, px - VW * (1 - omC.kenar), px - VW * omC.kenar); dy = clamp(dy, py - VHg * 0.9, py - 100 - VHg * 0.04); }
     tx = lerp(tx, clamp(dx, 0, maxX), dw); ty = lerp(ty, dy, dw); st = Math.max(st, lerp(st, 0.45, dw));
   }
@@ -1559,7 +1561,7 @@ function stepCam(dt, snap) {
     tx = clamp(DENIZ.ahtapot.x - VW / 2, 0, maxX);
     ty = DENIZ.ahtapot.y - 55 - VHg / 2; st = .35;
   }
-  const yUst = dw > 0 && om6Final() ? -40 - VHg * 0.5 * dw : -40;   // dünyanın tepesi; yalnız Bölüm 6 şenliğinde göğe doğru daha yukarı çıkılabilir (dikkat sönerken yumuşakça geri)
+  const yUst = dw > 0 && (om6Final() || dikGok) ? -40 - VHg * 0.5 * dw : -40;   // dünyanın tepesi; yalnız Bölüm 6 şenliğinde göğe doğru daha yukarı çıkılabilir (dikkat sönerken yumuşakça geri)
   ty = clamp(ty, yUst, BOLUM_NO === 4 ? Math.max(-40, yMax) : yMax);
   if (snap) { omC.x = tx; omC.y = ty; omC.vx = omC.vy = 0; }
   else if (dt > 0) {

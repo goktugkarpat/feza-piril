@@ -616,6 +616,11 @@ function yv9SapkaUcan(o, m) {   // üst kabuk yukarı uçup dönerek yavrunun ba
 }
 function yv9Cik(o, m, dt) {
   m.u += dt; const u = m.u, u0 = u - dt, C = YV9_CK, dx = P.x - m.x;
+  // çıkış anı görünsün: sarılmadan sonra yumurtanın dibinde duran Feza şaşkın sevinçle küçük bir hopla bir adım geri sıçrar
+  if (u0 < .12 && u >= .12 && DURUM === 'oyun' && P.ground && !P.ucus && Math.abs(P.x - o.x) < 50 && Math.abs(P.y - o.y) < 30) {
+    const sd = P.x < o.x ? -1 : 1, zy = yv9Zemin(o.x + sd * 70, P.y), zy2 = yv9Zemin(o.x + sd * 45, P.y);
+    if (zy != null && zy2 != null && Math.abs(zy - P.y) < 6 && Math.abs(zy2 - P.y) < 6) { P.vy = -430; P.vx = sd * 290; P.ground = false; P.f = -sd; P.kilit = Math.max(P.kilit || 0, .4); }
+  }
   const cik = smooth(clamp(u / .45, 0, 1));   // kabuğun içinden yükselir (taban yuvanın içinde)
   m.y = o.y - 9 * YV9_NS + (1 - cik) * 16; m.x = o.x; m.zip = u < .45 ? .5 * Math.sin(u / .45 * Math.PI) : 0;
   m.sapkaU = u < C.SAPKA ? u / C.SAPKA : 1; m.sapka = u >= C.SAPKA ? 1 : 0;
@@ -647,7 +652,7 @@ function yv9SapkaGuncelle(m, dt) { if (m.sapkaHop > 0) { m.sapkaHop += dt / .45;
 
 // ── Takip: zıplayarak (yerde yay çizen hoplar) ya da kısa uçuşlarla (boşluk, yüksek basamak, Feza havadayken); geride kalınca
 //    ekran dışından ışıltılı uçuşla yetişir. Sıra: çıkış sırası (m.k). Mini oyunlarda biraz daha geride bekleyip sevinçle izler.
-const YV9_ARA = 34, YV9_ILK = 48;
+const YV9_ARA = 41, YV9_ILK = 50;   // sıra aralığı: yavrular üst üste binmesin (gövde ≈ 40 birim)
 function yv9SicraAdim(o, m, dt) {
   const s = m.sic; if (!s || !s.aktif) return false;
   s.u += dt / s.T; const u = Math.min(1, s.u);
@@ -674,6 +679,9 @@ function yv9Takip(o, m, dt) {
   m.zip *= Math.max(0, 1 - dt * 7); m.kanat = Math.max(0, m.kanat - dt * 1.6); m.agiz = Math.max(0, m.agiz - dt * 1.5);
   m.cheerT = Math.max(0, m.cheerT - dt); m.tapT = Math.max(0, m.tapT - dt); m.saril = Math.max(0, m.saril - (m.sarT > 0 ? 0 : dt * 3));
   if (m.izT > 0) m.izT -= dt;
+  if (m.esneT > 0) { m.esneT = Math.max(0, m.esneT - dt); m.agiz = Math.max(m.agiz, Math.sin((1 - m.esneT / 1.3) * Math.PI)); }
+  if (m.utanT > 0) m.utanT = Math.max(0, m.utanT - dt);
+  if (m.cikT > 0) { m.cikT = Math.max(0, m.cikT - dt); m.agiz = Math.max(m.agiz, .35 + .35 * Math.sin(m.cikT * 28)); }   // cik cik
   if (m.durum === 'dans') { yv9Dans(o, m, dt); return; }
   if (yv9Final()) { yv9DansaBasla(o, m); return; }
   if (yv9Sirtta()) { if (m.durum !== 'sirt') { m.durum = 'sirt'; m.ucus = false; if (m.sic) m.sic.aktif = false; } m.x = P.x; m.y = P.y; return; }
@@ -699,7 +707,11 @@ function yv9Takip(o, m, dt) {
     return;
   }
   const f = P.f || 1, mini = yv9Mini(), vw = typeof VW !== 'undefined' ? VW : 1000;
-  const geri = YV9_ILK + m.k * YV9_ARA + (mini ? 80 : 0), hx = P.x - f * geri;
+  let geri = YV9_ILK + m.k * YV9_ARA + (mini ? 80 : 0), hx = P.x - f * geri;
+  if (!mini && oyun && YV9.durT > 1.3 && YV9.takipN >= 3) {   // Feza durdu: uzun kuyruk yerine iki yanına toplanırlar (ekran kenarında / düğmenin altında kaybolmasınlar)
+    const j = m.k >> 1, gx = P.x + (m.k % 2 ? f : -f) * (YV9_ILK + j * YV9_ARA), gz = yv9Zemin(gx, P.y - 6);
+    if (m.k % 2 === 0 || (gz != null && Math.abs(gz - P.y) < 1.3 * T && Math.abs(yv9Zemin(P.x + f * 30, P.y - 6) - P.y) < 1.3 * T)) { geri = YV9_ILK + j * YV9_ARA; hx = gx; }
+  }
   const zg = yv9Zemin(hx, P.y - 6), yerde = P.ground || YV9.havaT < .3;
   const dP = Math.hypot(P.x - m.x, P.y - m.y);
   if (oyun && (dP > vw * .85 || Math.abs(P.y - m.y) > 9 * T)) { m.uzakT += dt; if (m.uzakT > .35 + m.k * .1) { m.uzakT = 0; yv9GeriGel(o, m); } } else m.uzakT = 0;
@@ -717,30 +729,38 @@ function yv9Takip(o, m, dt) {
     yv9Duygu(o, m, dt); return;
   }
   if (oyun && (havada || yuksek) && Math.abs(P.x - m.x) < vw * .7) { yv9Kalk(m); yv9Duygu(o, m, dt); return; }
+  const hdx = hx - m.x, ad = Math.abs(hdx);
+  const kos = Math.abs(P.vx) > 60 && oyun;   // Feza yürüyor: hedefin biraz önüne (gideceği yere) seker, geride kalıp ekran kenarına yığılmaz
+  if (kos && ad > 40) m.hopT = Math.min(m.hopT, .04 + m.k * .05);   // dinlenirken Feza yürümeye başladı: hemen (sırayla) peşinden
   m.hopT -= dt;
   if (m.hopT > 0) { yv9Duygu(o, m, dt); return; }
-  const hdx = hx - m.x, ad = Math.abs(hdx);
-  if (ad > 24) {   // hedefe hop: uzaksa iri ve sık adımlar
-    m.hopT = ad > 140 ? .02 + Math.random() * .04 : .07 + Math.random() * .1;
-    const st = clamp(hdx, -125, 125), nx = m.x + st, ny = yv9Zemin(nx, m.y);
-    if (ny != null && Math.abs(ny - m.y) < 2.6 * T) { yv9Sicra(m, nx, ny, 16 + Math.abs(st) * .12 + Math.max(0, m.y - ny) * .6 + Math.random() * 6, .26 + Math.abs(st) / 620); yv9Duygu(o, m, dt); return; }
+  if (ad > (kos ? 20 : 15)) {   // hedefe hop: uzaksa / Feza yürürken iri ve sık adımlar
+    m.hopT = kos || ad > 140 ? .01 + Math.random() * .03 : .07 + Math.random() * .1;
+    const lim = kos || ad > 140 ? 168 : 125, st = clamp(hdx + (kos ? clamp(P.vx, -260, 260) * .3 : 0), -lim, lim), nx = m.x + st, ny = yv9Zemin(nx, m.y);
+    if (ny != null && Math.abs(ny - m.y) < 2.6 * T) { yv9Sicra(m, nx, ny, 14 + Math.abs(st) * .11 + Math.max(0, m.y - ny) * .6 + Math.random() * 6, kos || ad > 140 ? .22 + Math.abs(st) / 950 : .26 + Math.abs(st) / 620); yv9Duygu(o, m, dt); return; }
     yv9Kalk(m); yv9Duygu(o, m, dt); return;   // boşluk ya da yüksek basamak: kısa uçuş
   }
   // vardı: Feza'ya döner; ara sıra yerinde sevinç hopu, kanat çırpma, etrafa bakınma, "cik"
   m.hopT = .7 + Math.random() * 1.3;
   if (Math.abs(P.x - m.x) > 16) m.yon = P.x > m.x ? 1 : -1;
-  const r = Math.random();
-  if (m.cheerT > 0 || r < .32) yv9Sicra(m, m.x, m.y, 14 + Math.random() * 16 + (m.cheerT > 0 ? 16 : 0), .36);
-  else if (r < .5) m.kanat = 1;
-  else if (r < .62) { m.bak = m.yon * -.9; m.bakT = .8; }
-  else if (r < .7) m.agiz = .7;
+  // her yavrunun küçük bir huyu var: nane meraklı (etrafa bakınır), şeftali hoplayıcı, gök uykucu (esner), limon kanat çırpar,
+  // gül utangaç (kızarıp patisini ağzına götürür), lila geveze ("cik cik")
+  const r = Math.random(), hu = o.sira % 6;
+  if (m.cheerT > 0 || r < (hu === 1 ? .5 : .26)) yv9Sicra(m, m.x, m.y, 14 + Math.random() * 16 + (m.cheerT > 0 ? 16 : 0) + (hu === 1 ? 8 : 0), .36);
+  else if (r < .42 || (hu === 3 && r < .7)) m.kanat = 1;
+  else if (hu === 2 && r < .72) m.esneT = 1.3;
+  else if (hu === 4 && r < .76) m.utanT = 1.8;
+  else if (r < .56 || (hu === 0 && r < .8)) { m.bak = m.yon * -.9; m.bakT = .8; }
+  else if (r < .66 || (hu === 5 && r < .85)) { m.agiz = .7; m.cikT = .45; }
   yv9Duygu(o, m, dt);
 }
 function yv9Duygu(o, m, dt) {   // yön dönüşü, mutluluk, bakış (her durumda)
   m.yonS += clamp(m.yon - m.yonS, -dt * 7, dt * 7);
-  const mH = m.cheerT > 0 || m.ucus || m.saril > .2 || m.tapT > 0 || (m.sic && m.sic.aktif && m.sic.h > 26) ? 1 : .35 + .25 * Math.sin(m.t * .7 + o.sira);
+  const mH = m.cheerT > 0 || m.ucus || m.saril > .2 || m.tapT > 0 || (m.sic && m.sic.aktif && m.sic.h > 26) ? 1 : .56 + .24 * Math.sin(m.t * .7 + o.sira);   // dururken de hep tatlı bir gülümseme
   m.mut += (mH - m.mut) * Math.min(1, dt * 4);
-  if (m.bakT > 0) m.bakT -= dt; else m.bak += (clamp((P.x - m.x) / 160, -1, 1) * m.yon - m.bak) * Math.min(1, dt * 4);
+  if (m.bakT > 0) m.bakT -= dt; else m.bak += (clamp((P.x - m.x) / 160, -1, 1) * m.yon * .55 - m.bak) * Math.min(1, dt * 4);   // yan bakış değil: hafifçe Feza'ya
+  const yak = !m.ucus && Math.abs(P.x - m.x) < 150 && m.bakT <= 0 ? -.75 : 0;   // yanındayken başını kaldırıp kocaman Feza'ya bakar
+  m.bakY = (m.bakY || 0) + (yak - (m.bakY || 0)) * Math.min(1, dt * 3);
 }
 // ── Final: çıkmış yavrular yuvanın iki yanına uçar, ejderFinalNabiz() vuruşunda sekip kanat çırparak dans eder; doruğun ardından
 //    havada küçük bir ışık çemberi çizer. Çıkmamış yumurtaların yavruları da (sayılmaz) ekran dışından uçarak gelir.
@@ -813,8 +833,8 @@ function yv9YavruCiz(o, tm) {
   }
   const sp = m.sapkaHop > 0 ? Math.sin(m.sapkaHop * Math.PI) : 0;
   op.yon = m.yonS; op.mutlu = m.mut; op.kanat = Math.max(m.kanat, m.ucus ? 1 : 0); op.ucus = m.ucus ? 1 : 0; op.ziplama = clamp(m.zip, -1, 1);
-  op.kabuk = m.sapka; op.kabukEgim = sp * -.5 * Math.sign(m.yon || 1); op.agiz = m.agiz; op.dans = m.dans; op.kirp = m.durum === 'cik' ? m.kirp : null;
-  op.saril = m.saril; op.hapsir = m.hap; op.bak = m.bak; op.bakY = m.ucus ? .2 : 0; op.kanatAc = m.durum === 'cik' ? .3 + m.kol * .7 : .6;
+  op.kabuk = m.sapka; op.kabukEgim = sp * -.5 * Math.sign(m.yon || 1); op.agiz = m.agiz; op.dans = m.dans; op.kirp = m.durum === 'cik' ? m.kirp : m.esneT > .25 ? 1 : null;
+  op.saril = m.saril; op.hapsir = m.hap; op.bak = m.bak; op.bakY = m.ucus ? .2 : (m.bakY || 0); op.utangac = m.utanT > 0 ? Math.min(1, m.utanT * 2.5, (1.8 - m.utanT) * 4) : 0; op.kanatAc = m.durum === 'cik' ? .3 + m.kol * .7 : .6;
   op.egim = m.ucus ? clamp(m.vx / 1600, -.25, .25) * (m.yon || 1) * 0 + clamp(m.vy / 2400, -.12, .12) : 0;
   op.isik = m.durum === 'dans' ? .4 + .6 * yv9FinalNabiz() : 0;
   if (m.durum === 'dans') m.dans *= .985;
@@ -849,6 +869,7 @@ TUR.kaydet('yv9Saat', {
   guncelle(o, dt) {
     if (!(dt > 0) || !Number.isFinite(dt)) return;
     YV9.havaT = P.ground ? 0 : (YV9.havaT || 0) + dt;
+    YV9.durT = P.ground && Math.abs(P.vx) < 15 && DURUM === 'oyun' ? (YV9.durT || 0) + dt : 0;   // Feza ne zamandır duruyor (yavrular etrafına toplanır)
     if (YV9.final) YV9.finalT += Math.min(dt, .05);
   },
 });

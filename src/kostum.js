@@ -116,6 +116,8 @@ TUR.kaydet('kostumSec', {
       x.globalCompositeOperation = 'source-over';
       // içindeki kostüm simgesi (canlı: şapkanın ucu, kafatası, kulaklar sallanır)
       x.save(); x.globalAlpha = b.a; x.translate(b.x, b.y); x.scale(b.s * (1 + wob), b.s * (1 - wob));
+      // içi hafif koyu gece moru: kalabalık arka planda (ağaç, lolipop) simge net seçilsin
+      x.globalAlpha = b.a * 0.5; x.fillStyle = '#2a1f4e'; x.beginPath(); x.arc(0, 0, KS8_R - 1.5, 0, 6.2832); x.fill(); x.globalAlpha = b.a;
       if (typeof fezaKostumIkon === 'function') { try { fezaKostumIkon(x, b.ad, 0, 0.5, KS8_R * 0.86, tm + b.ph); } catch (e) {} }
       const kb = ks8Kabugu(b.ad, sc * b.s); x.drawImage(kb.c, -(KS8_R + 6), -(KS8_R + 6), (KS8_R + 6) * 2, (KS8_R + 6) * 2);
       x.restore();

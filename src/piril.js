@@ -1169,9 +1169,9 @@ function stepDragon(dt) {
     D.clapPh += dt * (on ? 13 : 0);
     if (on && Math.floor(eski / Math.PI) !== Math.floor(D.clapPh / Math.PI)) { drFx(D.x, D.y + 2, 'star'); if (D.sSq) D.sSq.v -= 0.8; }   // el çırpınca minik yıldız
     if (u >= D.alkDur || !drPlaying()) drMode('follow');
-  } else if (D.mode === 'kapi8') {     // Bölüm 8 şeker kapısı: Feza'nın omzunun üstünde kapıya dönük süzülür; konuşurken ("Şeker mi şaka mı!") neşeyle zıplar
+  } else if (D.mode === 'kapi8') {     // Bölüm 8 şeker kapısı: Feza'nın KAPIYA UZAK omzunun arkasında kapıya dönük süzülür (komşunun balonu ve sepete uçan şeker yayı Pırıl'ın üstünden geçmesin); konuşurken neşeyle zıplar
     const sd = D.k8S || 1;
-    tx = P.x + sd * 26 + Math.sin(D.t * 1.3) * 3; ty = P.y - 98 + Math.sin(D.t * 2.2) * 3; k = 46; damp = 11; flapW = 3.8;
+    tx = P.x - sd * 46 + Math.sin(D.t * 1.3) * 3; ty = P.y - 78 + Math.sin(D.t * 2.2) * 3; k = 46; damp = 11; flapW = 3.8;
     D.ft = sd; D.faceHold = 0.15; D.expr = 'happy'; D.exprT = 0.3;
     if (D.talkT > 0) hopW = Math.abs(Math.sin(D.modeT * 9)) * 6;
     D.lookAt.x = isFinite(D.k8X) ? D.k8X : P.x + sd * 46; D.lookAt.y = P.y - 72; D.lookAtT = 0.2;

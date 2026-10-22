@@ -29,7 +29,7 @@ const KL9_KOYU = ['#7a5cd6', '#2e9f78', '#e0608e', '#3aa8c8', '#e09a2e'];
 const KL9_BX = 178;                       // Büyükanne'nin oturduğu yer (o.x'e göre, taban)
 const KL9_AKTIF = 380;                    // Feza o.x - 380'i geçince etkinlik başlar
 const KL9_GIR0 = -450, KL9_GIR1 = -310;   // Feza'nın oyun boyunca durduğu yerin sınırları (o.x'e göre)
-const KL9_GEL = 1.7, KL9_IPUCU = 4, KL9_GOSTER = 10, KL9_YARDIM = 25, KL9_YARDIM2 = 12;
+const KL9_GEL = 1.7, KL9_IPUCU = 4, KL9_GOSTER = 10, KL9_YARDIM = 20, KL9_YARDIM2 = 8, KL9_YARDIM3 = 3.5;   // P9C: ilk yardım 25 → 20 sn; çocuk dokunduktan sonra 12 → 8 sn; hiç dokunmuyorsa art arda 3,5 sn
 const KL9_PR = 12.5;                        // pulun yuvadaki yarıçapı (çimende 1.25 kat)
 const KL9_YAKALA = 24, KL9_YANLIS = 22;   // sürüklenen pulu doğru yuva bu uzaklıkta yakalar · yanlış yuva bu uzaklıkta "ıh-ıh" der
 const KL9_BN_S = 1;                       // Büyükanne'nin ölçeği (buyukanne.js BN9_S verirse o kullanılır)
@@ -455,7 +455,7 @@ function kl9Siradaki(o) {   // ipucu/yardım için: Feza'ya en yakın bekleyen p
   for (const p of k.pul) if (p.durum === 'yer' || p.durum === 'geri') { if (!en || p.d.fx < en.d.fx) en = p; }
   return en;
 }
-function kl9Kullanici(o) { const k = o.kl; k.idle = 0; if (k.helpOn) { k.helpOn = false; k.helpT = 0; } }
+function kl9Kullanici(o) { const k = o.kl; k.idle = 0; k.helpArd = 0; if (k.helpOn) { k.helpOn = false; k.helpT = 0; } }
 function kl9OyunBasla(o) {   // pullar sırayla "buradayız" diye parlayıp hoplar
   const k = o.kl; k.faz = 'oyun'; k.fT = 0; k.idle = 0;
   k.pul.forEach((p, i) => { p.selam = -0.2 - i * 0.28; });
@@ -533,8 +533,8 @@ function kl9PulAdim(o, dt) {
 function kl9OyunAdim(o, dt) {
   const k = o.kl; let bekleyen = false, hareket = false;
   for (const p of k.pul) { if (p.durum === 'yer' || p.durum === 'geri') bekleyen = true; else if (p.durum !== 'takili') hareket = true; }
-  const esik = k.helpN > 0 ? KL9_YARDIM2 : KL9_YARDIM;
-  if (KOLYE.ptr < 0 && bekleyen && !hareket) { k.idle += dt; if (!k.helpOn && k.idle >= esik) { k.helpOn = true; k.helpT = 0; k.helpN++; OLAY.emit('kolyeYardim', { o }); } }
+  const esik = k.helpArd > 0 ? KL9_YARDIM3 : k.helpN > 0 ? KL9_YARDIM2 : KL9_YARDIM;   // P9C: çocuk hiç dokunmuyorsa Pırıl art arda (kısa arayla) getirir
+  if (KOLYE.ptr < 0 && bekleyen && !hareket) { k.idle += dt; if (!k.helpOn && k.idle >= esik) { k.helpOn = true; k.helpT = 0; k.helpN++; k.helpArd = (k.helpArd || 0) + 1; OLAY.emit('kolyeYardim', { o }); } }
   if (k.helpOn) k.helpT += dt;
   if (k.idle >= KL9_GOSTER && !k.ipucuBos && k.n < 5) { k.ipucuBos = true; if (k.t - k.ipucuT > 9) { k.ipucuT = k.t; OLAY.emit('kolyeIpucu', { o }); } }   // uzun beklemede bir kez
   if (k.idle < 1) k.ipucuBos = false;
@@ -738,9 +738,11 @@ function kl9Ciz(o, tm) {   // Feza'nın arkası: teras süsleri, Büyükanne, ko
     const sira = kl9Siradaki(o), ipucu = k.faz === 'oyun' && (k.idle > KL9_IPUCU || k.helpOn) && !k.tasinan;
     for (const p of k.pul) {
       if (p.durum !== 'yer' && p.durum !== 'geri') continue;
-      const vurgu = p === sira && ipucu ? 0.5 + 0.5 * Math.sin(tm * 4) : 0, nab = 0.75 + 0.25 * Math.sin(tm * 2.2 + p.i * 1.3);
-      kl9IsikE(g, KOLYE_RENK[p.b], p.x, Y + p.d.fy + 6, 46 + vurgu * 14, 16, 0.5 * nab + vurgu * 0.3);   // çimene vuran renkli ışık
-      const M = g.getTransform(); g.translate(p.x, p.y); g.rotate(p.rot); kolyePulCiz(g, 0, 0, KL9_PR * p.s * (1 + vurgu * 0.08), p.b, tm, 0.55 * nab + vurgu * 0.5); g.setTransform(M);
+      const isr = p === sira && ipucu && p.durum === 'yer', vurgu = isr ? 0.5 + 0.5 * Math.sin(tm * 4) : 0, nab = 0.75 + 0.25 * Math.sin(tm * 2.2 + p.i * 1.3);
+      const hop = isr ? Math.pow(Math.max(0, Math.sin(tm * 3.6)), 2) * 12 : 0;   // P9C: ipucu pulu belirgin hoplar ve parlar ("beni al!")
+      kl9IsikE(g, KOLYE_RENK[p.b], p.x, Y + p.d.fy + 6, 46 + vurgu * 22, 16 + vurgu * 6, 0.5 * nab + vurgu * 0.5);   // çimene vuran renkli ışık
+      if (isr) { kl9Isik(g, '#fff6d8', p.x, p.y - hop, 44 + vurgu * 10, 0.35 + vurgu * 0.3); kl9Isik(g, KOLYE_RENK[p.b], p.x, p.y - hop, 60, 0.35 + vurgu * 0.25); }
+      const M = g.getTransform(); g.translate(p.x, p.y - hop); g.rotate(p.rot); kolyePulCiz(g, 0, 0, KL9_PR * p.s * (1 + vurgu * 0.16), p.b, tm, 0.55 * nab + vurgu * 0.7); g.setTransform(M);
       if (p.durum === 'yer' && p.selam > 0.55) kl9Koy(g, kl9OtSpr(p.i), X + p.d.fx + 4, Y + 2);
     }
   }
@@ -789,8 +791,9 @@ function kl9CizOn(o, tm) {   // Feza'nın önü: Feza, Pırıl, kucakta ön kana
   const sira = kl9Siradaki(o), ipucu = k.faz === 'oyun' && (k.idle > KL9_IPUCU || k.helpOn) && !k.tasinan;
   if (ipucu && sira && sira.durum === 'yer') {
     const [yx, yy] = kl9Yuva(o, sira.b), cxp = (sira.x + yx) / 2, cyp = Math.min(sira.y, yy) - 80, col = KOLYE_RENK[sira.b];
-    for (let i = 0; i < 9; i++) { const v = (i / 9 + tm * 0.4) % 1, q = 1 - v, x = q * q * sira.x + 2 * q * v * cxp + v * v * yx, y = q * q * sira.y + 2 * q * v * cyp + v * v * yy;
-      kl9Isik(g, col, x, y, 13, 0.5 * Math.sin(v * Math.PI)); g.globalAlpha = 0.8 * Math.sin(v * Math.PI); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, 1.6, 0, 6.2832); g.fill(); g.globalAlpha = 1; }
+    for (let i = 0; i < 12; i++) { const v = (i / 12 + tm * 0.4) % 1, q = 1 - v, x = q * q * sira.x + 2 * q * v * cxp + v * v * yx, y = q * q * sira.y + 2 * q * v * cyp + v * v * yy, f = Math.sin(v * Math.PI);   // P9C: iz daha görünür
+      kl9Isik(g, col, x, y, 24, 0.9 * f); g.globalAlpha = f; kl9KoyS(g, kl9IsiltiSpr(), x, y, 0.75 + 0.35 * f); g.globalAlpha = 1; }
+    const yf = 0.5 + 0.5 * Math.sin(tm * 4); kl9Isik(g, col, yx, yy, 30 + yf * 8, 0.45 + 0.35 * yf);   // gideceği yuva da nabız gibi parlar
   }
   // havadaki pullar (tutulan, uçan, Pırıl'ın taşıdığı)
   for (const p of k.pul) {

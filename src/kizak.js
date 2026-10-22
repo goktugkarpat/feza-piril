@@ -41,7 +41,7 @@ const KZK_HB = 12, KZK_HBMAX = 200, KZK_HB_K = 5;         // her tanede hız art
 const KZK_A0 = 520, KZK_B0 = 700, KZK_B1 = 800, KZK_E = 1150;   // sanal→dünya eşlemesi: baştaki/sondaki birebir parça ve geçişler
 const KZK_IPUCU = 12, KZK_YARDIM = 20;                   // dokunulmadan geçen süre: ipucu / Pırıl kendisi toplar
 const KZK_KOLTUK = 20, KZK_SEDX = -6;                    // kızak demirinin altından oturma noktasına; oturma noktasının x kayması
-const KZK_GOVDE = 24, KZK_TOL = 60;                      // oturma noktasından göğse (tane denetim noktası); dikey tolerans (cömert)
+const KZK_GOVDE = 24, KZK_TOL = 60, KZK_TOL_ALT = 55;    // oturma noktasından göğse (tane denetim noktası); dikey tolerans (cömert; tane göğsün altındaysa +55)
 const KZK_GON = 106, KZK_KAR = 150;                      // geyik önde, kardan adamın kızağı arkada (sanal birim)
 const KZK_ADIM = 10;                                    // yol profili tablosunun adımı
 const KZK_G = 1350, KZK_ZIP = 560, KZK_HOP = 300;         // yerçekimi, zıplama hızı, havada ek sıçrama
@@ -371,7 +371,7 @@ function kzkKur(o) {
   o.v = 0; o.vOn = 0; o.dx = xs; o.dy = 0; o.spd = 0; o.sb = 0; o.hb = 0; o.hbH = 0; o.pat = 0; o.eh = 1; o.egim = 0;
   o.mx = o.x; o.my = o.y; o.sy = o.y; o.vy = 0; o.yer = true; o.coy = 0; o.h = 0; o.rot = 0; o.bas = false; o.idle = 0; o.n = 0; o.isik = 0;
   o.ft = 0; o.pt = 0; o.gt = 0; o.sq = 0; o.sqv = 0; o.sevT = 0; o.tk = 0; o.tkYon = 1; o.kirp = 0; o.havaT = 0; o.kayma = 0; o.yerT = 0;
-  o.prX = o.x; o.prY = o.y - 90; o.prW = 0; o.ipucu = 0; o.zorYardim = false; o.hizA = 0; o.flas = 0; o.gidisT = 0; o.kalk = 0;
+  o.prX = o.x; o.prY = o.y - 90; o.prW = 0; o.flasP = 0; o.ipucu = 0; o.zorYardim = false; o.hizA = 0; o.flas = 0; o.gidisT = 0; o.kalk = 0;
   o.yolA = 0; o.parA = 0; o.aurA = 0; o.kh = 0; o.khv = 0; o.kardanVar = false; o.kardanA = 0; o.kamY = o.y; o.kor = null;
   o.gx = o.x + KZK_GON; o.gyW = o.y; o.gx0 = o.gx; o.gy0 = o.y; o.kax = o.x - KZK_KAR; o.kay = o.y; o.kax0 = o.kax; o.kay0 = o.y; o.gzip = 0;
   o.camI = -1; o.krisI = 0; o.sxs = 0;
@@ -441,7 +441,8 @@ function kzkBasla(o) {
 function kzkAdim(o, dt, input) {
   if (!(dt > 0) || !Number.isFinite(dt) || DURUM !== 'oyun' || P.ucus !== o) return;
   dt = Math.min(dt, 0.05);
-  const K = o.K, basili = !!(input && (input.basili || input.eksenY < 0));
+  const K = o.K, basili = !!(input && (input.basili || input.eksenY < 0)) || kzkTik > 0;
+  kzkTik = Math.max(0, kzkTik - dt);
   o.ts = 1;
   if (o.faz === 'sicrama') { const u = clamp(o.t / KZK_SIC, 0, 1); o.ts = 1 - 0.6 * Math.sin(Math.PI * clamp(u * 1.12, 0, 1)); }   // sinematik yavaşlama
   if (o.ucSlow > 0) { o.ucSlow = Math.max(0, o.ucSlow - dt); o.ts = 1 - 0.4 * Math.sin(Math.PI * (1 - o.ucSlow / 0.7)); }   // kalkışta kısa yavaşlama (canlandırma)
@@ -691,7 +692,8 @@ function kzkTaneler(o, dt) {
     if (yardimModu && r.v > o.v && r.v - o.v < 900) r.yardim = true;
     if (r.v > o.vOn - 2 && r.v <= o.v + 2) {   // bu adımda tanenin hizasından geçildi
       const ry = kzkTaban(o, r.v) - KZK_KOLTUK - KZK_GOVDE - r.lift, d = ry - fy, tol = r.tip === 'k' ? KZK_TOL + 12 : KZK_TOL;
-      if (d > -(tol + 22) && d < tol) kzkTopla(o, r, 'feza');
+      const yerde = r.lift <= 0 && !kzkUcus(r.v);   // yolda duran tane hep toplanır: durmadan dokunup havada kalan çocuk da ödülsüz kalmaz (tane kızağa sıçrar)
+      if (yerde || d > -(tol + 22) && d < tol + KZK_TOL_ALT) kzkTopla(o, r, 'feza');   // altta kalan tane de cömertçe kapılır
       else if (r.yardim) kzkTopla(o, r, 'piril');
       else { r.d = 'kacti'; r.t = 0; OLAY.emit('kizakKacti', { o }); }
     }
@@ -793,7 +795,7 @@ function kzkIndi(o) {
 
 // ── çizim: gök, paralaks, yol ──
 function kzkAuroraCiz(o, tm) {   // kızaktaki kuzey ışıkları: üç kıvrımlı yumuşak kurdele; topladıkça belirginleşir, tane gelince o kesim parlar; uçuşta yakın ve dev
-  const ua = o.ucA * (o.uc === KZK_UCUS[1] ? 1 : 0.75), A = o.aurA * Math.max(0.12 + 0.6 * o.isik, 0.7 * ua) * (1 + o.flasP * 0.6); if (A < 0.01) return;
+  const ua = o.ucA * (o.uc === KZK_UCUS[1] ? 1 : 0.75), A = o.aurA * Math.max(0.12 + 0.6 * o.isik, 0.7 * ua) * (1 + (o.flasP || 0) * 0.6); if (!(A >= 0.01)) return;   // NaN'a karşı da (globalAlpha NaN'ı yok sayar: tam parlak beyaz kurdele)
   const VHg = VH / cam.zoom, cx = cam.x, cy = cam.y, N = 34, hz = o.faz === 'hiz' ? 1.8 : 1 + ua * 0.4;
   const PR = [[0, -0.05, 0.75, 0.42, 0.10, 3.2, 8, 0.14, 0.4], [1, 0.3, 1.08, 0.35, 0.09, 3.8, 7, 0.11, 2.1], [2, 0.05, 0.9, 0.26, 0.08, 2.8, 6.5, 0.09, 4.2]];
   g.globalCompositeOperation = 'lighter';
@@ -859,7 +861,8 @@ function kzkCamlarOn(o, tm) {   // öndeki iri koyu çamlar: yoldan 1,3 kat hız
   const dx = o.dx, a = o.parA; if (a < 0.02) return;
   for (const c of o.camOn) {
     const sx = (c.v - o.v) * 1.3 + o.v + dx; if (sx < cam.x - 120 || sx > cam.x + VW + 120) continue;
-    const vv = sx - dx; kzkCamCiz(o, c, sx, kzkY(o, vv) + 90, c.s, 3, a);
+    const vv = sx - dx, yak = Math.abs(sx - (o.mx + 30)), ac = a * (0.22 + 0.78 * smooth(clamp((yak - 70) / 150, 0, 1)));   // binicilerin önünden geçerken saydamlaşır: Feza hep görünür
+    kzkCamCiz(o, c, sx, kzkY(o, vv) + 90, c.s, 3, ac);
   }
 }
 function kzkYolParca(o, va, vb, solUc, sagUc, alt) {   // karlı yamaç parçası (dolu çokgen); uçlarda uçurum kenarı
@@ -1277,9 +1280,15 @@ function kzkBekleCiz(o, tm) {   // biniş öncesi: tepede bekleyen boş kızak, 
   g.strokeStyle = '#7a3b2a'; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + 48, y - 22); g.quadraticCurveTo(x + 80, y - 2, x + 112, y - 3); g.moveTo(x + 44, y - 8); g.quadraticCurveTo(x + 76, y + 1, x + 110, y - 1); g.stroke();
   g.fillStyle = '#d9454f'; g.beginPath(); g.ellipse(x + 116, y - 3, 7, 3, 0, 0, 6.2832); g.fill();
   g.fillStyle = '#ffd36a'; g.beginPath(); g.arc(x + 116, y - 5, 2.6, 0, 6.2832); g.fill();
-  g.globalCompositeOperation = 'lighter'; dglow('#ffd7e6', x, y - 20, 70, 0.22 + 0.06 * Math.sin(tm * 2)); g.globalCompositeOperation = 'source-over';
-  g.drawImage(art.arka, x - 60, y - 56, 120, 70); g.drawImage(art.on, x - 60, y - 56, 120, 70);
-  for (let i = 0; i < 3; i++) { const u = (tm * 0.35 + i / 3) % 1; kzkParilti(x - 4 + Math.sin(i * 2.1 + tm) * 16, y - 34 - u * 60, 4.2, 1 + i, Math.sin(u * Math.PI) * 0.85); }
+  // davet: kızak sabırsızca hoplar (ara sıra iki minik sıçrayış), çevresinde nefes alan sıcak bir ışık ve yükselen renkli parıltılar
+  const ph = tm % 2.6, hop = ph < 0.62 ? Math.abs(Math.sin(ph / 0.62 * Math.PI * 2)) * (ph < 0.31 ? 7 : 4) : 0, eg = ph < 0.62 ? Math.sin(ph / 0.62 * Math.PI * 2) * 0.04 : 0;
+  g.globalCompositeOperation = 'lighter'; dglow('#ffd7e6', x, y - 24, 110, 0.5 + 0.15 * Math.sin(tm * 2.2)); dglow('#fff3d6', x, y - 30, 52, 0.4 + 0.12 * Math.sin(tm * 2.2 + 1)); g.globalCompositeOperation = 'source-over';
+  g.lineWidth = 2.2; g.strokeStyle = '#fff2c4';   // karda dışa yayılan ışık halkaları: "buraya gel"
+  for (let j = 0; j < 2; j++) { const u = (tm * 0.55 + j * 0.5) % 1; g.globalAlpha = (1 - u) * Math.min(1, u * 5) * 0.75; g.beginPath(); g.ellipse(x, y + 1, 46 + u * 70, 5 + u * 8, 0, 0, 6.2832); g.stroke(); }
+  g.globalAlpha = 1;
+  g.fillStyle = 'rgba(70,64,140,' + (0.22 - hop * 0.012).toFixed(3) + ')'; g.beginPath(); g.ellipse(x, y + 1, 50 - hop, 4, 0, 0, 6.2832); g.fill();
+  g.save(); g.translate(x, y - hop); g.rotate(eg); g.drawImage(art.arka, -60, -56, 120, 70); g.drawImage(art.on, -60, -56, 120, 70); g.restore();
+  for (let i = 0; i < 5; i++) { const u = (tm * 0.32 + i / 5) % 1; kzkParilti(x - 4 + Math.sin(i * 2.1 + tm) * 26, y - 30 - u * 80, 5.2, 1 + (i % 4), Math.sin(u * Math.PI) * 0.9); }
 }
 function kzkBitmisCiz(o, tm) {   // yolculuktan sonra: iniş düzlüğünde boş kızak (kardan adamın kızağı da) ve izleri
   const art = kzkKizakArt(0), x = o.K.xDur, y = o.K.gy;
@@ -1357,6 +1366,10 @@ function kzkEkranCiz(o, tm) {   // ekrana göre çizilenler (dünya dönüşüm�
     kzkParilti(x, y, 5, k.c + 1, 1);
   }
 }
+// Çok kısa dokunuş (parmak iki fizik adımı arasında kalkarsa) kaybolmasın: her dokunuş en az ~0,1 sn basılı sayılır.
+let kzkTik = 0;
+addEventListener('pointerdown', e => { if (KIZAK.aktif() && e.target === cv && DURUM === 'oyun') kzkTik = 0.1; }, true);
+addEventListener('keydown', e => { if (!e.repeat && KIZAK.aktif() && /^(Space|ArrowUp|KeyW)$/.test(e.code)) kzkTik = 0.1; }, true);
 TUR.kaydet('kizakMini', {
   kur: kzkKur,
   dokun: kzkBasla,

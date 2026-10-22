@@ -711,11 +711,29 @@ function is8Toz(tip, x, y, vx, vy, max, s, col) {
 function is8Kivilcim(x, y, n, col, hiz) {
   for (let i = 0; i < n; i++) { const a = Math.random() * 6.2832, v = (hiz || 90) * (0.35 + Math.random() * 0.75); is8Toz(i % 3 === 0 ? 1 : 0, x, y, Math.cos(a) * v, Math.sin(a) * v - 25, 0.6 + Math.random() * 0.5, 3 + Math.random() * 4, i % 2 ? col : '#ffffff'); }
 }
+// konfeti: sahne saçağından süzülen pastel kâğıt parçaları (ta-da! ve cümle sonu dansları); sabit havuz, karede bellek yok
+const IS8_KF = []; for (let i = 0; i < 70; i++) IS8_KF.push({ a: false, x: 0, y: 0, vx: 0, vy: 0, t: 0, max: 1, r: 0, vr: 0, f: 0, col: '#fff', w: 5, h: 3 });
+const IS8_KF_REN = ['#ff9fc8', '#fff08a', '#9effc8', '#9fd8ff', '#c9a8ff', '#ffc38a'];
+function is8Konfeti(x0, x1, y, n, hiz) {
+  for (let j = 0; j < n; j++) for (const p of IS8_KF) if (!p.a) {
+    p.a = true; p.x = lerp(x0, x1, Math.random()); p.y = y + Math.random() * 18; p.vx = (Math.random() - 0.5) * 70 * hiz; p.vy = -Math.random() * 90 * hiz;
+    p.t = 0; p.max = 2.6 + Math.random() * 1.4; p.r = Math.random() * 6.28; p.vr = (Math.random() - 0.5) * 9; p.f = Math.random() * 6.28;
+    p.col = IS8_KF_REN[(Math.random() * IS8_KF_REN.length) | 0]; p.w = 7 + Math.random() * 4; p.h = 3.6 + Math.random() * 2; break;
+  }
+}
 function is8ParcaAdim(dt) {
+  for (const p of IS8_KF) { if (!p.a) continue; p.t += dt; if (p.t >= p.max) { p.a = false; continue; } p.vx *= Math.exp(-dt * 1.6); p.vy = Math.min(46, p.vy + 120 * dt); p.x += (p.vx + Math.sin(p.t * 3 + p.f) * 18) * dt; p.y += p.vy * dt; p.r += p.vr * dt; }
   for (const p of IS8_NT) { if (!p.a) continue; p.t += dt; if (p.t >= p.max) { p.a = false; continue; } p.y -= (44 + 22 * (1 - p.t / p.max)) * dt; p.x += (p.vx + Math.sin(p.t * 3.2 + p.ph) * 22) * dt; p.vx *= Math.exp(-dt * 2); }
   for (const p of IS8_TZ) { if (!p.a) continue; p.t += dt; if (p.t >= p.max) { p.a = false; continue; } p.vx *= Math.exp(-dt * 2.2); p.vy = p.vy * Math.exp(-dt * 2.2) + (p.tip === 2 ? 40 : -10) * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
 }
 function is8ParcaCiz() {
+  let M = null;
+  for (const p of IS8_KF) {
+    if (!p.a) continue; if (!M) M = g.getTransform();
+    g.globalAlpha = Math.min(1, (p.max - p.t) * 1.5, p.t * 8); g.fillStyle = p.col;
+    g.translate(p.x, p.y); g.rotate(p.r); g.scale(1, Math.cos(p.t * 7 + p.f)); g.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); g.setTransform(M);
+  }
+  g.globalAlpha = 1;
   g.globalCompositeOperation = 'lighter';
   for (const p of IS8_TZ) {
     if (!p.a) continue; const f = 1 - p.t / p.max;
@@ -773,7 +791,7 @@ function is8Dokun(o, kim, yardim) {
 function is8Faz(o, f, b0) {
   const k = o.is; k.faz = f; k.fT = 0; k.b0 = b0; k.sonVur = Math.floor(b0) - 1;
   if (f === 'tanit') k.nota = 0;
-  else if (f === 'dans') { k.dansN = k.cumle + 1; is8Sfx('iskeletDans', k.dansN); OLAY.emit('iskeletDans', { o, n: k.dansN, vurus: b0 }); }
+  else if (f === 'dans') { is8Konfeti(o.x - 260, o.x + 260, o.y - 236, 16, 0.6); k.dansN = k.cumle + 1; is8Sfx('iskeletDans', k.dansN); OLAY.emit('iskeletDans', { o, n: k.dansN, vurus: b0 }); }
   else if (f === 'final') { k.nota = 0; is8Sfx('iskeletDans', 5); OLAY.emit('iskeletDans', { o, n: 5, vurus: b0 }); }
 }
 function is8Vurus(o, vb, fn) { const k = o.is, bi = Math.floor(vb + 1e-6); if (bi > k.sonVur) { k.sonVur = bi; k.flas = 1; fn(bi - Math.round(k.b0)); } }
@@ -898,7 +916,7 @@ function is8FinalAdim(o, vb) {
   is8Vurus(o, vb, b => {
     if (b >= 0 && b < 9) is8Sfx('kemikTakir', b % 4 === 3 ? 1 : 0.7);
     if (b === 9) {   // ta-da!
-      is8Sfx('iskeletDans', 6);
+      is8Sfx('iskeletDans', 6); is8Konfeti(o.x - 280, o.x + 280, o.y - 236, 64, 1);
       for (const s of k.isk) { s.hepsi = 1; const ol = is8Ol(s.tip), tp = IS8_TIP[s.tip], sc = is8Olc(s); is8Kivilcim(s.x0, s.y + ol.gogusY * sc, 12, tp.renk, 150); is8NotaUcur(s.x0 + (Math.random() - 0.5) * 30, s.y + ol.tepeY * sc, tp.cubuk[(Math.random() * tp.cubuk.length) | 0], 1.2); }
     }
   });
@@ -1003,6 +1021,18 @@ function is8Spot(o, tm) {   // sıradaki iskeletin üstüne düşen sahne ışı
   g.save(); g.translate(x0, top); g.transform(1, 0, (x - x0) / h, 1, 0, 0); g.drawImage(sp.c, -sp.w * 0.5, 0, sp.w, h); g.restore();
   g.globalAlpha = 1;
   is8Glow(g, '#fff1c6', x, bot - 2, 84, 17, a * 0.8); is8Glow(g, '#ffffff', x, bot - 3, 40, 8, a * 0.45);
+  // sıradakinin ayağının dibinde kendi renginde nabız gibi atan ışık havuzu + dışa yayılan halka ("şimdi ben!"): kimin sırası, uzaktan da belli
+  const hk = is8Hedef(o);
+  if (hk >= 0 && k.faz === 'cal') {
+    const s = k.isk[hk], col = IS8_TIP[s.tip].renk, ip = k.idle > IS8_IPUCU || k.helpOn ? 1 : 0, nb = 0.5 + 0.5 * Math.sin(tm * 4.4);
+    is8Glow(g, col, s.x, bot - 3, 66 + 8 * nb, 15 + 2 * nb, a * (0.75 + 0.25 * ip) * (0.7 + 0.3 * nb));
+    for (let j = 0; j < 2; j++) {   // iki yumuşak halka sırayla dışa açılıp söner
+      const u = (tm * (0.8 + 0.3 * ip) + j * 0.5) % 1;
+      g.globalAlpha = a * (1 - u) * (0.55 + 0.3 * ip); g.strokeStyle = col; g.lineWidth = 2.2 * (1 - u) + 0.6;
+      g.beginPath(); g.ellipse(s.x, bot - 3, 26 + u * 58, 5 + u * 12, 0, 0, 6.2832); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
   g.globalCompositeOperation = 'source-over';
   g.fillStyle = '#2e1a36'; g.fillRect(x0 - 5.5, top - 7.5, 11, 8.5); g.fillStyle = '#d8a24a'; g.fillRect(x0 - 4.5, top - 6.5, 9, 6.5); g.fillStyle = '#fff1c6'; g.fillRect(x0 - 4.5, top - 1.2, 9, 1.4);
 }

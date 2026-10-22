@@ -866,7 +866,10 @@ function kb8SaklanCiz(o, tm, arka) {   // arka: hayaletin arkasındaki katman; d
     else if (!arka) {
       if (typeof dn8SaklanOn === 'function') { try { dn8SaklanOn('agac', v.x, v.y); } catch (e) {} }
       else { g.strokeStyle = '#4a3352'; g.lineWidth = 6; g.beginPath(); g.ellipse(v.x, v.y, v.rx + 2, v.ry + 2, 0, 0, KB8_PI2); g.stroke(); }
-    } else { g.fillStyle = 'rgba(34,22,58,.85)'; g.beginPath(); g.ellipse(v.x, v.y, v.rx, v.ry, 0, 0, KB8_PI2); g.fill(); }
+    } else if (m.durum === 'sakli' || m.durum === 'cik') {   // kovuğun içi dunya8'de (loş lila + sıcak ışık); saklıyken yalnız hafif erik gölgesi (beyaz hayaletçik seçilsin) + sıcak iç ışık
+      g.fillStyle = 'rgba(70,40,100,.36)'; g.beginPath(); g.ellipse(v.x, v.y, v.rx, v.ry, 0, 0, KB8_PI2); g.fill();
+      g.globalCompositeOperation = 'lighter'; kb8IsikE(g, '#ffd27a', v.x, v.y + v.ry * .35, v.rx * .9, v.ry * .55, .16); g.globalCompositeOperation = 'source-over';
+    }
   } else if (o.saklan === 'baca') {
     const v = m.baca;
     if (!m.harita) { if (arka) kb8Koy(g, kb8BacaArkaSpr(K), v.x, v.y + 50); else kb8Koy(g, kb8BacaOnSpr(K, o.cati !== false), v.x, v.y + 50); }
@@ -1030,6 +1033,7 @@ function kb8HTur(o, m, dt) {
   m.on = Math.sin(a) > .05; m.el = .85; m.mut = 1; m.yonS = clamp(m.vx / 160, -1, 1); m.iz = clamp(-m.vx / 300, -1, 1); m.fy = P.y;
   if (m.u >= 1) { m.durum = 'takip'; m.on = false; if (kb8Supurgede()) { m.durum = 'bekle'; m.bekX = m.x; m.bekY = m.y; } }
 }
+const KB8_HDALGA = [0, 18, 6, 22, 10];   // takip dizisinde yükseklikler: iki sıralı zikzak yerine yumuşak dalga (üst üste binmesinler)
 function kb8HTakip(o, m, dt) {
   if (kb8Final() && m.durum !== 'dans') { kb8HDansaKat(o); }
   if (m.durum === 'dans') { kb8HDans(o, m, dt); return; }
@@ -1040,9 +1044,17 @@ function kb8HTakip(o, m, dt) {
     tx = m.bekX; ty = m.bekY; om = 3; vmax = 300; m.sallaE = 1;
   } else {
     m.sallaE = Math.max(0, m.sallaE - dt);
-    const f = P.f || 1, mini = !!(P.ucus && !kb8Supurgede());
+    const mini = !!(P.ucus && !kb8Supurgede()), kapi = typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif;
+    // yön: Feza dönünce hayaletçikler bir anda karşı tarafa fırlamasın; yumuşak dönen yön (sıradakiler biraz gecikmeli)
+    m.fS = m.fS == null ? (P.f || 1) : m.fS + clamp((P.f || 1) - m.fS, -dt * (2.6 - m.k * .3), dt * (2.6 - m.k * .3));
+    const f = Math.abs(m.fS) < .2 ? (m.fS < 0 ? -.2 : .2) : m.fS;
     m.fy += (P.y - m.fy) * Math.min(1, dt * (P.ground ? 4 : 2.2));
-    tx = P.x - f * (58 + m.k * 44 + (mini ? 40 : 0)); ty = m.fy - 56 - (m.k % 2) * 16 + Math.min(m.k, 3) * 2 - (mini ? 48 : 0);
+    // kapı sahnesinde biraz geride, seyirci gibi dalga dizisi (komşuyu ve uçan şekerleri örtmesin)
+    const ara = 50 + (kapi ? 6 : 0), bas = 60 + (mini ? 40 : 0) + (kapi ? 34 : 0);
+    tx = P.x - f * (bas + m.k * ara); ty = m.fy - 56 - KB8_HDALGA[m.k % 5] - (mini ? 48 : 0);
+    // Feza'nın üstünden geçerken (dönüşte) gövdesine binmesin: yakınsa başının üstünden kavis çizerek geçer
+    const fx = Math.abs(m.x - P.x), karsi = (tx - P.x) * (m.x - P.x) < 0;
+    if (fx < 46 || (karsi && fx < 130)) ty = Math.min(ty, P.y - 112 - Math.max(0, 60 - fx) * .7);
     const d = Math.hypot(tx - m.x, ty - m.y), vw = typeof VW !== 'undefined' ? VW : 1000;
     if (d > vw * 1.3) kb8HGeriGel(o);
     if (d > 330) m.yetis = true; else if (d < 90) m.yetis = false;
@@ -1527,6 +1539,9 @@ function kb8HDans(o, m, dt) {
   const M = KB8.meydan, a = cadiFinalAn(), nb = cadiFinalNabiz();
   let tx = P.x - (P.f || 1) * (54 + m.k * 36), ty = P.y - 64; m.on = false;
   if (M && M.basla) { kb8MeydanHYer(M, m.k, a, KB8_TMP); tx = KB8_TMP[0]; ty = KB8_TMP[1]; m.on = KB8_TMP[2] > .1; }
+  // çok uzakta kaldıysa (bahçede beklerken final başladı vb.) dakikalarca uçmasın: kadrajın hemen dışından süzülerek gelsin
+  const vw = typeof VW !== 'undefined' ? VW : 1000;
+  if (Math.abs(tx - m.x) > vw * 1.1 || Math.abs(ty - m.y) > 900) { const yn = m.k % 2 ? -1 : 1; m.x = tx + yn * (vw * .62 + m.k * 40); m.y = ty - 140 - m.k * 18; m.vx = -yn * 380; m.vy = 60; m.yetis = true; }
   const om = a < 8 ? 3.2 : 5, ax = om * om * (tx - m.x) - 2 * .9 * om * m.vx, ay = om * om * (ty - m.y) - 2 * .9 * om * m.vy;
   m.vx += ax * dt; m.vy += ay * dt; const sp = Math.hypot(m.vx, m.vy); if (sp > 1000) { m.vx *= 1000 / sp; m.vy *= 1000 / sp; }
   m.x += m.vx * dt; m.y += m.vy * dt;
@@ -1734,7 +1749,11 @@ function kb8Misafirler(o, tm, a, nb) {
   const dor = a >= KB8_FIN.DORUK && a < KB8_FIN.DORUK + 5, vur = a / KB8_FIN.VUR, M = o.mOpt;
   for (let i = 0; i < KB8_MISAFIR.length; i++) {
     const [kim, dx0, tv, yan, tip] = KB8_MISAFIR[i], gel = smooth(clamp((a - tv + 1.6) / 1.6, 0, 1)); if (gel <= 0) continue;
-    const hx = kb8MeydanX(o, dx0), x = lerp(hx + yan * (o.gen + 220), hx, gel), yon = gel < 1 ? -yan : (P.x < x ? -1 : 1);
+    let hx = kb8MeydanX(o, dx0);
+    // Feza'nın (finalin başındaki yeri o.ox) üstüne basmasın: çok yakınsa yanına, dev kabaktan uzak tarafa kayar
+    const fdx = hx - o.ox;
+    if (Math.abs(fdx) < 58) { const kx = kb8MeydanX(o, 10); let yn = fdx >= 0 ? 1 : -1; if (Math.abs(o.ox + yn * 58 - kx) < 125 * o.rK) yn = -yn; hx = o.ox + yn * 58; }
+    const x = lerp(hx + yan * (o.gen + 220), hx, gel), yon = gel < 1 ? -yan : (P.x < x ? -1 : 1);
     const b = ((vur + i * .5) % 2) / 2, hop = gel < 1 ? Math.abs(Math.sin(a * 8 + i)) * 14 : (b < .5 ? Math.sin(b / .5 * Math.PI) * (dor ? 26 : 9) : 0);
     const y = o.y - hop;
     g.fillStyle = 'rgba(22,12,44,.25)'; g.beginPath(); g.ellipse(x, o.y, kim === 'nine' ? 28 : 18, 3.5, 0, 0, KB8_PI2); g.fill();

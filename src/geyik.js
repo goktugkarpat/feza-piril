@@ -698,8 +698,8 @@ function gyDans(o, dt) {
       if (Math.abs(o.x - hx) > 60) gySicra(o, hx, ty);
       else { o.x += clamp(hx - o.x, -150 * dt, 150 * dt); o.y = ty; m.kos = .3; }
     } else m.kos = lerp(m.kos, 0, dt * 4);
-    // vuruşta hop (0,6 sn); dorukta (karFinalDoruk) daha yüksek
-    const vur = .6, k0 = Math.floor((a - dt) / vur), k1 = Math.floor(a / vur), dor = typeof KAR_FIN !== 'undefined' && a >= KAR_FIN.DORUK && a < KAR_FIN.DORUK + 5;
+    // vuruşta hop (kar.js KAR_FIN.VUR = müziğin 0,8 sn vuruşu; yavrular ve kardan adamla aynı anda); dorukta daha yüksek
+    const vur = typeof KAR_FIN !== 'undefined' ? KAR_FIN.VUR : .8, k0 = Math.floor((a - dt) / vur), k1 = Math.floor(a / vur), dor = typeof KAR_FIN !== 'undefined' && a >= KAR_FIN.DORUK && a < KAR_FIN.DORUK + 5;
     if (a > 3 && k1 > k0 && m.hop <= 0 && (dor || k1 % 2 === 0)) m.hopV = dor ? 420 : 260;
     // ara ara yerinde dönüş (yön değiştirir)
     if (a > 3 && k1 > k0 && k1 % 8 === 4) m.yonH = -m.yonH;

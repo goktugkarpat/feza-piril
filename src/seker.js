@@ -60,7 +60,7 @@ const SK8_SEKER_TIP = ['sargi', 'lolipop', 'misir', 'para'];
 const SK8_KONF_RENK = ['#ff8fc8', '#7dffc4', '#e8ff8a', '#c39bff', '#ffb347', '#8fd8ff', '#ffd27a'];
 // Sahne takvimi (sn, sahne başından). Şeker kapısı ≈ 4,5 sn, şaka kapısı ≈ 5,5–6 sn kilit.
 const SK8_T = { tak: [.45, .72, .99], soyle: .55, ac: 1.35, acSure: .5, gel: 1.6, gelSure: .4, sasir: 1.85, soz: 2.0, alkis: 2.2, alkisSon: 3.0,
-  balon: 1.95, balonSon: 3.7, seker: 3.2, saka: 3.4, sakaSeker: .75, aralik: .11, ucus: .65 };
+  balon: 1.95, balonSon: 3.7, seker: 3.2, saka: 3.4, sakaSeker: .75, aralik: .11, ucus: .72 };
 // olay bitleri
 const SK8_E = { tak0: 1, tak1: 2, tak2: 4, soyle: 8, ac: 16, gel: 32, soz: 64, kalp: 128, saka: 256, cicek: 512, seker: 1024, veda: 2048, kapa: 4096, fener: 8192, takir: 16384 };
 
@@ -976,7 +976,7 @@ function sk8Basla(o) {
   o.Z = {}; sk8Takvim(o);
   o.taraf = P.x < o.x ? -1 : 1; o.hedefX = o.x + o.taraf * SK8_DUR;
   o.kostum = v && v.kostum ? v.kostum : null; o.es = !!(o.kostum && SK8_ES[o.kim] === o.kostum);
-  for (let i = 0; i < o.sk.length; i++) { const k = o.sk[i]; k.u = -1; k.in = false; k.t0 = 0; k.tip = SK8_SEKER_TIP[(i + o.sira) % 4]; k.renk = SK8_SEKER_RENK[(i * 2 + o.sira) % SK8_SEKER_RENK.length]; k.don = (Math.random() - .5) * 14; k.h = 46 + Math.random() * 26; }
+  for (let i = 0; i < o.sk.length; i++) { const k = o.sk[i]; k.u = -1; k.in = false; k.t0 = 0; k.tip = SK8_SEKER_TIP[(i + o.sira) % 4]; k.renk = SK8_SEKER_RENK[(i * 2 + o.sira) % SK8_SEKER_RENK.length]; k.don = (Math.random() - .5) * 14; k.h = 88 + Math.random() * 30; }   // yay tepesi iki başın da üstünde (komşunun yüzünü örtmesin)
   SEKER8.aktif = o; SEKER8.son = o; SK8.efO = o;
   OLAY.emit('sekerKapiBasla', { o, x: P.x, kapiX: o.x });
 }
@@ -1192,7 +1192,7 @@ TUR.kaydet('sekerKapi', {
         for (let j = 0; j < 3; j++) { const a = (o.taraf < 0 ? Math.PI : 0) + (j - 1) * .7 + Math.PI, r0 = 7 + u * 8, r1 = r0 + 6; c.moveTo(tx + Math.cos(a) * r0, ty + Math.sin(a) * r0); c.lineTo(tx + Math.cos(a) * r1, ty + Math.sin(a) * r1); }
         c.stroke(); c.globalAlpha = 1; }
       // kostüm balonu
-      const bal = sk8Ar(st, T.balon, T.balonSon, .2);
+      const bal = sk8Ar(st, T.balon, Math.max(T.balon + 1.1, Math.min(T.balonSon, (o.Z.sekerBas || 9) - .12)), .2);   // şekerler uçmaya başlarken balon çekilir (üst üste binmesin)
       if (bal > 0) {
         const sp = sk8KostumSpr(o.kostum || 'genel'), bx = o.x + o.taraf * 30, by = (KOMSU.basY || o.y - 80) - 44 + Math.sin(tm * 2.4) * 2, sc = bal * (1 + Math.sin(clamp((st - T.balon) / .3, 0, 1) * Math.PI) * .18);
         c.save(); c.translate(bx, by); c.scale(-o.taraf * sc, sc); sk8Koy(c, sp, 0, 0); c.restore();
@@ -1201,7 +1201,8 @@ TUR.kaydet('sekerKapi', {
       const b = sk8Sepet();
       for (let i = 0; i < o.n && i < o.sk.length; i++) {
         const k = o.sk[i]; if (k.u < 0 || k.in) continue;
-        const u = clamp(k.u, 0, 1), e = u, x = lerp(k.x0, b.x, e), y = lerp(k.y0, b.y, e) - k.h * 4 * u * (1 - u);
+        // yatayda biraz önden gider: son kısımda şeker sepete yukarıdan, neredeyse dik düşer ("içine girdi" okunsun)
+        const u = clamp(k.u, 0, 1), e = 1 - Math.pow(1 - u, 1.7), x = lerp(k.x0, b.x, e), y = lerp(k.y0, b.y, u) - k.h * 4 * u * (1 - u);
         const sc = u > .82 ? 1 - (u - .82) / .18 * .5 : u < .12 ? .6 + u / .12 * .4 : 1;
         c.save(); c.translate(x, y); c.rotate(k.don * u); c.scale(sc, sc); sk8Koy(c, sk8SekerSpr(k.tip, k.renk), 0, 0); c.restore();
         c.globalCompositeOperation = 'lighter'; sk8Isik(c, k.renk, x, y, 12, .3); c.globalCompositeOperation = 'source-over';
@@ -1223,15 +1224,15 @@ function sk8Esya(c, o, st, tm, p) {
   if (o.tur !== 'saka') return;
   if (s === 'kutu' || s === 'tavsan') {
     const g0 = sk8Ar(st, T.ac + .25, Z.kapa + .05, .25); if (g0 <= 0) return;
-    const bx = o.x + yon * (s === 'kutu' ? 13 : 19), by = o.y - SK8_BAS, u = st - Z.saka, zp = u > 0 && u < .25 ? Math.sin(u / .25 * Math.PI) * 2.5 : 0;
+    const bx = o.x + yon * (s === 'kutu' ? 18 : 19), by = o.y - SK8_BAS, u = st - Z.saka, zp = u > 0 && u < .25 ? Math.sin(u / .25 * Math.PI) * 2.5 : 0;
     c.save(); c.translate(bx, by); c.scale(g0, g0 * (1 + zp * .03));
     if (s === 'kutu') {
       const ac = clamp(u / .12, 0, 1), L = u < 0 ? 0 : (25 + Math.exp(-u * 3.2) * Math.sin(u * 17) * 9) * smooth(clamp(u / .12, 0, 1));
       if (L > 0) {   // yay + gülen kabak (Feza'ya doğru eğik)
-        c.save(); c.translate(0, -16); c.rotate(yon * .3 + Math.sin(u * 6) * .06 * Math.exp(-u));
+        c.save(); c.translate(0, -16); c.rotate(yon * .5 + Math.sin(u * 6) * .06 * Math.exp(-u));   // belirgin eğik: kabak komşunun göğsünü örtmesin
         c.strokeStyle = '#8f86a8'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(0, 0); for (let i = 1; i <= 8; i++) c.lineTo((i % 2 ? -4.2 : 4.2), -L * i / 8); c.stroke();
         c.strokeStyle = '#e4ddf0'; c.lineWidth = 1.4; c.stroke();
-        c.translate(0, -L + 3); c.rotate(-yon * .3 + Math.sin(u * 9) * .2 * Math.exp(-u * 1.5));
+        c.translate(0, -L + 3); c.rotate(-yon * .5 + Math.sin(u * 9) * .2 * Math.exp(-u * 1.5));
         if (typeof kabakCiz === 'function') { try { kabakCiz(c, 0, 0, .42, tm, { yuz: 0, yanik: 1, mutlu: 1 }); } catch (e) { sk8Koy(c, sk8MiniKabakSpr(), 0, 0); } }
         else sk8Koy(c, sk8MiniKabakSpr(), 0, 0);
         c.restore();

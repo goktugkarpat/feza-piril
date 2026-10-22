@@ -211,7 +211,11 @@ function dn8Agac(c,x,base,h,R,K,detay,L,kovuk){
   c.fillStyle=K.gov;for(const s of [-1,1]){c.beginPath();c.moveTo(x+s*tw*.6,base-tw*.9);c.quadraticCurveTo(x+s*tw*1.6,base-tw*.3,x+s*tw*2.6,base+2);c.lineTo(x+s*tw*.4,base+2);c.closePath();c.fill();}}
  // kovuk (hayaletçik saklanır): koyu oval, içi sıcak loş, kalın yumuşak kenar
  if(kovuk){const d=(base-kovuk.y)/h,uk=clamp((.64-Math.sqrt(Math.max(0,.4096-.16*d)))/.08,0,1),[kx]=nok(uk),ky=kovuk.y;c.fillStyle=K.koyu;c.beginPath();c.ellipse(kx,ky,30,36,0,0,6.283);c.fill();
-  const gr=c.createRadialGradient(kx,ky+6,2,kx,ky,30);gr.addColorStop(0,'#5a3060');gr.addColorStop(1,'#1e1030');c.fillStyle=gr;c.beginPath();c.ellipse(kx,ky,25,31,0,0,6.283);c.fill();
+  const gr=c.createRadialGradient(kx,ky-4,2,kx,ky-2,30);gr.addColorStop(0,'#a07aa8');gr.addColorStop(.55,'#5e3a78');gr.addColorStop(1,'#2e1a4a');c.fillStyle=gr;c.beginPath();c.ellipse(kx,ky,25,31,0,0,6.283);c.fill();
+  // içi kara bir delik gibi durmasın: dipte sıcak loş ışık, yumuşak yosun minderi, üstte iki minik yıldız parıltısı
+  // (alt yarısını saklanma ön parçası — dn8SaklanOn — örter; ışık bu yüzden görünen üst yarıda)
+  c.fillStyle='rgba(255,210,122,.26)';c.beginPath();c.ellipse(kx,ky-2,17,12,0,0,6.283);c.fill();
+  c.fillStyle='rgba(255,240,200,.7)';for(const [dx,dy,r] of [[-10,-14,2],[9,-6,1.5]]){c.beginPath();c.moveTo(kx+dx,ky+dy-r*2.2);c.lineTo(kx+dx+r*.6,ky+dy);c.lineTo(kx+dx,ky+dy+r*2.2);c.lineTo(kx+dx-r*.6,ky+dy);c.closePath();c.fill();c.beginPath();c.moveTo(kx+dx-r*2.2,ky+dy);c.lineTo(kx+dx,ky+dy+r*.6);c.lineTo(kx+dx+r*2.2,ky+dy);c.lineTo(kx+dx,ky+dy-r*.6);c.closePath();c.fill();}
   c.strokeStyle=K.govA;c.lineWidth=5;c.beginPath();c.ellipse(kx,ky,27,33,0,Math.PI*.95,Math.PI*1.9);c.stroke();kovuk.x=kx;kovuk.r=ry(uk);}
  // taç: yuvarlak yaprak bulutları (gölge + ana renk + parlak üst), kenarda minik yaprak noktaları
  const nb=detay?7:5,tcx=tx,tcy=ty-h*.16,blob=[];
@@ -533,6 +537,9 @@ function dn8Chunk(i){
  let gr=c.createLinearGradient(0,600,0,1200);gr.addColorStop(0,'#3e2a62');gr.addColorStop(.25,'#2e1f50');gr.addColorStop(.6,'#20163e');gr.addColorStop(1,'#140c2a');c.fillStyle=gr;c.fill(p);
  c.save();c.clip(p);
  const Q=rng(i*733+61);
+ // yüzeyin hemen altında ay ışığı alan yumuşak lila toprak bandı: ekranın altındaki toprak tek parça koyu, çamurlu bir şerit gibi durmasın
+ for(const [dy,lw,a] of [[16,34,.13],[44,40,.07]]){c.strokeStyle='rgba(140,104,200,'+a+')';c.lineWidth=lw;c.lineJoin='round';c.beginPath();let on=false;
+  for(let x=Math.floor(L)-20;x<=Rr+20;x+=10){const y=dn8Surface(x);if(y>=1200){on=false;continue;}on?c.lineTo(x,y+dy):c.moveTo(x,y+dy);on=true;}c.stroke();}
  // toprak katmanı çizgileri, gömülü yuvarlak taşlar, minik kökler, ışıl ışıl toprak kırıntıları
  c.strokeStyle='rgba(150,110,200,.12)';c.lineWidth=2.5;for(let k=0;k<34;k++){const xx=L+Q()*DN8_CW,yy=dn8Surface(xx)+40+Q()*200,ww=50+Q()*140;if(yy>1190)continue;c.beginPath();c.moveTo(xx,yy);c.quadraticCurveTo(xx+ww*.5,yy+6,xx+ww,yy);c.stroke();}
  // toprak cepleri (koyu yumuşak lekeler) ve daha açık bir katman bandı: geniş görünüşte toprak düz kalmasın
@@ -545,6 +552,8 @@ function dn8Chunk(i){
  c.strokeStyle='rgba(90,60,90,.55)';c.lineWidth=2;c.lineCap='round';for(let k=0;k<10;k++){const xx=L+Q()*DN8_CW,yy=dn8Surface(xx)+14;if(yy>1190)continue;c.beginPath();c.moveTo(xx,yy);c.bezierCurveTo(xx+6,yy+14,xx-8,yy+24,xx+3,yy+34+Q()*20);c.stroke();}
  for(let k=0;k<120;k++){const xx=L+Q()*DN8_CW,yy=dn8Surface(xx)+8+Q()*120;c.fillStyle='rgba(255,220,250,'+(.08+Q()*.2)+')';c.fillRect(xx,yy,1.2,1.2);}
  c.restore();
+ // 2b) uçurum ağzı: zeminin dik, düz kesik kenarını yuvarlak kaya yumrularıyla yumuşat (zeminin önünde, dudağın altında)
+ for(const b of Y.buyuk)if(b.tip==='ucurum'&&b.x1>L&&b.x0<Rr)dn8UcurumAgiz(c,b);
  // 3) yüzey dudağı: bölgeye göre çimen (mor-deniz mavisi), kaldırım taşı (sokak) ya da döşeme (meydan)
  dn8Dudak(c,L,Rr);
  // 4) küçük süsler (yüzeyde)
@@ -554,7 +563,11 @@ function dn8Chunk(i){
  if(yeni)dn8KayitSirala();
  DN8.chunks.set(i,cv);while(DN8.chunks.size>DN8_CACHE)DN8.chunks.delete(DN8.chunks.keys().next().value);return cv;
 }
-function dn8KayitSirala(){const Y=DN8.yap;for(const k of ['yuz','mantar','ampul','pen','asili','baca','lolipop'])Y[k].sort((a,b)=>a.x-b.x);}
+function dn8KayitSirala(){const Y=DN8.yap;
+ // dalda baykuş / yarasa asılıysa (kabak.js geceDost, o.dalX/dalY) aynı yerdeki kâğıt fener kaldırılır: üst üste binmesinler
+ if(typeof NESNELER!=='undefined')for(const o of NESNELER)if(o.tip==='geceDost'&&Number.isFinite(o.dalX)&&Number.isFinite(o.dalY))
+  Y.asili=Y.asili.filter(p=>Math.abs(p.x-o.dalX)>(o.tur==='baykus'?58:34)||Math.abs(p.y-o.dalY)>140);
+ for(const k of ['yuz','mantar','ampul','pen','asili','baca','lolipop'])Y[k].sort((a,b)=>a.x-b.x);}
 // yüzey dudağı
 function dn8Dudak(c,L,Rr){
  // çimen: koyu gölge, ana renk, ışıklı üst; basamak kenarında kendiliğinden saçak
@@ -635,7 +648,13 @@ function dn8Ev(c,b,R,Y){
   if(Y)Y.saklan.baca={x:bx,y:by};
   c.fillStyle=cati;c.beginPath();c.moveTo(kx0-8,ky+4);c.quadraticCurveTo(kx0+(kx1-kx0)*.4,ky-60,kx1+14,ky+8);c.lineTo(kx1+14,ky+16);c.lineTo(kx0-8,ky+14);c.closePath();c.fill();
   c.fillStyle='rgba(255,230,250,.12)';c.beginPath();c.moveTo(kx0-8,ky+4);c.quadraticCurveTo(kx0+(kx1-kx0)*.4,ky-60,kx1+14,ky+8);c.quadraticCurveTo(kx0+(kx1-kx0)*.4,ky-46,kx0-8,ky+10);c.fill();
-  dn8Pencere(c,kx0+(kx1-kx0)*.5,y-K.h*.52,26,32,'yuvarlak',b,Y,R);}
+  dn8Pencere(c,kx0+(kx1-kx0)*.5,y-K.h*.52,26,32,'yuvarlak',b,Y,R);
+  // kanat duvarı geniş ve boş kalmasın: iki küçük kepenkli pencere, altta çiçek saksıları ve duvara tırmanan sarmaşık
+  dn8Pencere(c,kx0+(kx1-kx0)*.2,y-K.h*.55,28,34,'kare',b,Y,R);dn8Pencere(c,kx0+(kx1-kx0)*.8,y-K.h*.55,28,34,'kare',b,Y,R);
+  for(let k=0;k<3;k++){const px=kx0+(kx1-kx0)*(.3+k*.2),py=y;c.fillStyle=dn8Gece('#c8704a',.3);c.beginPath();c.moveTo(px-11,py-20);c.lineTo(px+11,py-20);c.lineTo(px+8,py);c.lineTo(px-8,py);c.closePath();c.fill();
+   c.fillStyle=dn8Gece('#4a8a5e',.3);c.beginPath();c.arc(px,py-24,9,0,6.283);c.fill();c.fillStyle=dn8Gece(DN8_SEKER[(k*2+1)%6],.25);for(let m=0;m<3;m++){c.beginPath();c.arc(px-6+m*6,py-28+(m%2)*5,3.2,0,6.283);c.fill();}}
+  c.strokeStyle=dn8Gece('#3e7a52',.25);c.lineWidth=2.4;c.lineCap='round';c.beginPath();c.moveTo(kx1-14,y);c.bezierCurveTo(kx1-30,y-50,kx1-4,y-90,kx1-22,y-K.h+10);c.stroke();
+  for(let m=1;m<7;m++){const u=m/7,lx=kx1-14-Math.sin(u*5)*10,ly=y-u*(K.h-10);c.fillStyle=dn8Gece(m%2?'#4e8a62':'#3e7a52',.25);c.beginPath();c.ellipse(lx+(m%2?6:-6),ly,6,3.4,m%2?.6:-.6,0,6.283);c.fill();}}
  // duvar: hafif eğri (üst kenar biraz kayık), sol yan aydınlık, sağ yan gölge
  c.fillStyle=duvar;c.beginPath();c.moveTo(xl,y+4);c.lineTo(xl+egim-4,ust);c.lineTo(xr+egim+4,ust);c.lineTo(xr,y+4);c.closePath();c.fill();
  c.fillStyle=koyu;c.globalAlpha=.55;c.beginPath();c.moveTo(xr-w*.22,y+4);c.lineTo(xr-w*.22+egim,ust);c.lineTo(xr+egim+4,ust);c.lineTo(xr,y+4);c.closePath();c.fill();c.globalAlpha=1;
@@ -663,6 +682,15 @@ function dn8Ev(c,b,R,Y){
  for(let k=0;k<=Math.floor(w/26);k++){const u=k/Math.floor(w/26),px=lerp(xl-6,xr+6,u)+egim,py=ust+4+Math.sin(u*Math.PI)*10;c.fillStyle=dn8Gece(DN8_SEKER[k%6],.5);c.beginPath();c.arc(px,py+3,3.6,0,6.283);c.fill();}
  // kapı önünde iki saksı kabak (kapı alanının dışında)
  if(!b.meydan){dn8Kabak(c,x+DN8_KAPI.x0-34,y+3,.85,DN8_KAB[b.k%3],(b.k>>1)%3,Y?Y.yuz:null);dn8Kabak(c,x+DN8_KAPI.x1+30,y+3,.6,DN8_KAB[(b.k+1)%3],-1,null);}
+ // meydan evleri: kapısız kalmasın — kemerli, kepenk renginde kapı, yıldız tokmak, üstünde minik kabak çelenk, önünde paspas
+ else{const dw=52,dh=Math.min(96,h*.42),dx=x+egim*.2,kp=dn8Gece(b.kepenk||'#7a4a2a',.3);
+  c.fillStyle='#e8dcc8';c.beginPath();c.moveTo(dx-dw/2-5,y);c.lineTo(dx-dw/2-5,y-dh+dw/2);c.arc(dx,y-dh+dw/2,dw/2+5,Math.PI,0);c.lineTo(dx+dw/2+5,y);c.closePath();c.fill();
+  c.fillStyle=kp;c.beginPath();c.moveTo(dx-dw/2,y);c.lineTo(dx-dw/2,y-dh+dw/2);c.arc(dx,y-dh+dw/2,dw/2,Math.PI,0);c.lineTo(dx+dw/2,y);c.closePath();c.fill();
+  c.strokeStyle=dn8Mix(kp,'#140a28',.35);c.lineWidth=2;c.beginPath();for(const u of [-.25,0,.25]){c.moveTo(dx+u*dw,y-2);c.lineTo(dx+u*dw,y-dh+dw*.5-Math.cos(u*2)*dw*.2);}c.stroke();
+  c.fillStyle='#ffd27a';c.beginPath();c.arc(dx+dw*.3,y-dh*.45,3.6,0,6.283);c.fill();
+  c.fillStyle='rgba(255,231,168,.55)';c.beginPath();c.ellipse(dx,y-dh+dw*.42,9,7,0,0,6.283);c.fill();
+  dn8Kabak(c,dx,y-dh-2,.5,DN8_KAB[b.k%3],1,Y?Y.yuz:null);
+  c.fillStyle=dn8Gece('#ff8fc8',.35);dn8Yk(c,dx-dw/2-2,y-5,dw+4,7,3);c.fill();}
 }
 // çatı türleri
 function dn8Cati(c,b,xl,xr,ust,rh,cati,R,Y){
@@ -841,8 +869,23 @@ function dn8Kemer(c,b,R,Y){
 function dn8Kule(c,x,y,h,R,Y,koy){
  const w=koy?84:110,dv=dn8Gece(koy?'#9a78b8':'#8a70a8',koy?.28:.32),ust=y-h,xl=x-w/2,xr=x+w/2;
  c.fillStyle=dv;c.beginPath();c.moveTo(xl-6,y+4);c.lineTo(xl+4,ust);c.lineTo(xr-4,ust);c.lineTo(xr+6,y+4);c.closePath();c.fill();
- c.fillStyle='rgba(20,10,40,.28)';c.fillRect(x+w*.12,ust,w*.4,h+4);
- c.strokeStyle='rgba(30,20,50,.35)';c.lineWidth=1.3;for(let yy=ust+20,i=0;yy<y;yy+=20,i++){c.beginPath();c.moveTo(xl,yy);c.lineTo(xr,yy);c.stroke();}
+ // taş örgü: şaşırtmalı yuvarlak köşeli taşlar (düz, soluk bir dikdörtgen gibi okunmasın), solda ay ışığı kenarı, sağda gölge
+ const koyu=dn8Mix(dv,'#140a28',.38),acik=dn8Mix(dv,'#f0e0ff',.2);
+ for(let yy=ust+4,i=0;yy<y-4;yy+=22,i++){const u=(yy-ust)/h,ka=lerp(xl+4,xl-6,u),kb=lerp(xr-4,xr+6,u);
+  for(let xx=ka+(i%2?-14:0);xx<kb;xx+=30){const a=Math.max(xx,ka)+1.5,b=Math.min(xx+30,kb)-1.5;if(b-a<6)continue;
+   c.fillStyle=(i*3+Math.round(xx/30))%5===0?dn8Mix(dv,'#b08ac0',.25):(i+Math.round(xx/30))%4===0?dn8Mix(dv,'#2a1a40',.12):dv;dn8Yk(c,a,yy+1.5,b-a,19,5);c.fill();}}
+ c.strokeStyle=koyu;c.lineWidth=1.2;c.globalAlpha=.5;for(let yy=ust+4;yy<y;yy+=22){const u=(yy-ust)/h;c.beginPath();c.moveTo(lerp(xl+4,xl-6,u),yy);c.lineTo(lerp(xr-4,xr+6,u),yy);c.stroke();}c.globalAlpha=1;
+ c.fillStyle='rgba(20,10,40,.3)';c.beginPath();c.moveTo(x+w*.14,ust);c.lineTo(xr-4,ust);c.lineTo(xr+6,y+4);c.lineTo(x+w*.18,y+4);c.closePath();c.fill();
+ c.fillStyle=acik;c.globalAlpha=.55;c.beginPath();c.moveTo(xl+4,ust);c.lineTo(xl+14,ust);c.lineTo(xl+6,y+4);c.lineTo(xl-6,y+4);c.closePath();c.fill();c.globalAlpha=1;
+ c.strokeStyle=koyu;c.lineWidth=2.4;c.beginPath();c.moveTo(xl-6,y+4);c.lineTo(xl+4,ust);c.lineTo(xr-4,ust);c.lineTo(xr+6,y+4);c.stroke();
+ // temel kaidesi ve kemerli minik kapı (yıldız tokmak), yanında tırmanan sarmaşık
+ c.fillStyle=dn8Mix(dv,'#140a28',.25);dn8Yk(c,xl-14,y-18,w+28,22,7);c.fill();c.fillStyle=acik;c.globalAlpha=.35;c.fillRect(xl-10,y-17,w+20,3);c.globalAlpha=1;
+ if(!koy){const dw=34,dh=58;c.fillStyle='#e8dcc8';c.beginPath();c.moveTo(x-dw/2-4,y-16);c.lineTo(x-dw/2-4,y-dh+dw/2);c.arc(x,y-dh+dw/2,dw/2+4,Math.PI,0);c.lineTo(x+dw/2+4,y-16);c.fill();
+  c.fillStyle=dn8Gece('#7a4a8a',.25);c.beginPath();c.moveTo(x-dw/2,y-16);c.lineTo(x-dw/2,y-dh+dw/2);c.arc(x,y-dh+dw/2,dw/2,Math.PI,0);c.lineTo(x+dw/2,y-16);c.fill();
+  c.fillStyle='#ffd27a';c.beginPath();c.arc(x+dw*.28,y-36,2.8,0,6.283);c.fill();
+  c.strokeStyle=dn8Gece('#3e7a52',.2);c.lineWidth=2.6;c.lineCap='round';c.beginPath();c.moveTo(xl+2,y-14);c.bezierCurveTo(xl+22,y-h*.2,xl-4,y-h*.35,xl+16,y-h*.5);c.stroke();
+  for(let m=1;m<9;m++){const u=m/9,lx=xl+8+Math.sin(u*9)*9,ly=y-14-u*(h*.5-14);c.fillStyle=dn8Gece(m%2?'#4e8a62':'#3e7a52',.2);c.beginPath();c.ellipse(lx+(m%2?7:-7),ly,7,3.8,m%2?.6:-.6,0,6.283);c.fill();
+   if(m%3===0){c.fillStyle=dn8Gece('#ff8fc8',.3);c.beginPath();c.arc(lx+(m%2?12:-12),ly-2,3,0,6.283);c.fill();}}}
  // çan yeri (kemerli açıklık, içinde altın çan) ve şapka çatı
  const cy=ust-70;c.fillStyle=dv;c.fillRect(xl+6,cy,w-12,72);c.fillStyle='#2a1a3e';c.beginPath();c.moveTo(x-22,cy+70);c.lineTo(x-22,cy+30);c.arc(x,cy+30,22,Math.PI,0);c.lineTo(x+22,cy+70);c.fill();
  c.fillStyle='#e0b050';c.beginPath();c.moveTo(x-12,cy+56);c.quadraticCurveTo(x-12,cy+26,x,cy+26);c.quadraticCurveTo(x+12,cy+26,x+12,cy+56);c.closePath();c.fill();c.fillStyle='#ffe7a8';c.beginPath();c.arc(x,cy+58,3,0,6.283);c.fill();
@@ -864,13 +907,24 @@ function dn8Tezgah(c,b,R,Y){
  c.fillStyle='rgba(30,16,50,.25)';c.fillRect(x-w/2-8,y-150,w+16,6);
 }
 // ── Uçurum kenarı (bahçenin ucu / meydanın başı): yuvarlak kaya, sarkan kökler ve sarmaşıklar ──
+// (kaya gövdesi artık dn8UcurumAgiz'de, zeminin önünde; burada yalnız sarkan sarmaşıklar ve kökler — dn8UcurumAgiz'den çağrılır)
 function dn8Ucurum(c,b,R){
- const x=b.x,s=b.yon,top=dn8Surface(x-s*4);if(top>=1200)return;
- c.fillStyle='#2e2050';c.beginPath();c.moveTo(x-s*60,top+4);c.bezierCurveTo(x+s*30,top+10,x+s*36,top+120,x+s*14,top+220);c.bezierCurveTo(x+s*2,top+320,x+s*24,top+420,x,1200);c.lineTo(x-s*80,1200);c.closePath();c.fill();
- c.fillStyle='#3a2a62';for(let k=0;k<7;k++){const yy=top+40+k*70+R()*20,r=18+R()*16;c.beginPath();c.ellipse(x+s*(6+R()*10),yy,r,r*.7,0,0,6.283);c.fill();c.fillStyle='rgba(170,140,220,.22)';c.beginPath();c.ellipse(x+s*(2+R()*6),yy-r*.4,r*.6,r*.22,0,0,6.283);c.fill();c.fillStyle='#3a2a62';}
+ const x=b.x,s=b.yon,top=dn8Surface(x-s*4);if(top>=1200||!b.agiz)return;
  c.strokeStyle='#3e7a5a';c.lineWidth=2.4;c.lineCap='round';for(let k=0;k<5;k++){const vx=x-s*(10+k*14)+s*30,L=60+R()*110;c.beginPath();c.moveTo(vx,top+6);c.bezierCurveTo(vx+s*10,top+L*.4,vx-s*6,top+L*.7,vx+s*4,top+L);c.stroke();
   for(let m=1;m<6;m++){const u=m/6;c.fillStyle=m%2?'#4e8a62':'#3e7a5a';c.beginPath();c.ellipse(vx+s*Math.sin(u*4)*5,top+L*u,4.5,2.4,m%2?.6:-.6,0,6.283);c.fill();}}
  c.strokeStyle='rgba(90,60,90,.7)';c.lineWidth=3;for(let k=0;k<3;k++){const rx=x+s*(4+k*8);c.beginPath();c.moveTo(rx,top+20);c.bezierCurveTo(rx+s*14,top+50,rx-s*4,top+80,rx+s*10,top+110+k*20);c.stroke();}
+}
+// uçurumun dik kenarı boyunca üst üste binen yuvarlak kaya yumruları: aşağı indikçe koyulaşır ve içeri çekilir (yüzen ada gibi)
+function dn8UcurumAgiz(c,b){
+ const s=b.yon,x=b.x,top=dn8Surface(x-s*4);if(top>=1200)return;const Q=rng((x|0)+417),y0=top+26,D=1200-y0;
+ const ex=yy=>x+s*2-s*100*Math.pow(clamp((yy-y0)/D,0,1),1.5);   // kenarın derinliğe göre içeri çekilen çizgisi
+ // dik kesik köşe: kenarın dışında kalan zemin silinir (arkadaki gece köyü görünür)
+ c.save();c.globalCompositeOperation='destination-out';c.beginPath();c.moveTo(x+s*60,y0);for(let yy=y0;yy<=1200;yy+=24)c.lineTo(ex(yy),yy);c.lineTo(x+s*60,1200);c.closePath();c.fill();c.restore();
+ for(let yy=y0-6;yy<1200;){const u=clamp((yy-top)/520,0,1),r=20+Q()*16+u*12,ix=ex(yy)-s*r*(.35+Q()*.15);
+  c.fillStyle=dn8Mix('#3e2a62','#1a1232',u);c.beginPath();c.ellipse(ix,yy,r*.95,r,0,0,6.283);c.fill();
+  c.fillStyle='rgba(170,140,220,'+(.18*(1-u))+')';c.beginPath();c.ellipse(ix+s*r*.2,yy-r*.45,r*.5,r*.2,0,0,6.283);c.fill();
+  yy+=r*1.1;}
+ b.agiz=true;dn8Ucurum(c,b,rng((x|0)+91));b.agiz=false;
 }
 // ── Sokak lambası: kıvrık demir direk, asılı fener camı (karede yerel ışıkla yanar) ──
 function dn8Direk(c,b,Y){
@@ -944,6 +998,14 @@ function dn8AyHesap(tm,vw,vh){
 function dn8Ay(){const A=DN8.ay8;return {x:A.x,y:A.y,r:A.r};}
 
 // ════════ Arka plan ════════
+// zeminin ekrandaki y'si normal yerinden (ekranın ~%87-88'i) ne kadar aşağıda: kamera yukarı kalkınca > 0. Yumuşatılır (basamak
+// geçişinde zıplamasın), karede bir kez hesaplanır. Arka şerit ve ön plan yaprakları bunu kullanır (dünyaya bağlı, kaymadan iner/çıkar).
+function dn8YerKay(vh){
+ if(DN8.ykKare===DN8.kare)return DN8.yk||0;DN8.ykKare=DN8.kare;
+ const x=cam.x+(W/S)*.5;let y=dn8Surface(x);if(y>=1200){const a=dn8Surface(x-260),b=dn8Surface(x+260);y=Math.min(a,b);}
+ const hedef=y>=1200?0:Math.max(0,y-cam.y-vh*.885),k=Number.isFinite(DN8.yk)?DN8.yk:hedef;
+ DN8.yk=Math.abs(hedef-k)<.5?hedef:k+(hedef-k)*.14;return DN8.yk;
+}
 function dn8Backdrop(tm){
  const vw=W/S,vh=H/S,F=dn8FxArt(),sb=DN8.sabah,gece=1-sb,A=dn8AyHesap(tm,vw,vh),pw=A.w;
  g.setTransform(S,0,0,S,0,0);
@@ -955,7 +1017,10 @@ function dn8Backdrop(tm){
  // alt yarısının önünde siluet olur (yumuşak giriş-çıkış)
  let aaH=0;if(typeof SUPURGE!=='undefined'&&SUPURGE&&typeof SUPURGE.ayAni==='function'){try{aaH=clamp(+SUPURGE.ayAni()||0,0,1);}catch(e){aaH=0;}}
  DN8.ayAniS=(DN8.ayAniS||0)+(aaH-(DN8.ayAniS||0))*.06;if(Math.abs(DN8.ayAniS-aaH)<.002)DN8.ayAniS=aaH;const aa=smooth(DN8.ayAniS)*vh*.14;
- for(let l=0;l<5;l++)tab[l]=DN8_SB[l]-cam.y*DN8_SYF[l]+pw*[70,60,40,20,0][l]+[0,0,pw*110,pw*360,(1-pw)*520][l]+(l===3?0:aa);
+ // kamera yukarı kalkınca (Feza yüksek bir yerde) zemin ekranın altından iner: yakın çalı şeridi (3) ve ağaç sırasının dibi (2)
+ // zeminle birlikte iner — yoksa normalde zeminin arkasında saklı duran çalı/kabak sırası alttan birden belirip kaybolur
+ const yk=dn8YerKay(vh)*(1-pw);
+ for(let l=0;l<5;l++)tab[l]=DN8_SB[l]-cam.y*DN8_SYF[l]+pw*[70,60,40,20,0][l]+[0,0,pw*110,pw*360,(1-pw)*520][l]+(l===3?0:aa)+yk*[0,0,.45,.7,0][l];
  const ort=DN8.ort||(DN8.ort=[0,0,0,0,0]);for(let i=0;i<sira.length;i++){let m=yZ;for(let j=i+1;j<sira.length;j++)if(tab[sira[j]]<m)m=tab[sira[j]];ort[sira[i]]=m;}
  let gokAlt=yZ;for(let i=0;i<sira.length;i++)if(tab[sira[i]]<gokAlt)gokAlt=tab[sira[i]];DN8.gokAlt=gokAlt;
  // gök (yalnız görünen üst kısım)
@@ -1198,6 +1263,8 @@ function dn8OnBos(){
  for(const o of NESNELER){if(!/Mini$/.test(o.tip)||o.tip==='supurgeMini')continue;const a=Number.isFinite(o.x0)?o.x0:o.x-700,b=Number.isFinite(o.x1)?o.x1:o.x+700;L.push(Math.min(a,o.x-380)-220,Math.max(b,o.x+360)+220);}
  return DN8.onBos=L;
 }
+// ön plan yaprağının örtmemesi gereken oyun nesneleri (bir kez toplanır)
+function dn8OnNes(){if(DN8.onNes)return DN8.onNes;return DN8.onNes=NESNELER.filter(o=>/^(kabakFener|hayaletcik|sekerKapi)$/.test(o.tip)&&Number.isFinite(o.x));}
 function dn8Foreground(tm){
  if(!dn8Ready())return;const F=dn8FxArt(),vw=W/S,vh=H/S;dn8OnArt();
  const ucus=typeof P!=='undefined'&&!!P.ucus&&P.ucus.tip==='supurgeMini';
@@ -1210,10 +1277,16 @@ function dn8Foreground(tm){
     for(let j=1;j<14;j++){const u=j/14,x=lerp(x0,x1,u),y=y0+180*u*(1-u),sw=Math.sin(tm*1.6+j+q*3)*.12;g.save();g.translate(x,y);g.rotate(sw);g.globalAlpha=.92;g.drawImage(F.bayrak[((j+q*5)%8+8)%8],-16,-3,32,35);g.restore();}}g.globalAlpha=1;}
   // alt: yakın koyu yapraklar; Feza'nın üstüne gelince saydamlaşır
   const fb=1.1,left=cam.x*fb-160,right=cam.x*fb+vw+160,px=(Number.isFinite(P.rx)?P.rx:P.x);g.setTransform(S,0,0,S,-cam.x*S*fb,0);
-  const bos=dn8OnBos();
+  const bos=dn8OnBos(),yk=dn8YerKay(vh);   // yk: zemin aşağı indikçe yapraklar da onunla (biraz hızlı, paralaks 1,1) ekrandan çıkar
+  if(yk<vh*.4)
   for(let q=Math.floor(left/680);q<=Math.ceil(right/680);q++){const R=rng(q*71+883),x=q*680+R()*200,wx=x/fb;if(wx>DN8_GAP0-200&&wx<DN8_GAP1+100||wx>DN8_GAP1)continue;
-   let kac=false;for(let i=0;i<bos.length;i+=2)if(wx>bos[i]&&wx<bos[i+1]){kac=true;break;}if(kac)continue;const near=Math.abs(wx-px)<170,k=.5+R()*.25;
-   g.save();g.translate(x,vh+30);g.rotate(Math.sin(tm*.35+q)*.015);g.globalAlpha=near?.2:.86;g.drawImage(F.on[Math.abs(q)%2],-140*k*1.35,-150*k*1.35,280*k*1.35,150*k*1.35);g.restore();}
+   let kac=false;for(let i=0;i<bos.length;i+=2)if(wx>bos[i]&&wx<bos[i+1]){kac=true;break;}if(kac)continue;const k=.5+R()*.25;
+   // ekranda yaprağın Feza'ya ya da oyun nesnesine (sönük fener, saklanan hayaletçik, kapı) uzaklığı → yumuşak saydamlaşma
+   // (ani belirip kaybolma yok; yaprak paralaksla kaydığı için ekran konumuyla bakılır)
+   const sx=x-cam.x*fb,yar=140*k*1.35;let d=Math.abs(sx-(px-cam.x))-yar;
+   for(const o of dn8OnNes()){const e=Math.abs(sx-(o.x-cam.x))-yar;if(e<d)d=e;}
+   const al=.2+.66*clamp((d+20)/110,0,1);
+   g.save();g.translate(x,vh+30+yk*1.1);g.rotate(Math.sin(tm*.35+q)*.015);g.globalAlpha=al;g.drawImage(F.on[Math.abs(q)%2],-140*k*1.35,-150*k*1.35,280*k*1.35,150*k*1.35);g.restore();}
   g.globalAlpha=1;
  }
  // ekran geneli: fenerler yandıkça sıcak, sabahta altın ışık

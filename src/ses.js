@@ -342,7 +342,8 @@ const SES = (() => {
     // Bölüm 7 (Kuzey Işıkları) olay tepkileri ve talimatları
     if (k === 'p_k_kizak_giris' || k === 'p_k_kardan_giris' || k === 'p_k_kardan_top') return { oncelik: 2, acil: 1, omur: 12, konu: null };
     if (k === 'p_k_yavru' || k === 'p_k_geyik') return { oncelik: 2, acil: 1, omur: 10, konu: null };
-    if (/^p_k_(fener2?|yavru_uyan|kardan_bitti|buz|kizak|kizak_bitti)$/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
+    if (k === 'p_k_yavru_uyan') return { oncelik: 2, acil: 2, omur: 10, konu: null };   // ilk yavru girişteki fener/geyik sözlerinin arasında uyanıyor: sıradaki ilk söz o olsun (geyik tanışması yakınlıktan yeniden gelir)
+    if (/^p_k_(fener2?|kardan_bitti|buz|kizak|kizak_bitti)$/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
     // Bölüm 8 (Balkabağı Gecesi): kapıdaki komşular ve "Şeker mi şaka mı!" kapı sahnesinin içinde, hemen (kısa ömür: Feza giderse atılır)
     if (/^(kd|in|ck|kk|ht|k2)_veda$/.test(k)) return { oncelik: 1, acil: 0, omur: 4, konu: null };
     if (ses8Komsu(k)) return { oncelik: 2, acil: 2, omur: 8, konu: null };

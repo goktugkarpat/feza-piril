@@ -1312,7 +1312,7 @@ function dnFgSilhouettes() {
       if (u < 0.5 && !it.mush) continue;   // sol altta zıplama düğmesi: gövdeler yalnız sağ kenarda
       const spr = it.mush ? DN_FGSPR.m[0] : DN_FGSPR.t[it.v], w = (it.mush ? 300 : 170) * it.s * S, h = it.mush ? w * 1.5 : H * 1.25;
       a *= clamp(Math.abs(sx - fx) / (w * 0.9), 0.25, 1);   // Feza'nın önüne gelirse saydamlaşır
-      g.globalAlpha = a; g.save(); g.translate(sx, it.mush ? H - h * 0.62 : -H * 0.12); g.scale(it.fl, 1);
+      g.globalAlpha = a; g.save(); g.translate(sx, it.mush ? H - h * 0.62 + DN_FGK.ky * S : -H * 0.12); g.scale(it.fl, 1);
       const qx = spr.dnPad[0] * w / 40 * (it.mush ? 40 / 48 : 1), qy = spr.dnPad[1] * h / (it.mush ? 72 : 200);
       g.drawImage(spr, 0, 0, spr.dnSrc[0], spr.dnSrc[1], -w / 2 - qx, -qy, w + qx * 2, h + qy * 2); g.restore();
     } else {
@@ -3411,9 +3411,26 @@ function dnFgDefs(mk) {
 }
 const DN_FGI = (() => { const R = rng(29), a = []; for (let i = 0; i < 6; i++) a.push({ x: i * 340 + R() * 140, v: i % 3, s: 0.8 + R() * 0.45, y: -10 - R() * 25, fl: R() < 0.5 ? -1 : 1 }); return a; })();
 const DN_FGB = (() => { const R = rng(33), a = []; for (let i = 0; i < 5; i++) a.push({ x: i * 420 + R() * 200, v: i % 3, s: 0.95 + R() * 0.3, fl: R() < 0.5 ? -1 : 1 }); return a; })();
+// ── Ön plan alt bitkileri dünyaya bağlı (Bölüm 1–6 ortak; dunya.js hep yüklenir) ──
+// Ekranın altına çizilen yakın bitkiler ekrana yapışık kalmasın: Feza yükseğe çıkınca altta birden belirmesin, inerken birden kaybolmasın.
+// Ekranın orta bölümünde görünen en alçak zeminin ekrandaki yerine bakılır; zemin çizgisi olağan yerinin (ekranın ≈ %77'si) altına indikçe bitkiler de
+// 1,08 paralaksla (dünyadan biraz hızlı) aşağı kayar, zemine dönünce aynı yoldan geri gelir. Zemin referansı zamanla yumuşar
+// (ekrana yeni alçak zemin girince sıçrama yok). st: bölümün kendi durum nesnesi { ref, t }. Dönüş: aşağı kayma (dünya px, ≥ 0).
+function dnFgYerKay(st, tm) {
+  if (typeof topOf !== 'function' || typeof grid === 'undefined' || !(T > 0) || !(VW > 0) || !(H > 0) || !(S > 0)) return 0;
+  const c0 = Math.max(0, Math.floor((cam.x + VW * 0.15) / T)), c1 = Math.min(COLS - 1, Math.ceil((cam.x + VW * 0.85) / T));   // ekranın orta %70'i
+  let lo = -1; for (let c = c0; c <= c1; c++) { const r = topOf(c); if (r < ROWS && r * T > lo) lo = r * T; }
+  const dt = isFinite(st.t) && isFinite(tm) ? tm - st.t : 0; st.t = tm;
+  if (lo >= 0) { if (!isFinite(st.ref)) st.ref = lo; else if (dt > 0) st.ref += (lo - st.ref) * (1 - Math.exp(-Math.min(dt, 0.25) * 2.2)); }
+  if (!isFinite(st.ref)) return 0;
+  const asp = W / H, g0 = 0.775 + 0.05 * clamp((1.6 - asp) / 0.85, 0, 1);
+  return Math.max(0, st.ref - cam.y - g0 * (H / S) - T) * 1.08;   // bir karolık pay: tek basamaklık iniş bitkileri oynatmaz
+}
+const DN_FGK = { ref: NaN, t: NaN, ky: 0 };
 function drawForeground(tm) {
   dnFgSprites();
   g.setTransform(1, 0, 0, 1, 0, 0);
+  const ky = DN_FGK.ky = dnFgYerKay(DN_FGK, tm);   // alttaki eğreltiler ve mantarlar dünyaya bağlı kayar
   dnFgSilhouettes();
   const span1 = 2040, span2 = 2100, dy = dnDY();
   const topA = clamp(1 - dnOpen * 0.85, 0, 1);   // açık gökyüzünde üst çerçeve çekilir
@@ -3428,9 +3445,9 @@ function drawForeground(tm) {
     const sp = DN_FG.fern[it.v], wx = ((it.x - cam.x * 1.45) % span2 + span2) % span2 - 300;
     if (wx > VW + 200) continue;
     const gw = DN_GOLS.length ? Math.max(dnRegW(cam.x + wx, null, DN_RWS).gol, dnInLake(cam.x + wx, 60) ? 1 : 0) : 0;   // gölün önünü kapatma
-    if (gw > 0.97) continue;
+    if (gw > 0.97 || 46 + 60 * gw + ky > 200) continue;   // tamamen ekranın altında
     const sw = Math.sin(tm * 0.7 + it.x) * 0.03;
-    g.save(); g.translate(wx * S, (H / S + 46 + 60 * gw - Math.min(0, dy) * 0.3) * S); g.rotate(sw); g.scale(it.s * it.fl, it.s);
+    g.save(); g.translate(wx * S, (H / S + 46 + 60 * gw + ky) * S); g.rotate(sw); g.scale(it.s * it.fl, it.s);
     g.drawImage(sp.c, -sp.ox * S, -sp.oy * S, sp.w * S, sp.h * S); g.restore();
   }
 }
