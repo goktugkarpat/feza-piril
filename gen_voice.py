@@ -13,6 +13,8 @@ Voice: tr-TR-EmelNeural (natural Turkish female). Key prefix chooses the deliver
   (slow, soft), ck_ cadı kız (a child: higher, lively), kk_ kara kedi (playful), ht_ hayalet teyze (high, airy, gentle),
   k2_ kabak ikizler (two little pumpkin kids speaking in unison: the line is recorded twice, a few Hz apart, and mixed 35 ms apart),
   cn_ Cadı Nine (warm grandma, a touch lower), kb_ the carved pumpkin that comes alive (warm, a little deep).
+  Bölüm 9 Pırıl's family (same voice, small natural shifts): bn_ Büyükanne Ejderha (slow, warm, a little low: a loving grandma),
+  ea_ Pırıl's mum (warm, gentle), eb_ Pırıl's dad (lower, cheerful), fs_ little cousin Fıstık (a tiny dragon: high, soft and shy).
 Output: sesler.js  →  window.VOICE_MP3 = {key: base64 mp3}  and  window.VOICE_DUR = {key: seconds}.
 """
 import asyncio
@@ -59,6 +61,10 @@ STYLE = {            # prefix → (rate, pitch, volume)
     "k2_": ("+6%", "+24Hz", "+0%"),    # kabak ikizler (1. ses; 2. ses CHORUS'ta)
     "cn_": ("-10%", "-8Hz", "+0%"),    # Cadı Nine
     "kb_": ("-6%", "-10Hz", "+0%"),    # canlanan yüz kabağı (sıcak, biraz kalın)
+    "bn_": ("-14%", "-14Hz", "+0%"),   # Bölüm 9 Büyükanne Ejderha (yavaş, sıcak, sevecen)
+    "ea_": ("-6%", "-3Hz", "+0%"),     # Pırıl'ın annesi (sıcak, yumuşak)
+    "eb_": ("-5%", "-20Hz", "+0%"),    # Pırıl'ın babası (biraz kalın, neşeli)
+    "fs_": ("-9%", "+30Hz", "-8%"),    # minik kuzen Fıstık (ince, utangaç, yavaş)
 }
 # Second take mixed under the first one (same rate → same timing): two children saying it together.
 CHORUS = {"k2_": ("+6%", "+38Hz", "+0%")}
@@ -95,6 +101,12 @@ def remove_temp(path):
 
 FFMPEG = "/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else shutil.which("ffmpeg")
 FFPROBE = "/opt/homebrew/bin/ffprobe" if os.path.exists("/opt/homebrew/bin/ffprobe") else shutil.which("ffprobe")
+if not FFMPEG:   # Windows without ffmpeg on PATH: the copy bundled with the imageio-ffmpeg package (pip install imageio-ffmpeg)
+    try:
+        import imageio_ffmpeg
+        FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        FFMPEG = None
 # 1) shorten long pauses between sentences to ~0.4 s, 2) keep ~40 ms before the first sound and
 # 3) ~120 ms after the last one (reverse trick trims the tail), 4) tiny fades against clicks, 5) gentle loudness match.
 TRIM = ("silenceremove=stop_periods=-1:stop_threshold=-40dB:stop_duration=0.1:stop_silence=0.34,"
@@ -142,9 +154,19 @@ def cache_path(key, text):
 
 def duration(path):
     try:
-        r = subprocess.run([FFPROBE, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path],
-                           capture_output=True, text=True, timeout=20)
-        return float(r.stdout.strip())
+        if FFPROBE:
+            r = subprocess.run([FFPROBE, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path],
+                               capture_output=True, text=True, timeout=20)
+            return float(r.stdout.strip())
+        # no ffprobe (e.g. imageio-ffmpeg): decode once and read the last "time=" ffmpeg reports
+        r = subprocess.run([FFMPEG, "-hide_banner", "-nostats", "-stats_period", "100", "-i", path, "-f", "null", "-"],
+                           capture_output=True, text=True, timeout=30)
+        ts = re.findall(r"time=(\d+):(\d+):(\d+(?:\.\d+)?)", r.stderr)
+        if not ts:
+            r = subprocess.run([FFMPEG, "-hide_banner", "-i", path, "-f", "null", "-"], capture_output=True, text=True, timeout=30)
+            ts = re.findall(r"time=(\d+):(\d+):(\d+(?:\.\d+)?)", r.stderr)
+        h, m, sec = ts[-1]
+        return int(h) * 3600 + int(m) * 60 + float(sec)
     except Exception:
         return 0.0
 

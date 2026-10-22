@@ -96,11 +96,18 @@ function drMode(m) { D.mode = m; D.modeT = 0; D.faceHold = 0; }   // yeni mod: z
 function drSay(k, opt) { if (typeof SES !== 'undefined' && SES && SES.soyle) { try { SES.soyle(k, opt); } catch (e) {} } }
 function drSfx(k, v) { if (typeof AU !== 'undefined' && AU && AU.sfx) { try { AU.sfx(k, v); } catch (e) {} } }
 function drFree() { return D.mode === 'follow' || D.mode === 'orbit'; }
-function drBusy() { return D.mode === 'firlat' || D.mode === 'push' || D.mode === 'tasi' || D.mode === 'dalis' || D.mode === 'nefes' || D.mode === 'yardim' || D.mode === 'sakli'; }
-function drPlaying() { return DURUM === 'oyun' && P.fade <= 0 && !(P.kilit > 0) && !(BOLUM_NO === 5 && (typeof KR5 !== 'undefined' && KR5.aktif || typeof V5 !== 'undefined' && V5.final)) && !(BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final) && !(BOLUM_NO === 7 && (typeof V7 !== 'undefined' && V7.final || typeof KARDAN !== 'undefined' && KARDAN && KARDAN.aktif)) && !(BOLUM_NO === 8 && drB8Mesgul()); }
+function drBusy() { return D.mode === 'firlat' || D.mode === 'push' || D.mode === 'tasi' || D.mode === 'dalis' || D.mode === 'nefes' || D.mode === 'yardim' || D.mode === 'sakli' || D.mode === 'isit9' || D.mode === 'kucak9' || D.mode === 'git9'; }
+function drPlaying() { return DURUM === 'oyun' && P.fade <= 0 && !(P.kilit > 0) && !(BOLUM_NO === 5 && (typeof KR5 !== 'undefined' && KR5.aktif || typeof V5 !== 'undefined' && V5.final)) && !(BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final) && !(BOLUM_NO === 7 && (typeof V7 !== 'undefined' && V7.final || typeof KARDAN !== 'undefined' && KARDAN && KARDAN.aktif)) && !(BOLUM_NO === 8 && drB8Mesgul()) && !(BOLUM_NO === 9 && drB9Mesgul()); }
 // Bölüm 8: final, mini oyun ('Basla'→'Bitti', oyun.js om8MiniAktif) ya da şeker kapısı sahnesi sürerken Pırıl kendiliğinden bir şey yapmaz
 function drB8Mesgul() { return (typeof V8 !== 'undefined' && !!V8 && !!V8.final) || (typeof om8MiniAktif === 'function' && !!om8MiniAktif()) || drB8Kapi(); }
 function drB8Kapi() { return typeof SEKER8 !== 'undefined' && !!SEKER8 && !!SEKER8.aktif; }
+// Bölüm 9: final, mini oyun ('meyve|kanat|kolye' Basla→Bitti; oyun.js om9MiniAktif varsa o), Büyükanne yolculuğu ya da Feza'nın oyun içi
+// pozu (yumurtaya sarılma vb.) sürerken Pırıl kendiliğinden bir şey yapmaz
+function drB9Mesgul() {
+  if (typeof V9 !== 'undefined' && V9 && V9.final) return true;
+  if (typeof om9MiniAktif === 'function') { try { if (om9MiniAktif()) return true; } catch (e) {} }
+  return !!DR9.mini || (typeof fz9Aktif === 'function' && fz9Aktif());
+}
 let DR_YK = 1;   // Feza'ya yakınken Pırıl'ın gövdesine bağlı 'lighter' ışıkların çarpanı (Feza'yı soldurmasın); drawDragon ayarlar
 function drGlow(x, col, px, py, r, a) { if (DR_YK < 1) { a *= DR_YK; r *= 0.7 + 0.3 * DR_YK; } x.globalAlpha = a; x.drawImage(glow(col), px - r, py - r, r * 2, r * 2); x.globalAlpha = 1; }
 
@@ -326,6 +333,20 @@ function drGoalOpen(o) {
     }
     return false;
   }
+  if (BOLUM_NO === 9) {   // Ejderha Vadisi: pul çiçekleri / yumurtalar → meyve → kanat → kolye → Büyükanne → yuva (sıra oyun.js om9Hedef'te)
+    const V = typeof V9 !== 'undefined' && V9 ? V9 : {};
+    if (o.done || o.om9) return false;
+    switch (o.tip) {
+      case 'pulCicek': return !o.acik && !o.acildi;
+      case 'ejderYumurta': return !o.cikti && !o.catladi && !o.isindi;
+      case 'meyveMini': return !V.meyve;
+      case 'kanatMini': return !V.kanat;
+      case 'kolyeMini': return !V.kolye;
+      case 'buyukanneBinis': return !V.binis;
+      case 'ejderYuva': return !V.final;
+    }
+    return false;
+  }
   return (o.tip === 'cicek' && !o.done) || (o.tip === 'buyukPofuduk' && !o.uyandi) ||
     (o.tip === 'agac' && !(typeof TREE !== 'undefined' && TREE && TREE.done)) || (o.tip === 'karanlik' && !o.lit) ||
     (o.tip === 'yildiz' && !o.done && !o.secmeli) || (o.tip === 'yildizHayvan' && !o.uyandi && o.hazir) ||
@@ -355,7 +376,9 @@ function drGoalToward(sg) { for (const o of NESNELER) if (drGoalOpen(o) && (o.x 
 function drGoalY(h) { return h.y - (h.tip === 'buyukPofuduk' ? 170 : h.tip === 'agac' ? 230 : h.tip === 'karanlik' ? 70 : h.tip === 'yildizHayvan' ? 190 : h.tip === 'yildiz' ? 46 :
   h.tip === 'kuzu' ? 48 : h.tip === 'ucusKapisi' ? 96 : h.tip === 'gokkusagi' ? 80 : h.tip === 'midilli' ? 70 : h.tip === 'kaleKopru' ? 90 : h.tip === 'senlikAvlu' ? 160 : h.tip === 'karFener' ? 70 : h.tip === 'karYavru' ? 60 : h.tip === 'kardanMini' ? 120 : h.tip === 'kizakMini' ? 90 : h.tip === 'kuzeyTepe' ? 160 :
   h.tip === 'kostumSec' ? 130 : h.tip === 'kabakFener' ? 55 : h.tip === 'hayaletcik' ? 60 : h.tip === 'kabakYuzMini' ? 130 : h.tip === 'iskeletMini' ? 120 :
-  h.tip === 'sekerKapi' ? 100 : h.tip === 'kazanMini' ? 120 : h.tip === 'supurgeMini' ? 90 : h.tip === 'cadiMeydan' ? 180 : 40); }
+  h.tip === 'sekerKapi' ? 100 : h.tip === 'kazanMini' ? 120 : h.tip === 'supurgeMini' ? 90 : h.tip === 'cadiMeydan' ? 180 :
+  h.tip === 'pulCicek' ? 56 : h.tip === 'ejderYumurta' ? 70 : h.tip === 'meyveMini' ? 120 : h.tip === 'kanatMini' ? 120 : h.tip === 'kolyeMini' ? 150 :
+  h.tip === 'buyukanneBinis' ? 160 : h.tip === 'ejderYuva' ? 190 : 40); }
 function drGuide(h0) {
   const h = h0 || drHedef(); if (!h) return false;
   let gx = h.x, gy = drGoalY(h);
@@ -549,7 +572,7 @@ function stepDragon(dt) {
   if (BOLUM_NO === 4 && P.deniz) { drDenizAdim(dt); return; }
   D.t += dt; D.modeT += dt; if (D.flare > 0) D.flare = Math.max(0, D.flare - dt / 0.9);
   // sigorta: hiçbir Pırıl modu Feza'yı sonsuza dek kilitlemesin (yardim ≤3 sn, tasi ≤8 sn, P.kilit sürekli >2,5 sn olamaz)
-  const korKutlama = BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final || BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final || BOLUM_NO === 7 && typeof V7 !== 'undefined' && V7.final || BOLUM_NO === 8 && (typeof V8 !== 'undefined' && V8.final || drB8Kapi());   // Kor Çiçeği / şenlik avlusu / kuzey tepesi / meydan kutlaması, şeker kapısı
+  const korKutlama = BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final || BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final || BOLUM_NO === 7 && typeof V7 !== 'undefined' && V7.final || BOLUM_NO === 8 && (typeof V8 !== 'undefined' && V8.final || drB8Kapi()) || BOLUM_NO === 9 && (typeof V9 !== 'undefined' && V9.final || (typeof fz9Aktif === 'function' && fz9Aktif()));   // Kor Çiçeği / şenlik avlusu / kuzey tepesi / meydan kutlaması, şeker kapısı
   if (DURUM === 'oyun' && !korKutlama && !P.ucus && P.kilit > 0 && D.mode !== 'tasi') { D.kilitSay = (D.kilitSay || 0) + dt; if (D.kilitSay > 2.5) { P.kilit = 0; D.kilitSay = 0; if (D.mode === 'yardim') drMode('follow'); } } else D.kilitSay = 0;
   if (D.mode === 'yardim' && D.modeT > 3) { P.kilit = 0; drMode('follow'); }
   if (D.mode === 'tasi' && D.modeT > 8) { P.kilit = 0; P.fade = 0; D.tasiyor = false; drMode('follow'); }
@@ -596,6 +619,7 @@ function stepDragon(dt) {
   if (P.idle < 0.5) D.yawned = false;
   const playing = drPlaying();
   if (D.danceAfter && drFree() && (DURUM === 'oyun' || DURUM === 'final')) drMode('dans');
+  if (BOLUM_NO === 9 && !DR9.evOldu) dr9EvSevinci();   // Bölüm 9: "Burası benim evim!" sevinci
   if (playing && drFree()) {
     if (D.wowO) {   // Büyük Pofuduk kıpırdadı: şaşkın bakış
       D.lookAt.x = D.wowO.x; D.lookAt.y = D.wowO.y - 90; D.lookAtT = 1.6; D.expr = 'wow'; D.exprT = 1.4; D.wowO = null; D.wowWait = 1.3;
@@ -621,6 +645,13 @@ function stepDragon(dt) {
   }
   if (BOLUM_NO === 3 && playing && drFree() && !D.bayrak.kuzuMerak) {   // ilk gri, üzgün kuzucuk: merakla yanına uç, şefkatle bak
     for (const o of NESNELER) if (o.tip === 'kuzu' && !o.done && Math.abs(o.x - P.x) < 420 && o.x > cam.x + 40 && o.x < cam.x + VW - 40) { D.bayrak.kuzuMerak = true; drMode('merak'); D.mo = o; break; }
+  }
+  if (BOLUM_NO === 9 && playing && drFree() && (!D.bayrak.yumMerak || !D.bayrak.pulMerak) && D.modeT > 0.6) {   // Bölüm 9: ilk üşüyen yumurta / ilk uykulu pul çiçeği: şefkatle yanına uç, "hadi!"
+    for (const o of NESNELER) {
+      const yum = o.tip === 'ejderYumurta', pul = o.tip === 'pulCicek';
+      if (!(yum && !D.bayrak.yumMerak) && !(pul && !D.bayrak.pulMerak)) continue;
+      if (drGoalOpen(o) && Math.abs(o.x - P.x) < 400 && o.x > cam.x + 70 && o.x < cam.x + VW - 70) { D.bayrak[yum ? 'yumMerak' : 'pulMerak'] = true; drMode('merak'); D.mo = o; break; }
+    }
   }
   if (playing && drFree() && D.playCd <= 0) {   // uyanmış Pofuduklarla oyun
     D.playCd = 1;
@@ -668,7 +699,7 @@ function stepDragon(dt) {
   if (playing && drFree() && D.idleCd <= 0 && P.ground && Math.abs(P.vx) < 150 && D.talkT <= 0 && D.modeT > 1.2 && !D.spo) {
     D.idleCd = 8 + Math.random() * 7;
     let fl = null;
-    for (const o of NESNELER) if (o.tip === 'cicek' && Math.abs(o.x - P.x) < 240 && Math.abs(o.x - P.x) > 36 && Math.abs(o.y - P.y) < 100 && o.x > cam.x + 60 && o.x < cam.x + VW - 60 && (!fl || Math.abs(o.x - P.x) < Math.abs(fl.x - P.x))) fl = o;
+    for (const o of NESNELER) if ((o.tip === 'cicek' || (BOLUM_NO === 9 && o.tip === 'pulCicek' && (o.acik || o.acildi || o.om9 || o.done))) && Math.abs(o.x - P.x) < 240 && Math.abs(o.x - P.x) > 36 && Math.abs(o.y - P.y) < 100 && o.x > cam.x + 60 && o.x < cam.x + VW - 60 && (!fl || Math.abs(o.x - P.x) < Math.abs(fl.x - P.x))) fl = o;
     if (fl && D.koklandi !== fl && Math.random() < 0.8) { drMode('ilgi'); D.ik = 'kokla'; D.ikO = fl; D.ip = 0; D.koklandi = fl; }
     else if (Math.random() < 0.6) {
       const away = Math.sign(D.x - P.x) || -P.f;
@@ -939,7 +970,7 @@ function stepDragon(dt) {
     }
     if (Math.abs(P.x - o.x) > 450) drMode('follow');
   } else if (D.mode === 'merak') {     // Büyük Pofuduk'a merakla bak
-    const b = D.mo, side = Math.sign(P.x - b.x) || -1, kz = b.tip === 'kuzu';
+    const b = D.mo, side = Math.sign(P.x - b.x) || -1, kz = b.tip === 'kuzu' || (BOLUM_NO === 9 && (b.tip === 'ejderYumurta' || b.tip === 'pulCicek'));   // kuzucuk / (Bölüm 9) yumurta, pul çiçeği: şefkatli bakış
     const bw = kz ? 26 : b.cisim ? b.cisim.w / 2 : 80, bh = kz ? 46 : b.cisim ? b.cisim.h : 130;
     tx = b.x + side * (bw + 60); ty = b.y - bh - 40 + Math.sin(D.modeT * 2.2) * 4; k = 35; damp = 10;
     D.ft = -side; D.faceHold = 0.15;
@@ -947,7 +978,7 @@ function stepDragon(dt) {
     D.expr = D.modeT < (kz ? 1.0 : 2.2) ? 'wow' : 'happy'; D.exprT = 0.3;
     rollW = kz ? 0.22 * Math.min(1, D.modeT * 2) + Math.sin(D.modeT * 1.6) * 0.06 : Math.sin(D.modeT * 2.4) * 0.2;   // kuzucuğa: başı yana eğik, şefkatli bakış
     if (kz && D.modeT > 1.6) { D.beckonW = 1; }   // "hadi, ona sarıl!": Feza'ya pençesiyle işaret
-    if (D.modeT > (kz ? 3.2 : 3.0) || Math.abs(P.x - b.x) > 700 || (kz && b.done)) drMode('follow');
+    if (D.modeT > (kz ? 3.2 : 3.0) || Math.abs(P.x - b.x) > 700 || (kz && (b.done || b.om9 || (BOLUM_NO === 9 && !drGoalOpen(b))))) drMode('follow');
   } else if (D.mode === 'ugurla') {    // uyanan yıldızı göğe uğurla: başını kaldır, onunla birlikte yüksel, sevin
     const o = D.ugO, side = Math.sign(D.x - P.x) || 1, u = D.modeT;
     const fl = (o.durum === 'ucuyor' || o.durum === 'yerlesti') && isFinite(o.x2), sx = fl ? o.x2 : o.x, sy = fl ? o.y2 : o.y - (o.rise || 0);
@@ -1145,21 +1176,81 @@ function stepDragon(dt) {
     if (D.talkT > 0) hopW = Math.abs(Math.sin(D.modeT * 9)) * 6;
     D.lookAt.x = isFinite(D.k8X) ? D.k8X : P.x + sd * 46; D.lookAt.y = P.y - 72; D.lookAtT = 0.2;
     if (D.modeT > 7.5 || DURUM !== 'oyun' || P.fade > 0) drMode('follow');
-  } else if (D.mode === 'dans') {      // final: Feza'nın çevresinde sekiz çizen sevinç dansı
-    const a = D.modeT * 2.6;
-    tx = P.x + Math.sin(a) * 74; ty = P.y - 112 + Math.sin(2 * a) * 22; k = 60; damp = 12; flapW = 5.5;
+  } else if (D.mode === 'ev9') {      // Bölüm 9 girişi: evine gelmenin sevinci — iki minik takla, sonra vadiye doğru süzülüp "işte evim!" gösterir
+    const u = D.modeT, fz = P.f || 1;
+    if (u < 1.5) {   // Feza'nın başının üstünde iki sevinç taklası (kalpler, yıldızlar)
+      const T0 = 0.75, uu = (u % T0) / T0, a = smooth(uu) * 6.283, R = 18;
+      tx = D.ev9X + fz * Math.sin(a) * R; ty = D.ev9Y - (1 - Math.cos(a)) * R; k = 240; damp = 28; flapW = 7;
+      D.ft = fz; D.faceHold = 0.1; spinW = -a - (u >= T0 ? 6.283 : 0); D.expr = 'happy'; D.exprT = 0.3;
+      D.fxT -= dt; if (D.fxT < 0) { D.fxT = 0.1; drFx(D.x, D.y - 6, Math.random() < 0.55 ? 'heart' : 'star'); }
+      if (Math.random() < dt * 25) parts.push({ x: D.x, y: D.y + 4, vx: 0, vy: 0, life: 0.5, max: 0.5, col: DR9_IZ[(Math.random() * 4) | 0], size: 4 });
+    } else if (u < 3.3) {   // vadiye doğru (ileri-yukarı) süzül, kanat aç, pençesiyle göster (ışıltılı iz)
+      const v = smooth(clamp((u - 1.5) / 0.9, 0, 1));
+      tx = clamp(P.x + fz * lerp(40, 230, v), cam.x + 70, cam.x + VW - 70); ty = clamp(P.y - lerp(110, 190, v), cam.y + 70, P.y - 90); k = 34; damp = 9; flapW = 5.5;
+      D.ft = fz; D.faceHold = 0.15; D.expr = 'happy'; D.exprT = 0.3; D.lookAt.x = P.x + fz * 900; D.lookAt.y = P.y - 260; D.lookAtT = 0.2;
+      if (u > 2.2) { D.beckonW = 1; hopW = Math.abs(Math.sin(u * 7)) * 3; if (!D.ev9Pul) { D.ev9Pul = true; drPulse(D.x + fz * 40, D.y - 20, 40, 2); drSfx('parilti', 0.5); } }
+      D.izT -= dt; if (D.izT <= 0) { D.izT = 0.05; D.iz.push({ x: D.x - D.fs * 6, y: D.y + 4, life: 2.6, max: 2.6, ph: Math.random() * 6.283, col: DR9_IZ[D.iz.length % 4] }); }
+    } else { drMode('follow'); D.beckonW = 0; D.lockF = 0.3; }
+    if (!playing && D.mode === 'ev9' && u > 0.3) { drMode('follow'); D.beckonW = 0; }
+  } else if (D.mode === 'isit9') {    // Bölüm 9: yumurtaya (ya da bir noktaya) ılık ışık üfle — yanına uç → derin nefes → altın-pembe ışık → sevinç
+    const q = D.i9, sc = q.sc, u = D.modeT / sc, dir = Math.sign(q.x - q.px) || -q.side;
+    D.ft = dir; D.faceHold = 0.15; D.lookAt.x = q.x; D.lookAt.y = q.cy; D.lookAtT = 0.2;
+    if (u < 0.55) {   // hedefin üst yanına uç
+      tx = q.px; ty = q.py; k = 60; damp = 12; flapW = 5.5;
+      if (D.yawnT >= 0) D.yawnT = -1;
+    } else if (u < 1.25) {   // derin nefes: geri çekilir, şişer, çevredeki ılık ışık ağzına akar
+      if (q.f < 1) { q.f = 1; OLAY.emit('pirilUfle9', { o: q.o, asama: 'al' }); }
+      const su = smooth(clamp((u - 0.55) / 0.6, 0, 1));
+      tx = q.px - dir * 12 * su; ty = q.py - 8 * su; k = 60; damp = 13; flapW = 2.6;
+      D.puff = su; D.expr = 'puff'; D.exprT = 0.3; D.tiltWant = -0.18 * su; D.stretch = 0.5 * su;
+      const mo = drMouthPos();
+      if (Math.random() < dt * 40) { const a = (dir > 0 ? 0 : Math.PI) + (Math.random() - 0.5) * 2.6, r = 50 + Math.random() * 50; D.nf.push({ k: 1, x: mo.x + Math.cos(a) * r, y: mo.y + Math.sin(a) * r, vx: 0, vy: 0, life: 0.5, max: 0.5, size: 4 + Math.random() * 5, col: DR9_ILIK[(Math.random() * 4) | 0] }); }
+    } else if (u < 2.25) {   // uzun ılık ışık nefesi (zerreler hedefe süzülüp orada söner)
+      if (q.f < 2) { q.f = 2; OLAY.emit('pirilUfle9', { o: q.o, asama: 'ver' }); drSfx('yumurtaIsit', 0.7); }
+      const w = (u - 1.25) / 1.0, env = Math.min(1, w / 0.08) * (w > 0.8 ? Math.max(0, 1 - (w - 0.8) / 0.2) : 1);
+      D.blowM = env; D.puff = 1 - smooth(clamp(w * 1.05, 0, 1)); D.expr = 'blow'; D.exprT = 0.3; D.stretch = 0.5 * (1 - smooth(clamp(w * 3, 0, 1)));
+      tx = q.px - dir * (12 + 8 * smooth(clamp(w * 4, 0, 1))); ty = q.py - 4 + Math.sin(D.t * 5) * 1.5; k = 60; damp = 13; flapW = 4; D.tiltWant = 0.12;
+      const mo = drMouthPos(); D.nfA = Math.atan2(q.cy - mo.y, q.x - mo.x); q.L = Math.hypot(q.x - mo.x, q.cy - mo.y);
+      const n = Math.floor(70 * env * dt + Math.random());
+      for (let i = 0; i < n && D.nf.length < 90; i++) {
+        const a = D.nfA + (Math.random() - 0.5) * 0.5, s = 170 + Math.random() * 140, l = 0.9 + Math.random() * 0.5, kk = Math.random() < 0.14 ? 2 : 0;
+        D.nf.push({ k: kk, x: mo.x, y: mo.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: l, max: l, tx: q.x + (Math.random() - 0.5) * q.r * 1.2, ty: q.cy + (Math.random() - 0.5) * q.r * 1.4, tg: true, age: 0,
+          size: kk ? 2.6 + Math.random() * 2 : 4.5 + Math.random() * 6, col: DR9_ILIK[(Math.random() * 4) | 0] });
+      }
+    } else if (u < 2.9) {   // memnun sevinç
+      if (q.f < 3) { q.f = 3; D.blowM = 0; D.puff = 0; D.stretch = 0; OLAY.emit('pirilUfle9', { o: q.o, asama: 'bitti' }); for (let i = 0; i < 5; i++) drFx(D.x, D.y - 8, i % 2 ? 'heart' : 'star'); }
+      tx = q.px; ty = q.py - 14; k = 55; damp = 12; flapW = 5; D.expr = 'happy'; D.exprT = 0.6;
+      hopW = Math.abs(Math.sin(D.modeT * 10)) * 7 * (1 - (u - 2.25) / 0.65);
+    } else { drMode('follow'); D.lookAtT = 0; D.i9 = null; }
+    if (D.mode === 'isit9' && (DURUM !== 'oyun' || D.modeT > 8)) { drMode('follow'); D.blowM = 0; D.i9 = null; }
+  } else if (D.mode === 'git9') {     // Bölüm 9 (PIRIL9.git): bir noktaya uçup orada süzül
+    const q = D.g9; tx = q.x + Math.sin(D.t * 1.3) * 4; ty = q.y + Math.sin(D.t * 2.1) * 3; k = 42; damp = 10; flapW = 3.6;
+    if (Math.hypot(D.x - q.x, D.y - q.y) < 60) { D.ft = q.yon || (Math.sign(P.x - D.x) || D.ft); D.faceHold = 0.15; }
+    D.expr = q.expr || 'happy'; D.exprT = 0.3;
+    if ((q.sure > 0 && D.modeT > q.sure) || D.modeT > 60 || (DURUM !== 'oyun' && DURUM !== 'final')) { drMode('follow'); D.g9 = null; }
+  } else if (D.mode === 'kucak9') {   // Bölüm 9 (PIRIL9.kucak): oraya gel, önden kocaman sarıl (gözler ^ ^, başını yaslar, kalpler)
+    const q = D.k9, u = D.modeT;
+    tx = q.x + Math.sin(D.t * 1.6) * 1.5; ty = q.y + Math.sin(D.t * 2.4) * 1.5; k = u < 0.6 ? 50 : 80; damp = u < 0.6 ? 11 : 15; flapW = 2.2;
+    D.faceHold = 0.15; D.expr = 'happy'; D.exprT = 0.3; D.eyeOv = u > 0.5 ? 'happy' : null; D.eyeOv9 = true; rollW = u > 0.5 ? 0.2 + Math.sin(D.t * 2.2) * 0.06 : 0;
+    D.fxT -= dt; if (u > 0.6 && D.fxT < 0) { D.fxT = 0.35; drFx(D.x, D.y - 18, 'heart'); }
+    if (u >= q.sure || (DURUM !== 'oyun' && DURUM !== 'final')) { drMode('follow'); D.k9 = null; }
+  } else if (D.mode === 'dans') {      // final: Feza'nın çevresinde sekiz çizen sevinç dansı (Bölüm 9: PIRIL9.dans ile başka bir noktanın çevresinde)
+    const a = D.modeT * 2.6, d9 = BOLUM_NO === 9 && D.d9 ? D.d9 : null;
+    tx = (d9 ? d9.x : P.x) + Math.sin(a) * 74; ty = (d9 ? d9.y : P.y - 112) + Math.sin(2 * a) * 22; k = 60; damp = 12; flapW = 5.5;
     hopW = Math.abs(Math.sin(D.modeT * 8)) * 5;
     D.expr = 'happy'; D.exprT = 0.5;
     D.fxT -= dt; if (D.fxT < 0) { D.fxT = 0.22; drFx(D.x, D.y - 6, Math.random() < 0.6 ? 'heart' : 'star'); }
     if (DURUM !== 'oyun' && DURUM !== 'final') { drMode('follow'); D.danceAfter = false; }
   } else D.mode = 'follow';
   if (D.mode !== 'ilgi') { D.sniff = 0; D.nomO = 0; }
+  if (D.eyeOv9 && D.mode !== 'kucak9') { D.eyeOv9 = false; D.eyeOv = null; }
   if (D.mode !== 'irkil') D.gasp = Math.max(0, D.gasp - dt * 4);
   D.hop = hopW > 0 ? hopW : Math.max(0, D.hop - dt * 20);
   if (D.mode !== 'nefes') { D.puff = Math.max(0, D.puff - dt * 4); D.blowM = Math.max(0, D.blowM - dt * 6); D.stretch = Math.max(0, D.stretch - dt * 3); }
   if (D.mode !== 'yol' && D.mode !== 'sakli' && D.mode !== 'merak' && D.mode !== 'sekil') D.beckonW = 0;
   D.beckon = lerp(D.beckon, D.beckonW, 1 - Math.exp(-dt * 10));
-  D.clap = lerp(D.clap || 0, D.mode === 'alkis' && D.modeT > 0.15 && D.modeT < D.alkDur - 0.15 ? 1 : 0, 1 - Math.exp(-dt * 12));
+  D.clap = lerp(D.clap || 0, (D.mode === 'alkis' && D.modeT > 0.15 && D.modeT < D.alkDur - 0.15) || (D.mode === 'kucak9' && D.modeT > 0.35 && D.k9 && D.modeT < D.k9.sure - 0.2) ? 1 : 0, 1 - Math.exp(-dt * 12));
+  if (D.mode === 'kucak9') D.clapPh = 0;   // kucak: eller ortada buluşur (çırpmaz)
   D.headRoll = lerp(D.headRoll, rollW, 1 - Math.exp(-dt * 6));
 
   if (!isFinite(tx) || !isFinite(ty)) { tx = P.x - P.f * 40; ty = P.y - 112; if (D.mode !== 'follow') drMode('follow'); }   // hedef bozuksa (eksik nesne/olay verisi) güvenli takip
@@ -1241,15 +1332,15 @@ function stepDragon(dt) {
     else if (Math.abs(D.vx) < 50) { const rel = P.x - D.x; if (rel * D.ft < -26) D.ft = -D.ft; }
   }
   // dönüş (saydam karışım yok → hayalet kare yok): yan → (ezilerek) 3/4 önden → tam önden → öbür 3/4 → yan
-  if (D.mode === 'alkis') {   // yarım dönüş: yandan önden görünüşe döner, alkış boyunca önden kalır, aynı yana geri döner (dönüş yolu aynı: sıçrama yok)
-    const u = D.modeT, T = D.alkDur;
+  if (D.mode === 'alkis' || (D.mode === 'kucak9' && D.k9)) {   // yarım dönüş: yandan önden görünüşe döner, alkış boyunca önden kalır, aynı yana geri döner (dönüş yolu aynı: sıçrama yok)
+    const u = D.modeT, T = D.mode === 'alkis' ? D.alkDur : D.k9.sure;
     D.ft = D.face; D.face0 = D.face; D.tTo = D.face;
     const want = u < 0.25 ? 0.5 * smooth(u / 0.25) : u < T - 0.25 ? 0.5 : Math.min(0.999, 0.5 + 0.5 * smooth((u - (T - 0.25)) / 0.25));
     D.tt = D.tt >= 0 ? (D.tt <= 0.5 ? Math.max(D.tt, Math.min(want, 0.5)) : Math.max(D.tt, want)) : want;
   } else {
   if (D.tt < 0 && D.ft !== D.face) { D.tt = 0; D.face0 = D.face; D.tTo = D.ft; }
   }
-  if (D.tt >= 0 && D.mode !== 'alkis') {
+  if (D.tt >= 0 && D.mode !== 'alkis' && D.mode !== 'kucak9') {
     // yarıda vazgeçerse aynı yoldan geri döner (yüz yönü sıçramaz)
     if (D.ft !== D.tTo) { D.tTo = D.ft; D.face0 = -D.ft; D.tt = 1 - D.tt; }
     D.tt += dt / (Math.abs(D.vx) > 220 ? 0.22 : 0.3);   // hızlıyken daha çevik döner
@@ -1829,6 +1920,7 @@ function drFront(x, tm, yaw) {   // önden görünüş (dönüşte yaw ile 3/4'e
   ear(-1, true); ear(1, true);
   drMouthDraw(x, mx, -3.6, 3 * (1 - 0.25 * ya), true);
   if (BOLUM_NO === 8) { x.save(); x.translate(-3.4 + yw * 3.0, -21.5); x.rotate(-0.27 + yw * 0.22); drSapka8(x, tm, 0); x.restore(); }   // Bölüm 8: minik cadı şapkası
+  if (BOLUM_NO === 9) { x.save(); x.translate(5.6 + yw * 3.0, -21.2); x.rotate(0.42 + yw * 0.2); drTac9(x, tm, 0); x.restore(); }   // Bölüm 9: minik yaprak taç
   x.restore();
 }
 // büyük koyu yeşil yelpaze ibik: başın tepesinden arkasına uzanan üç yuvarlak taraklı dilim + ensede küçük dilim.
@@ -1994,6 +2086,7 @@ function drHeadSide(x, tm) {   // yandan kafa (sağa bakan yerel uzay; boyun ekl
   else drMouthDraw(x, 16.6, -6, 2.8, false);
   if (D.expr === 'effort' && D.mk === 'o') { x.fillStyle = 'rgba(255,255,255,0.7)'; x.beginPath(); x.arc(15, -24, 1, 0, 6.283); x.arc(17.2, -25.6, 0.6, 0, 6.283); x.fill(); }
   if (BOLUM_NO === 8) { x.save(); x.translate(5.2, -22.4); x.rotate(-0.16); drSapka8(x, tm, 1); x.restore(); }   // Bölüm 8: minik cadı şapkası
+  if (BOLUM_NO === 9) { x.save(); x.translate(8.4, -21.0); x.rotate(0.5); drTac9(x, tm, 1); x.restore(); }   // Bölüm 9: minik yaprak taç (ibiğin önünde)
   x.restore();   // kafa
 }
 
@@ -2176,6 +2269,7 @@ function drBack(x, tm, yaw) {
   x.save(); x.translate(mid, 0.4); x.translate(0, -23); x.scale(-ys * lerp(0.36, 0.62, ya), 1); x.translate(-1.2, 23);
   drCrest(x, tm, 0.7); x.restore();
   if (BOLUM_NO === 8) { x.save(); x.translate(mid * 0.6 + 3.2, -21.6); x.rotate(0.24); drSapka8(x, tm, 2); x.restore(); }   // Bölüm 8: minik cadı şapkası (arkadan)
+  if (BOLUM_NO === 9) { x.save(); x.translate(mid * 0.6 + 4.6, -21.4); x.rotate(0.36); drTac9(x, tm, 2); x.restore(); }   // Bölüm 9: minik yaprak taç (arkadan)
   x.restore();
 }
 // ── Bölüm 8: minik mor cadı şapkası (siper, eğri uçlu külah, altın kurdele, önde yıldız); ucu ibiğin yayıyla sallanır. gor: 0 önden, 1 yandan, 2 arkadan ──
@@ -2263,14 +2357,14 @@ function drawDragon(tm) {
   if (!isFinite(D.x) || !isFinite(D.y)) return;
   const x = g;
   // yol gösterme: kalıcı noktalı ışık izi ve hedefte yumuşak nabız
-  const gun = BOLUM_NO === 3;
+  const gun = BOLUM_NO === 3, gun9 = BOLUM_NO === 9;   // gun9: Bölüm 9 altın saat (açık gök): iz benekleri renkli, ışıltılar hafif
   if (D.iz.length || D.pulse.length) {
     x.globalCompositeOperation = 'lighter';
-    if (gun) {   // gündüz: açık gökte ışık izi kaybolmasın → altına yumuşak renkli (source-over) gökkuşağı benekleri
+    if (gun || gun9) {   // gündüz: açık gökte ışık izi kaybolmasın → altına yumuşak renkli (source-over) gökkuşağı benekleri
       x.globalCompositeOperation = 'source-over';
       for (let i = 0; i < D.iz.length; i++) {
         const p = D.iz[i], a = Math.min(1, p.life / 1.2) * Math.min(1, (p.max - p.life) * 6), tw = 0.7 + 0.3 * Math.sin(tm * 6 + p.ph);
-        x.globalAlpha = 0.5 * a; x.fillStyle = DR_GOK[(i >> 1) % 7];
+        x.globalAlpha = 0.5 * a; x.fillStyle = gun9 ? DR9_IZK[(i >> 1) & 3] : DR_GOK[(i >> 1) % 7];
         x.beginPath(); x.arc(p.x, p.y + Math.sin(tm * 2 + p.ph) * 1.5, 3.4 * tw, 0, 6.283); x.fill();
       }
       x.globalAlpha = 1;
@@ -2284,12 +2378,12 @@ function drawDragon(tm) {
     }
     for (const p of D.iz) {
       const a = Math.min(1, p.life / 1.2) * Math.min(1, (p.max - p.life) * 6), tw = 0.7 + 0.3 * Math.sin(tm * 6 + p.ph);
-      drGlow(x, p.col, p.x, p.y + Math.sin(tm * 2 + p.ph) * 1.5, (gun ? 9 : 14) * tw, (gun ? 0.16 : 0.8) * a);   // gündüz: üst üste binen ışık beyaz bulut olmasın
+      drGlow(x, p.col, p.x, p.y + Math.sin(tm * 2 + p.ph) * 1.5, (gun || gun9 ? 10 : 14) * tw, (gun ? 0.16 : gun9 ? 0.34 : 0.8) * a);   // gündüz: üst üste binen ışık beyaz bulut olmasın
     }
     for (const q of D.pulse) {
       if (q.t < 0) continue;
       const u = q.t / q.life, a = Math.sin(u * Math.PI);
-      drGlow(x, '#fff0c0', q.x, q.y, q.r * (0.8 + u * 0.9), (gun ? 0.1 : 0.32) * a);
+      drGlow(x, '#fff0c0', q.x, q.y, q.r * (0.8 + u * 0.9), (gun ? 0.1 : gun9 ? 0.2 : 0.32) * a);
       x.strokeStyle = `rgba(255,236,190,${0.55 * a})`; x.lineWidth = 3 * (1 - u) + 1;
       x.beginPath(); x.arc(q.x, q.y, q.r * (0.35 + u * 0.9), 0, 6.283); x.stroke();
     }
@@ -2339,7 +2433,11 @@ function drawDragon(tm) {
   // ışık nefesi: yumuşak koni + parçacıklar
   if (D.blowM > 0.01 || D.nf.length) {
     x.globalCompositeOperation = 'lighter';
-    if (D.blowM > 0.01) {
+    if (D.blowM > 0.01 && BOLUM_NO === 9) {   // Bölüm 9: ılık ışık (gradyansız: ağızdan hedefe sıralı yumuşak ışık topları)
+      const mo = drMouthPos(), a = D.nfA, L = (D.i9 ? D.i9.L : 120) * D.blowM;
+      for (let i = 0; i < 5; i++) { const f = (i + 0.5) / 5, w = Math.sin(tm * 9 - i * 1.3) * 0.15; drGlow(x, i & 1 ? '#ffd0e0' : '#ffe9a8', mo.x + Math.cos(a) * L * f, mo.y + Math.sin(a) * L * f, (10 + 16 * f) * (1 + w), 0.22 * D.blowM * (1 - f * 0.55)); }
+      drGlow(x, '#fff6d6', mo.x, mo.y, 14 + 5 * Math.sin(tm * 30), 0.75 * D.blowM);
+    } else if (D.blowM > 0.01) {
       const mo = drMouthPos(), a = D.nfA, L = 300 * D.blowM, hw = 0.2;
       const gr = x.createLinearGradient(mo.x, mo.y, mo.x + Math.cos(a) * L, mo.y + Math.sin(a) * L);
       gr.addColorStop(0, `rgba(255,250,220,${0.42 * D.blowM})`); gr.addColorStop(0.4, `rgba(200,240,255,${0.16 * D.blowM})`); gr.addColorStop(1, 'rgba(200,220,255,0)');
@@ -2375,7 +2473,7 @@ function drawDragon(tm) {
 // u verilmezse 0.6) · 'ucus' (uçuyor) · 'goz_kirp' (peluş gibi, bir gözü kırpık). x,y = gövde ortası. Oyundaki duruma dokunmaz.
 const DR_POZ_KEYS = ['x', 'y', 'bob', 'tilt', 'face', 'fs', 'fw', 'ph', 'glide', 'pose', 'expr', 'blinkT', 'lookX', 'lookY', 'headTilt',
   'headRoll', 'yaw', 'tsq', 'wingA', 'puff', 'blowM', 'mouth', 'yawn', 'stretch', 'fold', 'grip', 'plush', 'glowA', 'eyeOv', 'eyeOvR', 'lid', 'beckon', 'tail', 'hop', 'mk', 'ma',
-  'spin', 'sq', 'dz', 'au', 'gasp', 'nom', 'nomO', 'mRound', 'mWide', 'spd', 'sniff'];
+  'spin', 'sq', 'dz', 'au', 'gasp', 'nom', 'nomO', 'mRound', 'mWide', 'spd', 'sniff', 'clap', 'clapPh'];
 const drPozSave = {};
 let drPozTail = null;
 function drPozTailCurl(curl, wave, tm) {   // önden pozlar: kuyruk sağ yandan çıkıp kıvrılır
@@ -2403,8 +2501,8 @@ function pirilCizPoz(ctx, x, y, olcek, poz, tm, u) {
   D.puff = 0; D.blowM = 0; D.mouth = 0; D.yawn = 0; D.stretch = 0; D.fold = 0; D.wingA = 1; D.grip = 0; D.pose = 0; D.plush = 0; D.glowA = 1;
   D.eyeOv = null; D.eyeOvR = null; D.headRoll = 0; D.headTilt = 0; D.lookX = 0; D.lookY = 0.25; D.expr = 'normal'; D.lid = 1; D.beckon = 0;
   D.blinkT = 1; D.tail = drPozTail;
-  D.spin = 0; D.sq = 0; D.dz = 1; D.au = 0; D.gasp = 0; D.nom = 0; D.nomO = 0; D.mRound = 0; D.mWide = 0; D.spd = 0; D.sniff = 0;
-  tm = tm || 0;
+  D.spin = 0; D.sq = 0; D.dz = 1; D.au = 0; D.gasp = 0; D.nom = 0; D.nomO = 0; D.mRound = 0; D.mWide = 0; D.spd = 0; D.sniff = 0; D.clap = 0; D.clapPh = 0;
+  tm = tm || 0; let rot9 = 0, ret9;
   if (BOLUM_NO === 4 && poz === 'ucus') { D.mouth = drPozSave.mouth || 0; D.mRound = drPozSave.mRound || 0; D.mWide = drPozSave.mWide || 0; }
   if (poz === 'binek') {   // Bölüm 3 uçuşu: büyük Pırıl (konuşurken ağzı oyundaki hecelerle oynar)
     const s1 = D.sCr, s2 = D.sEr, s3 = D.sTl;
@@ -2420,13 +2518,52 @@ function pirilCizPoz(ctx, x, y, olcek, poz, tm, u) {
   if (poz === 'ucus') {
     front = false; D.ph = tm * 3.4 * 6.283; D.bob = Math.sin(D.ph - 0.7) * 2.2; D.tilt = -0.05 + Math.sin(tm * 1.3) * 0.04;
     D.lookX = 1; D.lookY = 0.1; D.expr = 'happy'; halo = 1;
-    if (BOLUM_NO === 8 && u && typeof u === 'object' && u.salla > 0) { D.beckon = clamp(+u.salla || 0, 0, 1); D.lookX = 0.4; D.lookY = -0.3; }   // Bölüm 8: süpürgede aya el sallama
+    if ((BOLUM_NO === 8 || BOLUM_NO === 9) && u && typeof u === 'object' && u.salla > 0) { D.beckon = clamp(+u.salla || 0, 0, 1); D.lookX = 0.4; D.lookY = -0.3; }   // Bölüm 8: süpürgede aya el sallama (Bölüm 9: uzak ejderhalara)
+    if (BOLUM_NO === 9 && u && typeof u === 'object') {   // Bölüm 9: sevinç (kıkır göz, hızlı kanat), bakış
+      const sv = clamp(+u.sevinc || 0, 0, 1); if (sv > 0) { D.ph = tm * 3.4 * 6.283 * (1 + 0.6 * sv); if (sv > 0.35) D.eyeOv = 'happy'; D.tilt -= 0.1 * sv; }
+      if (isFinite(u.bakX)) D.lookX = clamp(+u.bakX, -1, 1); if (isFinite(u.bakY)) D.lookY = clamp(+u.bakY, -1, 1);
+    }
     let p = { x: -7, y: 6 + D.bob };
     for (let i = 0; i < DR_TAIL_N; i++) {
       drPozTail[i].x = p.x; drPozTail[i].y = p.y;
       const uu = (i + 1) / (DR_TAIL_N - 1), ang = Math.PI - 0.75 + uu * 1.7 + Math.sin(tm * 3.2 - uu * 3.2) * 0.32 * (0.4 + uu);
       p = { x: p.x + Math.cos(ang) * DR_TAIL_LEN, y: p.y + Math.sin(ang) * DR_TAIL_LEN };
     }
+  } else if (BOLUM_NO === 9 && (poz === 'goster9' || poz === 'ufle9' || poz === 'tut9' || poz === 'sevinc9')) {   // Bölüm 9 yandan pozlar (uçarken)
+    front = false; halo = 1; D.ph = tm * 3.4 * 6.283; D.bob = Math.sin(D.ph - 0.7) * 2.2; D.tilt = -0.05 + Math.sin(tm * 1.3) * 0.04; D.lookX = 1; D.lookY = 0.1; D.expr = 'happy';
+    const q = u && typeof u === 'object' ? u : {};
+    if (poz === 'goster9') {   // "işte bu!": pençesiyle gösterir, başı eğik, minik sekme
+      D.beckon = 0.95; D.lookX = isFinite(q.bakX) ? clamp(+q.bakX, -1, 1) : 0.9; D.lookY = isFinite(q.bakY) ? clamp(+q.bakY, -1, 1) : 0.35; D.headRoll = 0.08 * Math.sin(tm * 3);
+      D.bob -= Math.abs(Math.sin(tm * 6)) * 2.5; D.ph = tm * 2.6 * 6.283;
+    } else if (poz === 'ufle9') {   // guc 0..0.5 nefes alır (yanaklar şişer), 0.5..1 ılık ışık üfler
+      const gc = q.guc != null ? clamp(+q.guc, 0, 1) : 0.5 + 0.5 * Math.sin(tm * 2), al = clamp(gc * 2, 0, 1), vr = clamp(gc * 2 - 1, 0, 1);
+      D.puff = gc < 0.5 ? smooth(al) : 1 - smooth(vr); D.blowM = vr > 0.02 ? Math.min(1, vr * 3) : 0; D.expr = gc < 0.5 ? 'puff' : 'blow'; D.stretch = 0.5 * D.puff;
+      D.tilt = gc < 0.5 ? -0.16 * al : 0.1; D.ph = tm * 2.6 * 6.283; D.lookX = 1; D.lookY = 0.2;
+      const mo = drMouthPos(); ret9 = { x: x + mo.x * olcek, y: y + mo.y * Math.abs(olcek) };
+    } else if (poz === 'tut9') {   // ön pençesi aşağıda bir şeyi tutar (kanat dersi: yavrunun kanadından)
+      D.grip = 1; D.lookX = 0.6; D.lookY = 0.7; D.ph = tm * 4.2 * 6.283; D.expr = 'happy';
+      const pw = drLocal(DR_PAW[0], DR_PAW[1]); ret9 = { x: x + pw.x * olcek, y: y + pw.y * Math.abs(olcek) };
+    } else {   // sevinç taklası (≈1 sn döngü): kıkır göz, kalp gibi kıvrık kuyruk
+      const c = tm % 1.1, w = smooth(clamp(c / 0.8, 0, 1)); rot9 = -w * 6.283; D.eyeOv = 'happy'; D.ph = tm * 5 * 6.283;
+    }
+    let p = { x: -7, y: 6 + D.bob };
+    for (let i = 0; i < DR_TAIL_N; i++) {
+      drPozTail[i].x = p.x; drPozTail[i].y = p.y;
+      const uu = (i + 1) / (DR_TAIL_N - 1), ang = Math.PI - 0.75 + uu * 1.7 + Math.sin(tm * 3.2 - uu * 3.2) * 0.32 * (0.4 + uu);
+      p = { x: p.x + Math.cos(ang) * DR_TAIL_LEN, y: p.y + Math.sin(ang) * DR_TAIL_LEN };
+    }
+  } else if (BOLUM_NO === 9 && (poz === 'alkis9' || poz === 'kucak9' || poz === 'dans9')) {   // Bölüm 9 önden pozlar (kanatlar açık, uçuyor)
+    halo = 1; D.plush = 0; D.glowA = 1; D.wingA = 1; D.ph = tm * 3 * 6.283; D.expr = 'happy'; D.lookX = 0; D.lookY = 0.2;
+    const q = u && typeof u === 'object' ? u : {};
+    if (poz === 'alkis9') { D.clap = 1; D.clapPh = tm * 13; D.eyeOv = (tm % 2.2) < 1.3 ? 'happy' : null; D.headRoll = 0.08 * Math.sin(tm * 4); D.bob = -Math.abs(Math.sin(tm * 6.5)) * 2; }
+    else if (poz === 'kucak9') {
+      const k = q.u != null ? smooth(clamp(+q.u, 0, 1)) : smooth(clamp(tm / 0.8, 0, 1));
+      D.clap = k; D.clapPh = 0; D.eyeOv = k > 0.5 ? 'happy' : null; D.headRoll = (0.22 + 0.06 * Math.sin(tm * 2.2)) * k; D.ph = tm * 1.6 * 6.283; D.pose = 0.35 * (1 - k);
+    } else {   // dans: kollar ritimle kalkar, sağa sola salınır, vuruşta kıkır göz
+      const bt = (tm % 0.5) / 0.5; D.pose = 0.75 * Math.abs(Math.sin(tm * Math.PI * 2)); D.tilt = 0.18 * Math.sin(tm * Math.PI); D.headRoll = 0.14 * Math.sin(tm * Math.PI + 0.6);
+      D.bob = -Math.sin(bt * Math.PI) * 3.4; D.eyeOv = bt < 0.45 ? 'happy' : null; D.ph = tm * 4 * 6.283;
+    }
+    drPozTailCurl(0.55, 1, tm);
   } else if (poz === 'uyaniyor' || poz === 'sabah') {   // 'sabah': u 0→1 = canlı → peluş (parıltı söner, kanatlar solar, gözler kapanır)
     const v = u === undefined ? 0.6 : (poz === 'sabah' ? 1 - clamp(u, 0, 1) : clamp(u, 0, 1));
     const eo = smooth(clamp((v - 0.1) / 0.35, 0, 1)), st = Math.sin(clamp((v - 0.35) / 0.55, 0, 1) * Math.PI);
@@ -2450,7 +2587,7 @@ function pirilCizPoz(ctx, x, y, olcek, poz, tm, u) {
     D.eyeOv = 'closed'; D.expr = 'normal';
     drPozTailCurl(1, 0, tm);
   }
-  ctx.save(); ctx.translate(x, y); ctx.scale(olcek, olcek);
+  ctx.save(); ctx.translate(x, y); ctx.scale(olcek, Math.abs(olcek)); if (rot9) { ctx.translate(0, -2); ctx.rotate(rot9); ctx.translate(0, 2); }   // eksi olcek: sola bakar
   if (halo > 0.01) { const op = ctx.globalCompositeOperation; ctx.globalCompositeOperation = 'lighter'; drGlow(ctx, '#b88aff', 0, 0, 66, 0.22 * halo); drGlow(ctx, '#ffe0ff', 0, 0, 24, 0.14 * halo); ctx.globalCompositeOperation = op; }   // ara sahnede Feza'nın yanında: soldurmayacak kadar
   const pl = D.plush, sik = poz === 'pelus_sik' ? (u === undefined ? 0.7 : clamp(u, 0, 1)) : 0, br = Math.sin(tm * 1.7) * 0.012 * pl;
   if (pl > 0.02) { ctx.save(); ctx.translate(0, 14); ctx.scale(1 + br + sik * 0.07, 1 - br - sik * 0.08); ctx.rotate(-sik * 0.05); ctx.translate(0, -14); }   // peluş: nefes alır, sarılınca ezilir
@@ -2467,8 +2604,14 @@ function pirilCizPoz(ctx, x, y, olcek, poz, tm, u) {
     const tw = 0.6 + 0.4 * Math.sin(tm * 5);
     ctx.fillStyle = '#fff6c8'; drTwinkle(ctx, 14, -22, 3.2 * tw, 0.9);
   }
+  if (BOLUM_NO === 9 && D.blowM > 0.02) {   // ufle9: ağızda ılık ışık
+    const mo = drMouthPos(), op = ctx.globalCompositeOperation; ctx.globalCompositeOperation = 'lighter';
+    drGlow(ctx, '#fff0c8', mo.x, mo.y, 12 + 4 * Math.sin(tm * 30), 0.8 * D.blowM); drGlow(ctx, '#ffd0e0', mo.x + 14, mo.y + 2, 18, 0.4 * D.blowM);
+    ctx.globalCompositeOperation = op;
+  }
   ctx.restore();
   for (const k of DR_POZ_KEYS) D[k] = drPozSave[k];
+  return ret9;
 }
 
 // Peluş kimliği değişmez: aynı kulak, ibik ve kanatlar suda daha yavaş, yüzgeç gibi çırpınır.
@@ -2685,3 +2828,70 @@ OLAY.on('denizatiYardim', e => {
   dragonInit(); D.suGosterO = e.o; D.suGosterT = Math.max(1, +e.sure || 4); D.suYardimT = D.suGosterT;
   D.expr = 'happy'; D.exprT = D.suGosterT; D.suIlkGosterildi = true;
 });
+
+// ════════════════════════ Bölüm 9 (Pırıl'ın Ejderha Vadisi): Pırıl evinde ════════════════════════
+// Girişte eve dönüş sevinci ('ev9': iki takla + vadiyi gösterme), yumurtaya ılık ışık ('yumurtaIsit' → 'isit9'), mini oyun / yolculuk /
+// finalde kendiliğinden davranış yok (drB9Mesgul); olaylara kısa alkış; ejderFinal'de dans. Başkalarının kullanımı için PIRIL9 kancaları.
+const DR9 = { mini: null, evOldu: false };
+const DR9_ILIK = ['#ffe9a8', '#ffd0e0', '#fff6d6', '#ffc29a'];   // ılık ışık: altın, gül, krem, şeftali
+const DR9_IZ = ['#d9c8ff', '#c8f08a', '#ffd27a', '#ffffff'];       // leylak, fıstık, altın, beyaz
+const DR9_IZK = ['#a67cf0', '#ff7fb0', '#ffb83a', '#3fbf8a'];     // iz benekleri (açık gökte okunsun): leylak, gül, altın, zümrüt
+for (const ad of ['meyve', 'kanat', 'kolye', 'binis']) {
+  OLAY.on(ad + 'Basla', () => { if (BOLUM_NO === 9) { DR9.mini = ad; dragonInit(); if (D.mode === 'isit9' || D.mode === 'ev9' || D.mode === 'yol') drMode('follow'); } });
+  OLAY.on(ad + 'Bitti', () => { if (BOLUM_NO !== 9) return; if (DR9.mini === ad) DR9.mini = null; dragonInit(); setTimeout(() => drDokunAlkis(1.5), 400); });
+}
+OLAY.on('pulCicek', () => { if (BOLUM_NO === 9) drDokunAlkis(1.1); });
+OLAY.on('yavruCikti', e => {   // yavru çıktı: yavrunun üstünde kalpli sevinç turu
+  if (BOLUM_NO !== 9) return; dragonInit(); const o = e && e.o;
+  if (o && isFinite(o.x) && isFinite(o.y) && (drFree() || D.mode === 'isit9') && DURUM === 'oyun') { if (D.mode === 'isit9') { D.blowM = 0; D.puff = 0; } D.mode = 'follow'; dragonHappy({ x: o.x, y: o.y - 30 }); }
+  else drDokunAlkis(1.4);
+});
+OLAY.on('yumurtaIsit', e => {   // Feza yumurtaya sarılırken Pırıl öbür üst yanına uçar, derin nefes alıp ılık ışık üfler
+  if (BOLUM_NO !== 9 || !e) return; dragonInit();
+  const o = e.o && typeof e.o === 'object' ? e.o : null, x = isFinite(e.x) ? +e.x : o && isFinite(o.x) ? o.x : NaN, y = isFinite(e.y) ? +e.y : o && isFinite(o.y) ? o.y : NaN;
+  if (!isFinite(x) || !isFinite(y) || D.mode === 'tasi' || D.mode === 'dalis' || P.ucus || (D.mode === 'isit9' && D.i9 && (D.i9.o === o || D.modeT < 1))) return;   // aynı yumurtayı zaten ısıtıyor
+  const h = isFinite(e.h) ? +e.h : 40, r = isFinite(e.r) ? +e.r : 16, su = isFinite(e.sure) && e.sure > 0 ? +e.sure : 2.5;
+  dr9UfleBasla(x, y - h * 0.5, r, o, su, Math.sign(x - P.x) || P.f || 1, h);
+});
+OLAY.on('ejderFinal', () => { if (BOLUM_NO === 9) setTimeout(() => { if (typeof DURUM !== 'undefined' && DURUM === 'oyun' && !D.d9Ozel) { dragonInit(); D.danceAfter = true; } }, 2400); });
+function dr9UfleBasla(x, cy, r, o, sure, yanFz, h) {   // (x, cy): ışığın gideceği merkez; Pırıl Feza'nın öbür yanında, yukarıda durur
+  const side = yanFz || (Math.sign(D.x - x) || 1), top = cy - (h ? h * 0.5 : r);
+  const px = clamp(x + side * (r + 30), cam.x + 50, cam.x + VW - 50), py = clamp(top - 34, cam.y + 60, cam.y + VH - 60);
+  D.i9 = { x, cy, r: Math.max(8, r), o, side, px, py, f: 0, L: 120, sc: clamp((sure || 2.5) / 2.5, 0.6, 1.6) };
+  drMode('isit9'); D.yawnT = -1; D.beckonW = 0; D.expr = 'happy'; D.exprT = 0.4; D.trail.length = 0;
+}
+// girişte ilk kez oynanabilir olunca: eve dönüş sevinci
+function dr9EvSevinci() {
+  if (BOLUM_NO !== 9 || DR9.evOldu || !drPlaying() || !drFree() || P.ucus) return;
+  if (D.t < 1.2) return;
+  DR9.evOldu = true; drMode('ev9'); D.ev9X = P.x - (P.f || 1) * 10; D.ev9Y = P.y - 130; D.ev9Pul = false; D.yawnT = -1;
+  D.expr = 'happy'; D.exprT = 1; drSparkle(D.x, D.y, 12, 120); D.guideCd = Math.max(D.guideCd, 10);
+}
+// ── PIRIL9: başka dosyalar için kancalar (P.ucus doluyken Pırıl'ı siz çizin: pirilCizPoz) ──
+const PIRIL9 = {
+  git(x, y, opt) { if (BOLUM_NO !== 9 || !isFinite(x) || !isFinite(y)) return false; dragonInit(); const o = opt || {}; D.g9 = { x: +x, y: +y, yon: o.yon < 0 ? -1 : o.yon > 0 ? 1 : 0, sure: +o.sure || 0, expr: o.expr }; D.d9Ozel = true; drMode('git9'); return true; },
+  goster(x, y) { if (BOLUM_NO !== 9 || !isFinite(x) || !isFinite(y)) return false; dragonInit(); if (D.mode === 'tasi' || D.mode === 'dalis') return false; return drGuide({ x: +x, y: +y + 40, tip: 'pirilGoster9' }); },
+  ufle(x, y, sure, r) { if (BOLUM_NO !== 9 || !isFinite(x) || !isFinite(y)) return false; dragonInit(); if (D.mode === 'tasi' || D.mode === 'dalis') return false; D.d9Ozel = true; dr9UfleBasla(+x, +y, isFinite(r) ? +r : 24, null, sure, Math.sign(D.x - x) || 1, 0); return true; },
+  kucak(x, y, sure) { if (BOLUM_NO !== 9 || !isFinite(x) || !isFinite(y)) return false; dragonInit(); D.k9 = { x: +x, y: +y, sure: isFinite(sure) && sure > 0.6 ? +sure : 2.5 }; D.d9Ozel = true; drMode('kucak9'); D.yawnT = -1; return true; },
+  dans(x, y) { if (BOLUM_NO !== 9) return false; dragonInit(); D.d9 = isFinite(x) && isFinite(y) ? { x: +x, y: +y } : null; D.d9Ozel = true; drMode('dans'); D.danceAfter = true; return true; },
+  birak() { if (BOLUM_NO !== 9) return; dragonInit(); D.g9 = D.k9 = D.d9 = null; D.danceAfter = false; if (D.mode === 'git9' || D.mode === 'kucak9' || D.mode === 'dans' || D.mode === 'isit9') { D.blowM = 0; drMode('follow'); } },
+  durum() { return D.mode; },
+};
+
+// Bölüm 9: minik yaprak taç (iki nane yaprağı + pembe çiçek); ibiğin yayıyla hafifçe sallanır. gor: 0 önden, 1 yandan, 2 arkadan
+function drTac9(x, tm, gor) {
+  const sw = (D.sCr ? D.sCr.a : 0) * 0.7 + Math.sin(tm * 2.1) * 0.05;
+  x.save(); x.rotate(sw); x.lineWidth = 0.5; x.strokeStyle = '#2e8f6f';
+  for (const s of [-1, 1]) {
+    x.save(); x.rotate(s * 1.0 - (gor === 1 ? 0.2 : 0)); x.fillStyle = s > 0 ? '#6fd8a8' : '#3fbf8a';
+    x.beginPath(); x.moveTo(0, 0); x.quadraticCurveTo(2.4, -3.2, 0, -7.2); x.quadraticCurveTo(-2.4, -3.2, 0, 0); x.fill(); x.stroke();
+    x.beginPath(); x.moveTo(0, -0.8); x.lineTo(0, -5.6); x.stroke(); x.restore();
+  }
+  if (gor !== 2) {
+    x.fillStyle = '#ff9fc0'; x.strokeStyle = '#d9608a'; x.lineWidth = 0.42;
+    for (let i = 0; i < 5; i++) { const a = i * 1.2566 + 0.3; x.beginPath(); x.ellipse(Math.cos(a) * 1.75, -1.2 + Math.sin(a) * 1.75, 1.45, 1.05, a, 0, 6.283); x.fill(); x.stroke(); }
+    x.fillStyle = '#ffd27a'; x.beginPath(); x.arc(0, -1.2, 0.95, 0, 6.283); x.fill();
+    x.fillStyle = '#ffffff'; x.beginPath(); x.arc(-0.7, -2.5, 0.42, 0, 6.283); x.fill();
+  } else { x.fillStyle = '#ff9fc0'; x.beginPath(); x.arc(0, -0.8, 1.6, 0, 6.283); x.fill(); }
+  x.restore();
+}

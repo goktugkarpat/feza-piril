@@ -12,6 +12,7 @@
    Uzun sessizlikte (≥50 sn) Pırıl ara sıra küçük dostça bir söz söyler (p_dost*; oturumda en çok 3). Ayrıntı: src/BOLUM3.md › SES notları.
    Bölüm 8 komşuları (şeker sokağı, Cadı Nine) kendi önekleriyle konuşur (kd_ kabak dede · in_ iskelet nine · ck_ cadı kız · kk_ kara kedi ·
    ht_ hayalet teyze · k2_ kabak ikizler · cn_ Cadı Nine · kb_ canlanan yüz kabağı; gen_voice.py STYLE her birine ayrı, doğal bir ton verir); OLAY 'konusma' kim:'k'.
+   Bölüm 9 (Ejderha Vadisi) Pırıl'ın ailesi de öyle: bn_ Büyükanne Ejderha · ea_ annesi · eb_ babası · fs_ minik kuzeni Fıstık (kim:'k').
    SES.sus() → susar, sırayı boşaltır. SES.konusuyor() · SES.sure(anahtar) · SES.kayit (deneme günlüğü) · SES.sira().
 
    Sıra kuralları (Feza okuyamaz: ses tek talimat kanalı; ama BAYAT talimat kafa karıştırır):
@@ -263,15 +264,67 @@ const SES = (() => {
     "kb_tesekkur": "Ha ha ha! Teşekkür ederim, Feza!",
     "cn_puf": "Puf! Bak bak, süpürgem uyandı!",
     "p_c_iskelet_ipucu": "Bak, ışık kimin üstünde? Ona dokun, kaburgası çalsın!",
-    "p_c_iskelet_yardim": "Gel, birlikte çalalım! Ben göstereyim."
+    "p_c_iskelet_yardim": "Gel, birlikte çalalım! Ben göstereyim.",
+    "p_e_uyku": "Bu gece seni benim evime götüreceğim! Gözlerini kapat, Ejderha Vadisi'ne gidiyoruz!",
+    "p_e_giris": "Yaşasın, burası benim evim! Ejderha Vadisi'ne hoş geldin, Feza! Ama bak, çiçekler kapanmış, yumurtalar üşümüş. Hadi, vadiye ışık getirelim!",
+    "p_e_pul": "Bak, pul çiçeği açıldı! Tıpkı benim pullarım gibi parlıyor. Öbür çiçeklerin de yanından geçelim!",
+    "p_e_pul2": "Vadi renklenmeye başladı! Çiçekler ne güzel parlıyor.",
+    "p_e_pul_son": "Bütün pul çiçekleri açıldı! Vadimiz ışıl ışıl oldu.",
+    "p_e_yumurta": "Bak, bir ejderha yumurtası! Üşümüş. Hadi, yanına git, ona sarılıp ısıtalım!",
+    "p_e_yavru": "Yumurtadan minik bir yavru çıktı! Bak, sana sarılıyor. O da bizimle geliyor!",
+    "p_e_yavru2": "Bir yavru daha! Başında yumurta kabuğundan şapkası var, ne tatlı!",
+    "p_e_yavru_son": "Bütün yavrular çıktı! Hepsi peşimizden geliyor.",
+    "p_e_meyve_giris": "Yavrular acıkmış! Bak, her biri bir meyve düşünüyor. O meyveye dokun, ona uçsun!",
+    "p_e_meyve_ipucu": "Yavrunun baloncuğuna bak! Aynı meyveye dokun.",
+    "p_e_meyve_yardim": "Gel, birlikte verelim! Ben göstereyim.",
+    "p_e_meyve_iki": "Bak, ortadaki yavru bu sefer iki meyve istiyor!",
+    "p_e_meyve_bitti": "Karınları doydu! Bak, mutlu mutlu uçuyorlar.",
+    "p_e_kanat_giris": "Bu benim minik kuzenim Fıstık! Daha uçamıyor, biraz utanıyor. Ekrana dokun, kanatlarını çırpsın!",
+    "p_e_kanat_yardim": "Gel Fıstık, birlikte uçalım!",
+    "p_e_kanat_bitti": "Fıstık artık uçabiliyor! Ona sen öğrettin, Feza!",
+    "p_e_kolye_giris": "Bu benim Büyükannem! Parlayan pullara dokun, kolyedeki yerine takalım!",
+    "p_e_kolye_ipucu": "Pulun biçimine bak! Kolyede aynı yere götür.",
+    "p_e_kolye_yardim": "Ben de yardım ederim, bak!",
+    "p_e_kolye_bitti": "Büyükannem kayalıkta bizi bekliyor! Hadi, yanına gidelim!",
+    "p_e_binis_giris": "Büyükannemin sırtına bin, uçuyoruz! Ekrana dokun, yükselsin. Işık baloncuklarını toplayalım!",
+    "p_e_binis": "Bak, gün batıyor! Bulutların üstünden uçuyoruz. Ne kadar güzel!",
+    "p_e_binis_yardim": "Ben de yardım ederim! Ekrana dokunursan Büyükannem yükselir.",
+    "p_e_binis_bitti": "İşte Büyükannemin yuvası! Ejderha Kalbi orada bizi bekliyor.",
+    "p_e_final": "Ejderha Kalbi yeniden parladı! Bütün vadi ışıl ışıl oldu, Feza!",
+    "p_dost_ejder": "Evimi sana göstermek çok güzel! Sen benim en iyi arkadaşımsın.",
+    "a_e_final1": "Feza ile Pırıl, pul çiçeklerini açmışlar, üşüyen yumurtaları ısıtmışlar. Büyükanne Ejderha'nın yuvasında, Ejderha Kalbi yeniden ışıl ışıl parlamış.",
+    "a_e_final2": "Sabah Feza, yatağında gözlerini açmış. Komodinin üstünde parıldayan leylak bir ejderha pulu ve minicik bir yumurta kabuğu duruyormuş. Pırıl da ona tatlı tatlı göz kırpmış.",
+    "a_e_final3": "Ve Ejderha Vadisi'nin bütün ejderhaları, Feza'yı her gece sıcacık bir kucakla bekliyormuş.",
+    "bn_merhaba": "Hoş geldin, güzel yavrum! Kolyemin pulları çimenlere düşmüş. Bana yardım eder misin?",
+    "bn_pul_yuvarlak": "Yuvarlacık pulum geri geldi!",
+    "bn_pul_yildiz": "Yıldız pulum! Ne güzel parlıyor.",
+    "bn_pul_kalp": "Kalp pulum! İçim ısındı.",
+    "bn_pul_damla": "Damla pulum da yerinde!",
+    "bn_pul_ay": "Ay pulum! Tıpkı gökyüzündeki gibi.",
+    "bn_pul": "Bir pulum daha yerinde!",
+    "bn_tesekkur": "Teşekkür ederim, canım Feza! Kolyem yeniden ışıl ışıl oldu.",
+    "bn_binis": "Sıkı tutunun, yavrularım! Yavaş yavaş uçacağız.",
+    "bn_hediye": "Bu parlak pul senin olsun, Feza. Sen artık bizim ailemizdensin.",
+    "ea_merhaba": "Pırıl, yavrum, eve hoş geldin! Feza, sen de hoş geldin, tatlım.",
+    "ea_kucak": "Gelin buraya, ikinize de kocaman sarılayım!",
+    "eb_merhaba": "Feza, Pırıl'a yardım ettiğin için çok teşekkür ederiz! Kalbimizi sen ısıttın.",
+    "eb_dans": "Hadi herkes, şimdi dans zamanı!",
+    "fs_merhaba": "Merhaba. Ben Fıstık. Biraz korkuyorum, ama deneyeceğim.",
+    "p_e_kanat_ipucu": "Dokun dokun! Fıstık her dokunuşta kanat çırpıyor.",
+    "bn_davet": "Hadi bakalım, sırtıma binin. Sizi yuvama götüreyim!",
+    "bn_selam": "Bakın, komşularımız bize selam veriyor!",
+    "fs_ilk": "Vay! Biraz uçtum!",
+    "fs_ucuyorum": "Uçuyorum! Bak Feza, uçuyorum!",
+    "fs_tesekkur": "Teşekkür ederim, Feza!"
 }/*SESLER-SON*/;
 
   const sesSaat = () => performance.now() / 1000;
   const ovguMu = k => /^p_aferin/.test(k);
-  const SES_SAHNE = { p_uyan: 1, p_gecis: 1, p_y_giris: 1, p_y_bitti: 1, p_secim: 1, p_y_uyku: 1, p_b_uyku: 1, p_b_giris: 1, p_b_bitti: 1, p_i_uyku: 1, p_i_giris: 1, p_i_yuz: 1, p_i_bitti: 1, p_i_inci_uyan: 1, p_i_dostlar: 1, p_i_deniz_uyandi: 1, p_f_uyku: 1, p_f_giris: 1, p_f_final: 1, p_k_uyku: 1, p_k_giris: 1, p_k_final: 1, p_c_uyku: 1, p_c_giris: 1, p_c_final: 1 };   // sahne cümleleri: öncelik 3, ağaç yandı/oyun bitti diye atılmaz
+  const SES_SAHNE = { p_uyan: 1, p_gecis: 1, p_y_giris: 1, p_y_bitti: 1, p_secim: 1, p_y_uyku: 1, p_b_uyku: 1, p_b_giris: 1, p_b_bitti: 1, p_i_uyku: 1, p_i_giris: 1, p_i_yuz: 1, p_i_bitti: 1, p_i_inci_uyan: 1, p_i_dostlar: 1, p_i_deniz_uyandi: 1, p_f_uyku: 1, p_f_giris: 1, p_f_final: 1, p_k_uyku: 1, p_k_giris: 1, p_k_final: 1, p_c_uyku: 1, p_c_giris: 1, p_c_final: 1, p_e_uyku: 1, p_e_giris: 1, p_e_final: 1 };   // sahne cümleleri: öncelik 3, ağaç yandı/oyun bitti diye atılmaz
   const anlatici = k => k.startsWith('a_') || k === 'p_v_uyku' || k === 'p_v_giris' || !!SES_SAHNE[k];
   const ses8Komsu = k => /^(kd|in|ck|kk|ht|k2|cn|kb)_/.test(k);   // Bölüm 8 komşu sesleri (Pırıl değil: onun ağzı oynamaz)
-  const sesKim = k => k.startsWith('a_') ? 'a' : ses8Komsu(k) ? 'k' : 'p';
+  const ses9Aile = k => /^(bn|ea|eb|fs)_/.test(k);   // Bölüm 9: Pırıl'ın ailesi ve Fıstık (Pırıl değil)
+  const sesKim = k => k.startsWith('a_') ? 'a' : ses8Komsu(k) || ses9Aile(k) ? 'k' : 'p';
   // ── cümle bilgisi: oncelik (3 sahne · 2 oyun · 1 yönlendirme · 0 övgü), acil (2 araya girer · 1 olay tepkisi), ömür (sn), konu ──
   const KONU_SIRA = { p_buyuk: 1, p_buyuk_goz: 2, p_buyuk_esne: 3, p_buyuk_kalk: 4, p_agac: 5, p_karanlik: 1, p_nilufer: 2, p_karanlik2: 1, p_nilufer2: 2 };
   const sesTaban = k => (k === 'p_karanlik2' || k === 'p_nilufer2') ? k.slice(0, -1) : k;   // ikinci göl cümlesi → asıl anahtar (kurallar için)
@@ -299,6 +352,13 @@ const SES = (() => {
     if (k === 'p_c_hayalet' || k === 'p_c_sokak') return { oncelik: 2, acil: 1, omur: 10, konu: null };
     if (k === 'p_c_fener' || k === 'p_c_hayalet_bul' || k === 'p_c_kostum_cadi' || k === 'p_c_kostum_kabak' || k === 'p_c_kostum_iskelet' || k === 'p_c_kostum_yarasa') return { oncelik: 2, acil: 1, omur: 14, konu: null };   // ilk kez öğreten / seven tepkiler: giriş konuşmaları sürerken de beklesin
     if (/^p_c_/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
+    // Bölüm 9 (Ejderha Vadisi): mini oyunların tek talimatı gerekirse çalanı cümle sonunda keser; Büyükanne'nin pul sözleri anlık (kısa ömür)
+    if (/^bn_pul/.test(k)) return { oncelik: 2, acil: 1, omur: 4, konu: null };
+    if (k === 'bn_selam' || k === 'fs_ilk') return { oncelik: 2, acil: 1, omur: 5, konu: null };   // uzak ejderhalar geçerken / ilk kanat çırpışı (anlık)
+    if (ses9Aile(k)) return { oncelik: 2, acil: 1, omur: 12, konu: null };
+    if (/^p_e_(meyve|kanat|kolye|binis)_giris$/.test(k)) return { oncelik: 2, acil: 2, omur: 15, konu: null };
+    if (k === 'p_e_yumurta' || k === 'p_e_pul' || k === 'p_e_yavru') return { oncelik: 2, acil: 1, omur: 14, konu: null };   // ilk kez öğreten tepkiler: giriş konuşması sürerken de beklesin
+    if (/^p_e_/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
     if (/^p_kurtar/.test(k) || /^p_yardim/.test(k)) return { oncelik: 2, acil: 2, omur: 3, konu: 'kurtar' };
     if (k === 'p_buyuk_kalk' || k === 'p_agac') return { oncelik: 2, acil: 2, omur: 12, konu: 'buyuk' };
     if (k === 'p_buyuk_goz' || k === 'p_buyuk_esne') return { oncelik: 2, acil: 1, omur: 8, konu: 'buyuk' };
@@ -426,7 +486,19 @@ const SES = (() => {
     p_c_fener_son: () => typeof V8 === 'undefined' || !V8.final,
     p_c_hayalet_son: () => typeof V8 === 'undefined' || !V8.final,
     p_dost_cadi: () => sesDostUygun(),
-    p_yol: () => !(sesB8() && ((typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif) || (typeof om8MiniAktif === 'function' && om8MiniAktif()))),   // kapı sahnesinde / mini oyunda "bu tarafa gel" yok
+    // Bölüm 9: talimatlar konusu bitince söylenmez
+    p_e_yumurta: () => !(typeof SAYAC !== 'undefined' && SAYAC.yavru > 0),
+    p_e_meyve_giris: () => !sesV9('meyve'), p_e_meyve_iki: () => !sesV9('meyve'), p_e_meyve_ipucu: () => !sesV9('meyve'), p_e_meyve_yardim: () => !sesV9('meyve'),
+    p_e_kanat_giris: () => !sesV9('kanat'), p_e_kanat_ipucu: () => !sesV9('kanat'), p_e_kanat_yardim: () => !sesV9('kanat'), fs_merhaba: () => !sesV9('kanat'), fs_ilk: () => !sesV9('kanat'),
+    p_e_kolye_giris: () => !sesV9('kolye'), p_e_kolye_ipucu: () => !sesV9('kolye'), p_e_kolye_yardim: () => !sesV9('kolye'), bn_merhaba: () => !sesV9('kolye'),
+    p_e_kolye_bitti: () => !sesV9('binis') && !(gP() && gP().ucus), bn_tesekkur: () => !sesV9('binis'), bn_davet: () => !sesV9('binis') && !(gP() && gP().ucus && gP().ucus.tip === 'buyukanneBinis'),
+    p_e_binis_giris: () => !sesV9('binis'), bn_binis: () => !sesV9('binis'),
+    p_e_binis: () => !sesV9('binis') && !!(gP() && gP().ucus), bn_selam: () => !sesV9('binis') && !!(gP() && gP().ucus), p_e_binis_yardim: () => !sesV9('binis') && !!(gP() && gP().ucus),
+    p_e_binis_bitti: () => !sesV9('final'),
+    p_e_pul2: () => !sesV9('final'), p_e_pul_son: () => !sesV9('final'), p_e_yavru_son: () => !sesV9('final'), p_e_yavru2: () => !sesV9('final'),
+    p_dost_ejder: () => sesDostUygun(),
+    p_yol: () => !(sesB8() && ((typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif) || (typeof om8MiniAktif === 'function' && om8MiniAktif())))
+      && !(sesB9() && typeof om9MiniAktif === 'function' && om9MiniAktif()),   // kapı sahnesinde / mini oyunda "bu tarafa gel" yok
     p_i_denizati: () => typeof DNZ === 'undefined' || DNZ.ati.some(o => !o.done),
     p_i_ahtapot: () => typeof DNZ === 'undefined' || !DNZ.oct || !DNZ.oct.done,
     p_i_vatoz: () => typeof DNZ === 'undefined' || !DNZ.ride || (!DNZ.ride.done && DNZ.ride.faz !== 'inis'),
@@ -474,7 +546,7 @@ const SES = (() => {
     if (sesEskidi[sesTaban(s.k)]) return 'olay eskitti';
     const durum = typeof DURUM !== 'undefined' ? DURUM : 'oyun';
     if (s.k === 'p_secim' && durum !== 'baslik') return 'seçim bitti';
-    if (/^(a_giris\d|p_[ybivfkc]_uyku)$/.test(s.k) && durum !== 'giris') return 'uyku sahnesi bitti';
+    if (/^(a_giris\d|p_[ybivfkce]_uyku)$/.test(s.k) && durum !== 'giris') return 'uyku sahnesi bitti';
     if (anlatici(s.k)) return '';
     if (!sesSert(s)) return 'oyun bitti';
     if (agacYandi() && !ovguMu(s.k)) return 'ağaç yandı';
@@ -546,8 +618,8 @@ const SES = (() => {
   }
   function sesOnceden() {     // cümleleri boşta önceden çöz (ilk konuşmada gecikme olmasın); bu bölümün cümleleri önce
     if (!window.VOICE_MP3) return;
-    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c' }[bn] || '';
-    const baska = k => { if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; const m = /^[pa]_([ybivfkc])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
+    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c', 9: 'e' }[bn] || '';
+    const baska = k => { if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; if (ses9Aile(k)) return harf === 'e' ? 0 : 1; const m = /^[pa]_([ybivfkce])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
     const ks = Object.keys(LINES).filter(k => VOICE_MP3[k]).sort((a, b) => baska(a) - baska(b));
     let i = 0;
     const adim = () => { if (i >= ks.length) return; sesCozumle(ks[i++]).then(() => setTimeout(adim, 30)); };
@@ -585,13 +657,23 @@ const SES = (() => {
     p_c_kostum_cadi: ['p_c_kostum'], p_c_kostum_kabak: ['p_c_kostum'], p_c_kostum_iskelet: ['p_c_kostum'], p_c_kostum_yarasa: ['p_c_kostum'],
     p_c_hayalet_bul: ['p_c_hayalet'], p_c_kabakyuz_bitti: ['p_c_kabakyuz_giris', 'p_c_kabakyuz_burun', 'p_c_kabakyuz_agiz', 'p_c_kabakyuz_ipucu', 'p_c_kabakyuz_yardim'], p_c_iskelet_bitti: ['p_c_iskelet_giris', 'p_c_iskelet_ipucu', 'p_c_iskelet_yardim'],
     p_c_kazan_bitti: ['p_c_kazan_giris', 'cn_merhaba', 'cn_malzeme'], cn_bitti: ['p_c_kazan_giris', 'cn_merhaba', 'cn_malzeme'],
-    p_c_supurge_giris: ['p_c_kazan_bitti', 'cn_bitti'], p_c_supurge_bitti: ['p_c_supurge_giris', 'p_c_supurge', 'p_c_supurge_yardim'], p_c_final: ['p_c_supurge_bitti', 'p_c_fener2', 'p_c_fener_son', 'p_c_hayalet_son', 'p_c_hayalet2'] }, sesEskidi = {};
+    p_c_supurge_giris: ['p_c_kazan_bitti', 'cn_bitti'], p_c_supurge_bitti: ['p_c_supurge_giris', 'p_c_supurge', 'p_c_supurge_yardim'], p_c_final: ['p_c_supurge_bitti', 'p_c_fener2', 'p_c_fener_son', 'p_c_hayalet_son', 'p_c_hayalet2'],
+    p_e_yavru: ['p_e_yumurta'], p_e_meyve_bitti: ['p_e_meyve_giris', 'p_e_meyve_ipucu', 'p_e_meyve_yardim', 'p_e_meyve_iki'],
+    p_e_kanat_bitti: ['p_e_kanat_giris', 'p_e_kanat_ipucu', 'p_e_kanat_yardim', 'fs_merhaba', 'fs_ilk'], fs_ucuyorum: ['p_e_kanat_giris', 'p_e_kanat_ipucu', 'p_e_kanat_yardim', 'fs_merhaba', 'fs_ilk'],
+    p_e_kolye_bitti: ['p_e_kolye_giris', 'p_e_kolye_ipucu', 'p_e_kolye_yardim', 'bn_merhaba'], bn_tesekkur: ['p_e_kolye_giris', 'p_e_kolye_ipucu', 'p_e_kolye_yardim', 'bn_merhaba'],
+    p_e_binis_giris: ['p_e_kolye_bitti', 'bn_tesekkur', 'bn_davet'], p_e_binis_bitti: ['p_e_binis_giris', 'p_e_binis', 'bn_selam', 'p_e_binis_yardim', 'bn_binis'],
+    p_e_final: ['p_e_binis_bitti', 'p_e_pul2', 'p_e_pul_son', 'p_e_yavru2', 'p_e_yavru_son'] }, sesEskidi = {};
   // Bölüm 6: bu cümleler tetikleyici nesne başına değil, oyun başına bir kez (harita konuşma nesnesi + olay aynı cümleyi isteyebilir)
   const SES_TEK = { p_f_fener: 1, p_f_fener2: 1, p_f_midilli: 1, p_f_midilli_uyan: 1, p_f_halka_giris: 1, p_f_halka: 1, p_f_halka_bitti: 1, p_f_kopru: 1, p_f_final: 1,
     p_k_fener: 1, p_k_fener2: 1, p_k_yavru: 1, p_k_yavru_uyan: 1, p_k_geyik: 1, p_k_kardan_giris: 1, p_k_kardan_top: 1, p_k_kardan_bitti: 1, p_k_buz: 1, p_k_kizak_giris: 1, p_k_kizak: 1, p_k_kizak_bitti: 1, p_k_final: 1,
     p_c_kostum: 1, p_c_kostum_cadi: 1, p_c_kostum_kabak: 1, p_c_kostum_iskelet: 1, p_c_kostum_yarasa: 1, p_c_fener: 1, p_c_fener2: 1, p_c_fener_son: 1,
     p_c_hayalet: 1, p_c_hayalet_bul: 1, p_c_hayalet2: 1, p_c_hayalet_son: 1, p_c_kabakyuz_giris: 1, p_c_kabakyuz_burun: 1, p_c_kabakyuz_agiz: 1, p_c_kabakyuz_ipucu: 1, p_c_kabakyuz_bitti: 1, kb_tesekkur: 1, p_c_iskelet_giris: 1, p_c_iskelet_ipucu: 1, p_c_iskelet_yardim: 1, p_c_iskelet_bitti: 1, cn_puf: 1,
-    p_c_sokak: 1, p_c_kazan_giris: 1, p_c_kazan_bitti: 1, p_c_supurge_giris: 1, p_c_supurge: 1, p_c_supurge_yardim: 1, p_c_supurge_bitti: 1, p_c_final: 1, cn_merhaba: 1, cn_malzeme: 1, cn_bitti: 1 };
+    p_c_sokak: 1, p_c_kazan_giris: 1, p_c_kazan_bitti: 1, p_c_supurge_giris: 1, p_c_supurge: 1, p_c_supurge_yardim: 1, p_c_supurge_bitti: 1, p_c_final: 1, cn_merhaba: 1, cn_malzeme: 1, cn_bitti: 1,
+    p_e_pul: 1, p_e_pul2: 1, p_e_pul_son: 1, p_e_yumurta: 1, p_e_yavru: 1, p_e_yavru2: 1, p_e_yavru_son: 1, p_e_meyve_giris: 1, p_e_meyve_ipucu: 1, p_e_meyve_yardim: 1, p_e_meyve_iki: 1, p_e_meyve_bitti: 1,
+    p_e_kanat_giris: 1, p_e_kanat_ipucu: 1, p_e_kanat_yardim: 1, p_e_kanat_bitti: 1, p_e_kolye_giris: 1, p_e_kolye_ipucu: 1, p_e_kolye_yardim: 1, p_e_kolye_bitti: 1,
+    p_e_binis_giris: 1, p_e_binis: 1, p_e_binis_yardim: 1, p_e_binis_bitti: 1, p_e_final: 1,
+    bn_merhaba: 1, bn_pul_yuvarlak: 1, bn_pul_yildiz: 1, bn_pul_kalp: 1, bn_pul_damla: 1, bn_pul_ay: 1, bn_tesekkur: 1, bn_davet: 1, bn_binis: 1, bn_selam: 1, bn_hediye: 1,
+    ea_merhaba: 1, ea_kucak: 1, eb_merhaba: 1, eb_dans: 1, fs_merhaba: 1, fs_ilk: 1, fs_ucuyorum: 1, fs_tesekkur: 1 };
   const SES_KURTAR = ['p_kurtar', 'p_kurtar1', 'p_kurtar2', 'p_kurtar3', 'p_kurtar4'], sesKurtarGec = [];
   const sesB2 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 2;
   const sesB3 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 3;
@@ -601,7 +683,14 @@ const SES = (() => {
       setTimeout(() => { if (typeof DNZ !== 'undefined' && DNZ.oct && !DNZ.oct.done && DURUM === 'oyun') soyle('p_i_ahtapot_yardim', { oncelik: 3 }); }, 4500);
     }
     const ko = k;   // çağıranın verdiği ad (konuşma tetikleyicisi anahtarı)
-    if (/^[ybivfkc]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
+    if (/^[ybivfkce]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
+    if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 9) {   // Ejderha Vadisi: sahne/CORE ortak adları çağırırsa Bölüm 9 cümlesi
+      if (/^a_(y_|b_|i_|v_|f_|k_|c_)?final\d$/.test(k)) k = 'a_e_final' + k.slice(-1);
+      else if (k === 'p_y_uyku') k = 'p_e_uyku';
+      else if (k === 'p_y_giris' || k === 'p_uyan') k = 'p_e_giris';
+      // yuvadaki şölende ailenin sözleri sahne cümlesi gibi sırada bekler (anlatıcının ardından), atılmaz
+      if (ses9Aile(k) && typeof V9 !== 'undefined' && V9 && V9.final && !(ops && ops.oncelik != null)) ops = Object.assign({}, ops, { oncelik: 3 });
+    }
     if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 8) {   // Balkabağı Gecesi: sahne/CORE ortak adları çağırırsa Bölüm 8 cümlesi
       if (/^a_(y_|b_|i_|v_|f_|k_)?final\d$/.test(k)) k = 'a_c_final' + k.slice(-1);
       else if (k === 'p_y_uyku') k = 'p_c_uyku';
@@ -898,7 +987,7 @@ const SES = (() => {
     const t = sesSaat();
     if (t - sesOyunT < 60 || t - sesDostT < 90 || t - sesSonBitis < 50 || !sesDostUygun()) return;
     const bolum = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1;
-    const ozel = bolum === 8 ? 'p_dost_cadi' : bolum === 7 ? 'p_dost_kar' : bolum === 6 ? 'p_dost_senlik' : bolum === 5 ? 'p_dost_volkan' : bolum === 4 ? 'p_dost_deniz' : bolum === 3 ? 'p_dost_bulut' : bolum === 2 ? 'p_dost_yildiz' : 'p_dost_orman';
+    const ozel = bolum === 9 ? 'p_dost_ejder' : bolum === 8 ? 'p_dost_cadi' : bolum === 7 ? 'p_dost_kar' : bolum === 6 ? 'p_dost_senlik' : bolum === 5 ? 'p_dost_volkan' : bolum === 4 ? 'p_dost_deniz' : bolum === 3 ? 'p_dost_bulut' : bolum === 2 ? 'p_dost_yildiz' : 'p_dost_orman';
     const aday = [ozel, 'p_dost1', 'p_dost2', 'p_dost3'].filter(k => LINES[k] && !sesSoylendi[k]);
     if (!aday.length) return;
     const k = sesDostN === 0 ? aday[0] : aday[Math.floor(Math.random() * aday.length)];
@@ -1065,6 +1154,92 @@ const SES = (() => {
     if (sesSoylendi.p_c_hayalet || (typeof SAYAC !== 'undefined' && SAYAC.hayalet > 0) || !(typeof V8 === 'undefined' || V8.kostum || !TUR.al('kostumSec'))) return;
     const m = gN().find(n => n.tip === 'hayaletcik' && !n.bulundu && !n.om8 && !n.done && n.x > p.x - T && n.x - p.x < 7 * T && Math.abs(n.y - p.y) < 6 * T);
     if (m) soyle('p_c_hayalet');
+  }, 500);
+  // ── Bölüm 9 (Pırıl'ın Ejderha Vadisi) olayları (yavru.js, meyve.js, kanat.js, kolye.js, buyukanne.js, yuva.js): ilk pul çiçeği / yarısı /
+  // hepsi, ilk üşümüş yumurta yakındayken, ilk yavru çıkınca, mini oyun başı / ipucu / yardım / sonu (Fıstık ve Büyükanne kendi sesleriyle).
+  // Büyükanne'nin sırtında yolculuğun ve yuvadaki şölenin sözlerini (bn_binis, bn_selam, p_e_binis*, p_e_final, ea_/eb_merhaba, bn_hediye)
+  // buyukanne.js / yuva.js kendi anlarında söyler; burada yalnız yedekler (tek seferlik cümleler bir kez söylenir, çift çağrı zararsız).
+  // Övgü ara sıra (sonraki çiçek/yavrularda ~üçte bir, mini oyunlarda yer yer; övgü aralığı ayrıca ≥12 sn).
+  const sesB9 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 9;
+  const sesV9 = ad => typeof V9 !== 'undefined' && !!V9 && !!V9[ad];
+  const ses9Ovgu = (sans, ms) => { if (Math.random() < sans) setTimeout(() => { if (!sesCalan && !sesSira.length) soyle('p_aferin'); }, ms || 700); };
+  let ses9PulN = 0, ses9YavruN = 0, ses9KolyeN = 0, ses9MeyveYanlis = 0;
+  OLAY.on('pulCicek', () => {
+    if (!sesB9()) return;
+    ses9PulN++;
+    const top = (typeof SAYAC !== 'undefined' && SAYAC.pulTop) || (typeof V9 !== 'undefined' && V9.pulTop) || 10;
+    if (ses9PulN === 1) soyle('p_e_pul');
+    else if (ses9PulN === Math.ceil(top / 2)) soyle('p_e_pul2');
+    else if (ses9PulN === top) soyle('p_e_pul_son');
+    else if (ses9PulN > 2) sesF6Ovgu_();
+  });
+  OLAY.on('yavruCikti', () => {
+    if (!sesB9()) return;
+    ses9YavruN++;
+    const top = (typeof SAYAC !== 'undefined' && SAYAC.yavruTop) || (typeof V9 !== 'undefined' && V9.yavruTop) || 6;
+    if (ses9YavruN === 1) setTimeout(() => soyle('p_e_yavru'), 900);   // çıkış, esneme ve hapşırıktan sonra
+    else if (ses9YavruN === top) setTimeout(() => soyle('p_e_yavru_son'), 900);
+    else if (ses9YavruN === 2) setTimeout(() => soyle('p_e_yavru2'), 900);
+    else sesF6Ovgu_();
+  });
+  // mini oyun 1: yavrulara meyve (meyve.js)
+  OLAY.on('meyveBasla', () => { if (sesB9()) soyle('p_e_meyve_giris'); });
+  OLAY.on('meyveVer', e => {
+    if (!sesB9() || !e) return;
+    if (e.dogru === false) { if (++ses9MeyveYanlis === 2) soyle('p_e_meyve_ipucu'); return; }   // ikinci yanlışta bir kez (ceza yok, yavru başını çevirir)
+    if (!e.yardim) ses9Ovgu(0.3);
+  });
+  OLAY.on('meyveTur', e => { if (sesB9() && e && e.n === 3) setTimeout(() => soyle('p_e_meyve_iki'), 900); });   // son tur: ortadaki yavru iki meyve ister
+  OLAY.on('meyveIpucu', () => { if (sesB9()) soyle('p_e_meyve_ipucu'); });
+  OLAY.on('meyveYardim', () => { if (sesB9()) soyle('p_e_meyve_yardim'); });
+  OLAY.on('meyveBitti', () => { if (sesB9()) setTimeout(() => soyle('p_e_meyve_bitti'), 500); });
+  // mini oyun 2: utangaç Fıstık'ın uçma dersi (kanat.js): Pırıl kuzenini tanıtır, Pırıl gösterince Fıstık utangaç merhaba der
+  OLAY.on('kanatBasla', () => { if (sesB9()) soyle('p_e_kanat_giris'); });
+  OLAY.on('kanatGoster', () => { if (sesB9()) soyle('fs_merhaba'); });
+  OLAY.on('kanatCicek', e => {
+    if (!sesB9() || !e) return;
+    if (e.n === 1) soyle('fs_ilk');
+    else if (e.n === 3 && !e.yardim) ses9Ovgu(0.6);
+  });
+  OLAY.on('kanatIpucu', () => { if (sesB9()) soyle('p_e_kanat_ipucu'); });
+  OLAY.on('kanatYardim', () => { if (sesB9()) soyle('p_e_kanat_yardim'); });
+  OLAY.on('kanatSuzul', () => { if (sesB9()) soyle('fs_ucuyorum'); });
+  OLAY.on('kanatBurun', () => { if (sesB9()) soyle('fs_tesekkur'); });
+  OLAY.on('kanatBitti', () => { if (sesB9()) setTimeout(() => soyle('p_e_kanat_bitti'), 400); });
+  // mini oyun 3: Büyükanne'nin pul kolyesi (kolye.js): Büyükanne ilk kez görünür ve konuşur; pulların çoğunda kısa bir söz (biçimine göre),
+  // birinde ara sıra Pırıl'ın övgüsü; son pulda kolye parlar → teşekkür, kucak → davet, Büyükanne kayalığa konunca Pırıl yol gösterir
+  OLAY.on('kolyeBasla', () => { if (!sesB9()) return; ses9KolyeN = 0; soyle('bn_merhaba'); soyle('p_e_kolye_giris'); });
+  OLAY.on('kolyePul', e => {
+    if (!sesB9()) return;
+    const n = e && isFinite(e.n) ? e.n : ++ses9KolyeN, top = (e && isFinite(e.top) && e.top) || 5;
+    if (n >= top) return;   // son pulda söz yok: kolye parlar, teşekkür gelecek
+    if (n === 3 && !(e && e.yardim) && Math.random() < 0.5) { ses9Ovgu(1, 300); return; }
+    const b = e && typeof e.bicim === 'string' ? 'bn_pul_' + e.bicim : '';
+    soyle(LINES[b] ? b : 'bn_pul', { yer: 'kp' + n });
+  });
+  OLAY.on('kolyeIpucu', () => { if (sesB9()) soyle('p_e_kolye_ipucu'); });
+  OLAY.on('kolyeYardim', () => { if (sesB9()) soyle('p_e_kolye_yardim'); });
+  OLAY.on('kolyeParla', () => { if (sesB9()) soyle('bn_tesekkur'); });
+  OLAY.on('kolyeKucak', () => { if (sesB9()) soyle('bn_davet'); });
+  OLAY.on('kolyeBitti', () => { if (!sesB9()) return; soyle('bn_tesekkur'); setTimeout(() => soyle('p_e_kolye_bitti'), 400); });
+  // Büyükanne'nin sırtında yolculuk (buyukanne.js sözlerini kendisi söyler; bunlar yedek, aynı anda): yardım ve ara sıra övgü burada
+  OLAY.on('binisBasla', () => { if (sesB9()) soyle('p_e_binis_giris'); });
+  OLAY.on('binisGunbatimi', () => { if (sesB9()) soyle('p_e_binis'); });
+  OLAY.on('binisYardim', () => { if (sesB9()) soyle('p_e_binis_yardim'); });
+  OLAY.on('binisIsik', e => { if (sesB9() && e && isFinite(e.n) && e.n > 0 && e.n % 6 === 0 && !e.yardim && e.kim !== 'piril') ses9Ovgu(0.4); });
+  OLAY.on('binisBitti', () => { if (sesB9()) setTimeout(() => soyle('p_e_binis_bitti'), 600); });
+  // final: Ejderha Kalbi Şöleni (yuva.js sözleri kendi anlarında söyler: p_e_final, ea_merhaba, eb_merhaba, bn_hediye; anlatıcı oyun.js'te 6. sn)
+  const ses9Final = (k, ops) => { if (sesB9() && typeof DURUM !== 'undefined' && DURUM === 'oyun') soyle(k, ops || { oncelik: 3 }); };
+  OLAY.on('ejderAile', () => { ses9Final('ea_merhaba'); ses9Final('eb_merhaba'); });
+  OLAY.on('ejderHediye', () => ses9Final('bn_hediye'));
+  OLAY.on('ejderKucak', () => ses9Final('ea_kucak'));
+  OLAY.on('ejderDans', () => ses9Final('eb_dans'));
+  setInterval(() => {   // ilk üşümüş yumurta önüne gelince (harita konuşma nesnesi koymadıysa da) bir kez "sarılıp ısıtalım"
+    if (!sesB9() || typeof DURUM === 'undefined' || DURUM !== 'oyun' || sesV9('final')) return;
+    const p = gP(); if (!p || p.ucus || p.kilit > 0) return;
+    if (sesSoylendi.p_e_yumurta || (typeof SAYAC !== 'undefined' && SAYAC.yavru > 0)) return;
+    const m = gN().find(n => n.tip === 'ejderYumurta' && !n.om9 && !n.done && !n.cikti && n.x > p.x - 2 * T && n.x - p.x < 7 * T && Math.abs(n.y - p.y) < 5 * T);
+    if (m) soyle('p_e_yumurta');
   }, 500);
   OLAY.on('secim', () => { sesSecimT = sesSaat(); });
   OLAY.on('secimIlgi', () => { sesSecimT = sesSaat(); });   // boş dokunuş: yalnız sayaç sıfırlanır (ses çalmaz)

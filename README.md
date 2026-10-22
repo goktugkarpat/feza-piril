@@ -23,6 +23,16 @@ Korkutucu hiçbir şey yoktur, kaybetmek yoktur. Feza okuma bilmediği için her
    kocaman bir Anka yumurtasını okşayarak uyandırma. Feza parmağıyla Anka'nın eksik kanadını renklendirir; ışıl ışıl dostu
    lav nehrindeki kayığa eşlik eder. Yolculuktaki büyük ışık çiçeklerine yön vermek çevreyi değiştirir. Sonunda Kor Çiçeği açılır ve dağ yeniden renklenir. Yeni müzik, sıcak taş tınıları ve
    Türkçe seslendirmeler bu rüya için hazırlandı; lav yolculuğunda düşmek, yanmak veya kaybetmek yoktur.
+6. **Şenlik Kalesi** (alacakaranlık) — Kasabanın fenerlerini yakma, uyuyan midillileri uyandırma, midilli sırtında halka kapma
+   yolculuğu ve kale avlusunda ışıl ışıl bir şenlik.
+7. **Kuzey Işıkları** (karlı gece) — Kar fenerleriyle gökyüzüne renk getirme, kar yığınındaki yavruları uyandırma, kardan adam yapma,
+   buzlu gölde kayma, ren geyiğinin çektiği kızakla yolculuk ve kuzey tepesinde rengârenk gökyüzü.
+8. **Balkabağı Gecesi** (Cadılar Bayramı) — Kostüm seçme, kabak fenerlerini yakma, saklanan sevimli hayaletçikleri bulma, kabağa yüz yapma,
+   iskelet orkestrası, kapı kapı "Şeker mi şaka mı!", Cadı Nine'nin kazanı, süpürgeyle uçuş ve köy meydanında Balkabağı Şenliği.
+9. **Pırıl'ın Ejderha Vadisi** (altın saat, gün batımı) — Pırıl, Feza'yı kendi evine götürür. Pul çiçeklerini açma, üşüyen ejderha
+   yumurtalarına sarılıp yavruları çıkarma (yavrular Feza'nın peşinden gelir), aç yavrulara doğru meyveyi verme, utangaç kuzen Fıstık'a
+   uçmayı öğretme, Büyükanne Ejderha'nın kolyesine pulları takma, Büyükanne'nin sırtında gün batımında uçuş ve yuvada Ejderha Kalbi Şöleni:
+   Pırıl'ın annesi, babası ve Büyükanne Feza'yı kucaklar, Feza'ya leylak bir pul hediye edilir.
 
 **Pofuduklar** ormanın ışığını karınlarında taşıyan tüylü orman dostlarıdır. Üstlerine zıplamak onları gıdıklayıp ışıklarını uyandırır:
 hapşırırlar, karınları parlar, çevrelerindeki mantarlar ve bitkiler renklenir, Feza'nın peşine takılırlar. Bazıları çok derin uyur;
@@ -55,12 +65,12 @@ onları yalnızca ışık şarkısı uyandırır.
 
 - **Sessiz açmak:** adrese `?sessiz` ekle. Açılışı atlamak için `?atla`, altyazı için `?altyazi`.
 - **Sesli açılış:** tarayıcı sesi ilk dokunuşa kadar kilitlerse müzik ve geçerli açılış konuşması o dokunuşta devam eder; konuşma ses bağlamı hazır olmadan söylenmiş sayılmaz. Sekmeye geri dönüldüğünde aynı ses bağlamı sürdürülür.
-- **Doğrudan bir rüyayı açmak:** `?bolum=1`, `?bolum=2`, `?bolum=3`, `?bolum=4` veya `?bolum=5`.
-  Beşinde de yatak animasyonu tamamlanınca oyun doğrudan başlar; ayrıca oda dönüşümü, ikinci uyanış, ışıkla belirme veya kontrol beklemesi yoktur.
+- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=9`. Seçim ekranında en yeni rüya en baştadır.
+  Hepsinde yatak animasyonu tamamlanınca oyun doğrudan başlar; ayrıca oda dönüşümü, ikinci uyanış, ışıkla belirme veya kontrol beklemesi yoktur.
   Ormanın yatak girişi yaklaşık 13,4 saniye, diğer rüyalarınki 7,85 saniyedir. Yatağı da atlayan sessiz deneme: `?sessiz&atla&bolum=5`.
 - **Kayıtları sıfırlamak:** seçim ekranında sol üst köşeye 3 saniye basılı tut. Bitirilen rüyalar cihazda saklanır, kilit yoktur.
 - **Performans:** dokunmatik cihazlarda oyun en çok 60, masaüstünde en çok 120 kare/sn çizer; oyun hızı her ekranda aynıdır.
   Büyük ekranlarda çözünürlük otomatik uyarlanır.
 - **Seslendirme:** tr-TR-EmelNeural kadın sesiyle önceden kaydedilmiş, kırpılmış mp3'ler (`sesler.js`); cümleleri değiştirmek için
   `src/ses.js` düzenlenip `python gen_voice.py` çalıştırılır.
-- Teknik ayrıntı: `src/SPEC.md` (modül sözleşmesi), `src/BOLUM2.md`, `src/BOLUM3.md`, `src/BOLUM5.md`.
+- Teknik ayrıntı: `src/SPEC.md` (modül sözleşmesi), `src/BOLUM2.md`, `src/BOLUM3.md`, `src/BOLUM5.md` … `src/BOLUM9.md`.

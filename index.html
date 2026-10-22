@@ -68,12 +68,13 @@
   var V6 = { fener: 0, fenerTop: 12, midilli: 0, mini: false, kopru: false, final: false };   // Bölüm 6 (Şenlik Kalesi) genel durumu
   var V7 = { fener: 0, fenerTop: 10, yavru: 0, kardan: false, kizak: false, final: false };   // Bölüm 7 (Kuzey Işıkları) genel durumu
   var V8 = { kostum: null, fener: 0, fenerTop: 12, hayalet: 0, hayaletTop: 5, seker: 0, kapi: 0, kapiTop: 6, kabakYuz: false, iskelet: false, kazan: false, supurge: false, final: false };   // Bölüm 8 (Balkabağı Gecesi) genel durumu
+  var V9 = { pul: 0, pulTop: 10, yavru: 0, yavruTop: 6, meyve: false, kanat: false, kolye: false, binis: false, final: false };   // Bölüm 9 (Pırıl'ın Ejderha Vadisi) genel durumu
   try {
     var bq = /[?&]bolum=(\d)/.exec(location.search);
-    var bs = bq ? +bq[1] : +(sessionStorage.getItem('fezaIsikSec') || 1);   // başlık sayfası her zaman Bölüm 1; Bölüm 2-8 seçim ekranından (oturum bayrağı + yenileme)
-    BOLUM_NO = (bs >= 2 && bs <= 8) ? bs : 1;
+    var bs = bq ? +bq[1] : +(sessionStorage.getItem('fezaIsikSec') || 1);   // başlık sayfası her zaman Bölüm 1; Bölüm 2-9 seçim ekranından (oturum bayrağı + yenileme)
+    BOLUM_NO = (bs >= 2 && bs <= 9) ? bs : 1;
   } catch (e) {}
-  document.write('<script src="src/' + (BOLUM_NO === 8 ? 'bolum8' : BOLUM_NO === 7 ? 'bolum7' : BOLUM_NO === 6 ? 'bolum6' : BOLUM_NO === 5 ? 'bolum5' : BOLUM_NO === 4 ? 'bolum4' : BOLUM_NO === 3 ? 'bolum3' : BOLUM_NO === 2 ? 'bolum2' : 'bolum') + '.js"><\/script>');
+  document.write('<script src="src/' + (BOLUM_NO === 9 ? 'bolum9' : BOLUM_NO === 8 ? 'bolum8' : BOLUM_NO === 7 ? 'bolum7' : BOLUM_NO === 6 ? 'bolum6' : BOLUM_NO === 5 ? 'bolum5' : BOLUM_NO === 4 ? 'bolum4' : BOLUM_NO === 3 ? 'bolum3' : BOLUM_NO === 2 ? 'bolum2' : 'bolum') + '.js"><\/script>');
 </script>
 <script src="src/dunya.js"></script>
 <script src="src/feza.js"></script>
@@ -104,6 +105,9 @@
     document.write('<script src="src/' + n + '.js"><\/script>');
   });
   if (BOLUM_NO === 8) ['dunya8', 'kostum', 'kabak', 'seker', 'kabakyuz', 'iskelet', 'kazan', 'supurge'].forEach(function(n) {   // Balkabağı Gecesi
+    document.write('<script src="src/' + n + '.js"><\/script>');
+  });
+  if (BOLUM_NO === 9) ['dunya9', 'yavru', 'meyve', 'kanat', 'kolye', 'buyukanne', 'yuva'].forEach(function(n) {   // Pırıl'ın Ejderha Vadisi
     document.write('<script src="src/' + n + '.js"><\/script>');
   });
 </script>
