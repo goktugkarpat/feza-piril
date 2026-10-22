@@ -61,7 +61,7 @@ for(const c of [20,44,80,150,185,265,300,340,450,520])
  nesne('pulCicek',c,yuzey(c),{r:80,sira:NESNELER.filter(n=>n.tip==='pulCicek').length});
 
 // ── Üşümüş ejderha yumurtaları (6; yavru.js): Feza sarılır/ısıtır → çatlar, yavru çıkar (her biri başka renk), Feza'yı izler. V9.yavru++ ──
-for(const [c,renk] of [[54,'nane'],[120,'seftali'],[170,'gok'],[285,'limon'],[360,'gul'],[500,'lila']])
+for(const [c,renk] of [[54,'nane'],[120,'seftali'],[170,'gok'],[285,'limon'],[360,'gul'],[509,'lila']])
  nesne('ejderYumurta',c,yuzey(c),{renk,sira:NESNELER.filter(n=>n.tip==='ejderYumurta').length});
 
 // ── Mini oyun 1: yavrulara meyve (meyve.js) ──

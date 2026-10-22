@@ -1,6 +1,6 @@
 // İnternetsiz çalışma: ilk açılıştan sonra oyun (kod, gömülü sesler, simgeler) cihazda saklanır.
 // Dosya eklenirse SRC listesine ekle; önemli değişiklikte CACHE sürümünü artır.
-const CACHE = 'feza-piril-v93';
+const CACHE = 'feza-piril-v94';
 const SRC = ['ortak', 'kapi', 'bolum', 'dunya', 'feza', 'piril', 'pofuduk', 'sahne', 'arayuz', 'sarki', 'bolum2', 'dunya2', 'yildiz', 'takim', 'dunya3', 'bulut', 'kuzu', 'sekil', 'ucus', 'bolum3', 'bolum4', 'dunya4', 'deniz', 'inci', 'bolum5', 'anka', 'dunya5', 'volkan', 'atesoyun', 'kristal', 'lavsal', 'bolum6', 'dunya6', 'midilli', 'senlik', 'halka', 'bolum7', 'dunya7', 'geyik', 'kar', 'kardan', 'kizak', 'bolum8', 'dunya8', 'kostum', 'kabak', 'seker', 'kabakyuz', 'iskelet', 'kazan', 'supurge', 'muzik', 'ses', 'oyun', 'bolum9', 'dunya9', 'yavru', 'meyve', 'kanat', 'kolye', 'buyukanne', 'yuva'];
 const CORE = ['./', './index.html', './sesler.js', './manifest.webmanifest', ...SRC.map(n => './src/' + n + '.js')];
 const ICONS = ['./icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];   // eksik simge kurulumu durdurmasın
