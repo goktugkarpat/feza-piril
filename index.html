@@ -69,12 +69,13 @@
   var V7 = { fener: 0, fenerTop: 10, yavru: 0, kardan: false, kizak: false, final: false };   // Bölüm 7 (Kuzey Işıkları) genel durumu
   var V8 = { kostum: null, fener: 0, fenerTop: 12, hayalet: 0, hayaletTop: 5, seker: 0, kapi: 0, kapiTop: 6, kabakYuz: false, iskelet: false, kazan: false, supurge: false, final: false };   // Bölüm 8 (Balkabağı Gecesi) genel durumu
   var V9 = { pul: 0, pulTop: 10, yavru: 0, yavruTop: 6, meyve: false, kanat: false, kolye: false, binis: false, final: false };   // Bölüm 9 (Pırıl'ın Ejderha Vadisi) genel durumu
+  var V10 = { damla: 0, tilki: 0, bahce: 0, kure: 0, sandal: false, sandalAktif: false, sandalAsama: 0, final: false };   // Zamanın Uyuduğu Vadi
   try {
-    var bq = /[?&]bolum=(\d)/.exec(location.search);
-    var bs = bq ? +bq[1] : +(sessionStorage.getItem('fezaIsikSec') || 1);   // başlık sayfası her zaman Bölüm 1; Bölüm 2-9 seçim ekranından (oturum bayrağı + yenileme)
-    BOLUM_NO = (bs >= 2 && bs <= 9) ? bs : 1;
+    var bq = /[?&]bolum=(\d+)(?:&|$)/.exec(location.search);
+    var bs = bq ? +bq[1] : +(sessionStorage.getItem('fezaIsikSec') || 1);   // başlık sayfası her zaman Bölüm 1; Bölüm 2-10 seçim ekranından (oturum bayrağı + yenileme)
+    BOLUM_NO = (Number.isInteger(bs) && bs >= 2 && bs <= 10) ? bs : 1;
   } catch (e) {}
-  document.write('<script src="src/' + (BOLUM_NO === 9 ? 'bolum9' : BOLUM_NO === 8 ? 'bolum8' : BOLUM_NO === 7 ? 'bolum7' : BOLUM_NO === 6 ? 'bolum6' : BOLUM_NO === 5 ? 'bolum5' : BOLUM_NO === 4 ? 'bolum4' : BOLUM_NO === 3 ? 'bolum3' : BOLUM_NO === 2 ? 'bolum2' : 'bolum') + '.js"><\/script>');
+  document.write('<script src="src/' + (BOLUM_NO === 10 ? 'bolum10' : BOLUM_NO === 9 ? 'bolum9' : BOLUM_NO === 8 ? 'bolum8' : BOLUM_NO === 7 ? 'bolum7' : BOLUM_NO === 6 ? 'bolum6' : BOLUM_NO === 5 ? 'bolum5' : BOLUM_NO === 4 ? 'bolum4' : BOLUM_NO === 3 ? 'bolum3' : BOLUM_NO === 2 ? 'bolum2' : 'bolum') + '.js"><\/script>');
 </script>
 <script src="src/dunya.js"></script>
 <script src="src/feza.js"></script>
@@ -110,6 +111,9 @@
   if (BOLUM_NO === 9) ['dunya9', 'yavru', 'meyve', 'kanat', 'kolye', 'buyukanne', 'yuva'].forEach(function(n) {   // Pırıl'ın Ejderha Vadisi
     document.write('<script src="src/' + n + '.js"><\/script>');
   });
+  if (BOLUM_NO === 10) ['dunya10', 'zaman10', 'zamanyol10'].forEach(function(n) {
+    document.write('<script src="src/' + n + '.js"><\/script>');
+  });
 </script>
 <script src="src/muzik.js"></script>
 <script src="sesler.js"></script>
@@ -117,7 +121,40 @@
 <script src="src/oyun.js"></script>
 <script>
   // iPad'de internetsiz çalışma (file:// ile açılınca atlanır)
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    // Eski önbellek yeni index'i eski oyun koduyla açmış olabilir. Güncelleme
+    // hazır olunca yalnız boş seçim odasını yenile; oynanan rüyayı kesme.
+    const oncekiIsci = navigator.serviceWorker.controller;
+    let secimGuncelBekliyor = false, secimYenilendi = false, secimKontrol = 0;
+    function guncelRafAc() {
+      clearTimeout(secimKontrol); secimKontrol = 0;
+      if (!secimGuncelBekliyor || secimYenilendi) return;
+      if (typeof DURUM === 'undefined' || DURUM !== 'baslik' || typeof sh === 'undefined' || sh.mod !== 'secim') {
+        secimGuncelBekliyor = false; return;
+      }
+      const raf = sh.sec;
+      if (!raf || raf.secili || raf.acil >= 0) { secimGuncelBekliyor = false; return; }
+      if (document.hidden) return;
+      if (raf.el || Math.abs(raf.v || 0) > 0.02 || Math.abs(raf.kay - raf.hedef) > 0.02) {
+        secimKontrol = setTimeout(guncelRafAc, 400); return;
+      }
+      secimYenilendi = true;
+      location.reload();
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!oncekiIsci || navigator.serviceWorker.controller === oncekiIsci) return;
+      // Yeni rüyaya doğrudan bağlantı, v97'nin eski koduyla yarım açılmış olabilir.
+      // Yalnız eski sürümün hiç içermediği bu rüyayı yeni kodla baştan kur.
+      if (!secimYenilendi && typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10 &&
+          window.OYUN && !(OYUN.bolumSayisi >= 10)) {
+        secimYenilendi = true; location.reload(); return;
+      }
+      secimGuncelBekliyor = true; guncelRafAc();
+    });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) guncelRafAc(); });
+    addEventListener('pagehide', () => clearTimeout(secimKontrol));
+    addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
 </script>
 </body>
 </html>

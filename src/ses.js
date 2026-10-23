@@ -29,7 +29,8 @@
    · DURUM 'oyun' değilse ya da ağaç yandıysa oyun cümlesi başlamaz (çalan da kesilir; "ağaca dokun" bitebilir). */
 'use strict';
 const SES = (() => {
-  const LINES = /*SESLER*/{
+  const LINES = /*SESLER*/
+{
     "a_giris1": "Bir varmış, bir yokmuş. Feza adında, küçük bir çocuk varmış. Her gece, en sevdiği oyuncağı Pırıl'a sarılıp uyurmuş.",
     "a_giris2": "Pırıl, mor renkli, minicik bir ejderhaymış. Bir gece Feza uykuya dalınca, Pırıl'ın gözleri yavaşça parlamaya başlamış.",
     "a_giris3": "Ve oda, yavaş yavaş, sihirli bir ormana dönüşmüş. Işık Ormanı'na!",
@@ -315,12 +316,48 @@ const SES = (() => {
     "bn_selam": "Bakın, komşularımız bize selam veriyor!",
     "fs_ilk": "Vay! Biraz uçtum!",
     "fs_ucuyorum": "Uçuyorum! Bak Feza, uçuyorum!",
-    "fs_tesekkur": "Teşekkür ederim, Feza!"
-}/*SESLER-SON*/;
+    "fs_tesekkur": "Teşekkür ederim, Feza!",
+    "p_z_uyku": "Bu gece, Zamanın Uyuduğu Vadi’ye gidiyoruz!",
+    "p_z_giris": "Bak Feza! Su havada kalmış, tilkiler zıplarken durmuş. Dokunuşumuzla zaman yeniden akacak!",
+    "p_z_selale": "Bu damlalar yere düşemiyor. Onlara dokun, şelale yeniden aksın.",
+    "p_z_damla": "Duydun mu? Damlanın minicik bir şarkısı var!",
+    "p_z_selale_ipucu": "Parmağını parlayan damlaların üzerinde gezdir. Hepsi uyanacak!",
+    "p_z_selale_bitti": "Damlalar şarkı söylüyor! Bak, şelale yeniden akıyor.",
+    "p_z_tilki": "Tilki dostlarımız havada kalmış! Bulutu altlarına getir, zıplayışları devam etsin.",
+    "p_z_tilki_ipucu": "Buluta ya da tilkiye dokun. Birlikte zıplayalım!",
+    "p_z_tilki_bitti": "Tilki dostlarımız yeniden zıplıyor! Hadi, bizimle gelsinler.",
+    "p_z_hapsir": "Çok yaşa, minik tilki! Yapraklar bile seninle zıpladı!",
+    "p_z_bahce": "Bu bahçede zaman durmuş. Çiçekli saati çevir, mevsimler yeniden başlasın.",
+    "p_z_bahce_ipucu": "Büyük çiçeği parmağınla çevir. Ona dokunarak da zamanı ilerletebilirsin.",
+    "p_z_bahce_bitti": "Bir tohumdan kocaman bahçe oldu! Mevsimler yeniden dönüyor.",
+    "p_z_kure": "Bu küçük dünyalarda da zaman durmuş. İçlerine dokunalım!",
+    "p_z_kure_ipucu": "Parlayan küçük dünyanın içine dokun. Zamanı birlikte başlatalım.",
+    "p_z_kure_bitti": "Yağmur akıyor, güneş yükseliyor, kuşlar uçuyor! Küçük dünyalar canlandı!",
+    "p_z_agac": "İşte Zaman Ağacı! Köklerine ışık geldi. Bak, dev çiçeği açılıyor!",
+    "p_z_yardim": "Ben yanındayım, Feza. Bak, birlikte uyandırabiliriz.",
+    "p_z_bitti": "Başardık Feza! Vadi yeniden hareket ediyor. Çiçeğimiz ne güzel açıldı!",
+    "p_dost_zaman": "Sen dokununca dünya ne güzel canlanıyor!",
+    "a_z_final1": "Feza ile Pırıl, durmuş zamanı küçük dokunuşlarla yeniden başlatmışlar. Damlalar akmış, tilkiler zıplamış. Ay sandalı onları Zaman Ağacı’na götürmüş. Dev çiçek de onlara gülümsemiş.",
+    "a_z_final2": "Sabah Feza, yatağında gözlerini açmış. Başucunda, içinde altın ışıklar akan minicik bir kum saati çiçeği duruyormuş. Pırıl da ona tatlı tatlı göz kırpmış.",
+    "a_z_final3": "Ve Zamanın Uyuduğu Vadi, Feza’nın sıcacık dokunuşunu hep hatırlayacakmış.",
+    "p_z_bahce_tohum": "Çiçek küçülüp tohum oldu! Şimdi yeniden filizleniyor.",
+    "p_z_bahce_yaprak": "Bak, altın yapraklar tekrar uçuşuyor!",
+    "p_z_bahce_kar": "Karın içinden sıcacık bir çiçek açıyor!",
+    "p_z_kure_yagmur": "Yağmur havada kalmış. Bulutu okşa, damlalar göle insin.",
+    "p_z_kure_gunes": "Güneş doğarken durmuş! Onu yukarı götür, yeni gün başlasın.",
+    "p_z_kure_kus": "Kuşlarımız uçamıyor. Parmağını yana doğru gezdir, onlara rüzgâr ol!",
+    "p_z_sandal_giris": "Bak, ay gibi bir sandal bizi bekliyor! Hadi, birlikte binelim.",
+    "p_z_sandal_yildiz": "Şu ışıklı çanlara dokun! Sesleriyle zaman yeniden aksın.",
+    "p_z_sandal_doruk": "Bak Feza! Havada duran altın kumlar yeniden akıyor!",
+    "p_z_sandal_bitti": "Ne güzel süzüldük! İşte, Zaman Ağacı’nın yanına geldik.",
+    "p_z_agac_kok": "Işık köklerden yukarı çıkıyor! Ağacımız uyanıyor.",
+    "p_z_agac_tac": "Bak, yapraklar tek tek açılıyor! Ne kocaman bir çiçek!"
+}
+  /*SESLER-SON*/;
 
   const sesSaat = () => performance.now() / 1000;
   const ovguMu = k => /^p_aferin/.test(k);
-  const SES_SAHNE = { p_uyan: 1, p_gecis: 1, p_y_giris: 1, p_y_bitti: 1, p_secim: 1, p_y_uyku: 1, p_b_uyku: 1, p_b_giris: 1, p_b_bitti: 1, p_i_uyku: 1, p_i_giris: 1, p_i_yuz: 1, p_i_bitti: 1, p_i_inci_uyan: 1, p_i_dostlar: 1, p_i_deniz_uyandi: 1, p_f_uyku: 1, p_f_giris: 1, p_f_final: 1, p_k_uyku: 1, p_k_giris: 1, p_k_final: 1, p_c_uyku: 1, p_c_giris: 1, p_c_final: 1, p_e_uyku: 1, p_e_giris: 1, p_e_final: 1 };   // sahne cümleleri: öncelik 3, ağaç yandı/oyun bitti diye atılmaz
+  const SES_SAHNE = { p_z_uyku: 1, p_z_giris: 1, p_z_bitti: 1, p_uyan: 1, p_gecis: 1, p_y_giris: 1, p_y_bitti: 1, p_secim: 1, p_y_uyku: 1, p_b_uyku: 1, p_b_giris: 1, p_b_bitti: 1, p_i_uyku: 1, p_i_giris: 1, p_i_yuz: 1, p_i_bitti: 1, p_i_inci_uyan: 1, p_i_dostlar: 1, p_i_deniz_uyandi: 1, p_f_uyku: 1, p_f_giris: 1, p_f_final: 1, p_k_uyku: 1, p_k_giris: 1, p_k_final: 1, p_c_uyku: 1, p_c_giris: 1, p_c_final: 1, p_e_uyku: 1, p_e_giris: 1, p_e_final: 1 };   // sahne cümleleri: öncelik 3, ağaç yandı/oyun bitti diye atılmaz
   const anlatici = k => k.startsWith('a_') || k === 'p_v_uyku' || k === 'p_v_giris' || !!SES_SAHNE[k];
   const ses8Komsu = k => /^(kd|in|ck|kk|ht|k2|cn|kb)_/.test(k);   // Bölüm 8 komşu sesleri (Pırıl değil: onun ağzı oynamaz)
   const ses9Aile = k => /^(bn|ea|eb|fs)_/.test(k);   // Bölüm 9: Pırıl'ın ailesi ve Fıstık (Pırıl değil)
@@ -360,6 +397,7 @@ const SES = (() => {
     if (/^p_e_(meyve|kanat|kolye|binis)_giris$/.test(k)) return { oncelik: 2, acil: 2, omur: 15, konu: null };
     if (k === 'p_e_yumurta' || k === 'p_e_pul' || k === 'p_e_yavru') return { oncelik: 2, acil: 1, omur: 14, konu: null };   // ilk kez öğreten tepkiler: giriş konuşması sürerken de beklesin
     if (/^p_e_/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
+    if (/^p_z_/.test(k)) return { oncelik: 2, acil: 1, omur: /_ipucu$/.test(k) ? 7 : 16, konu: null };
     if (/^p_kurtar/.test(k) || /^p_yardim/.test(k)) return { oncelik: 2, acil: 2, omur: 3, konu: 'kurtar' };
     if (k === 'p_buyuk_kalk' || k === 'p_agac') return { oncelik: 2, acil: 2, omur: 12, konu: 'buyuk' };
     if (k === 'p_buyuk_goz' || k === 'p_buyuk_esne') return { oncelik: 2, acil: 1, omur: 8, konu: 'buyuk' };
@@ -441,6 +479,28 @@ const SES = (() => {
   }
   // her talimatın "hâlâ yerinde mi?" koşulu (çalma anında bakılır)
   const KOSUL = {
+    p_z_selale: () => typeof V10 === 'undefined' || V10.damla < 9,
+    p_z_selale_ipucu: () => typeof V10 === 'undefined' || V10.damla < 9,
+    p_z_tilki: () => typeof V10 === 'undefined' || V10.tilki < 6,
+    p_z_tilki_ipucu: () => typeof V10 === 'undefined' || V10.tilki < 6,
+    p_z_bahce: () => typeof V10 === 'undefined' || V10.bahce < 3,
+    p_z_bahce_ipucu: () => typeof V10 === 'undefined' || V10.bahce < 3,
+    p_z_kure: () => typeof V10 === 'undefined' || V10.kure < 3,
+    p_z_kure_ipucu: () => typeof V10 === 'undefined' || V10.kure < 3,
+    p_z_bahce_tohum: () => typeof V10 === 'undefined' || (V10.bahce < 3 && (typeof ZAMAN10 === 'undefined' || !ZAMAN10.aktif || ZAMAN10.aktif.z.asama === 0)),
+    p_z_bahce_yaprak: () => typeof V10 === 'undefined' || (V10.bahce < 3 && (typeof ZAMAN10 === 'undefined' || !ZAMAN10.aktif || ZAMAN10.aktif.z.asama === 1)),
+    p_z_bahce_kar: () => typeof V10 === 'undefined' || (V10.bahce < 3 && (typeof ZAMAN10 === 'undefined' || !ZAMAN10.aktif || ZAMAN10.aktif.z.asama === 2)),
+    p_z_kure_yagmur: () => typeof V10 === 'undefined' || V10.kure < 1,
+    p_z_kure_gunes: () => typeof V10 === 'undefined' || V10.kure < 2,
+    p_z_kure_kus: () => typeof V10 === 'undefined' || V10.kure < 3,
+    p_z_sandal_giris: () => typeof V10 === 'undefined' || (!V10.sandal && (typeof ZAMAN_YOL === 'undefined' || ZAMAN_YOL.an < 8)),
+    p_z_sandal_yildiz: () => typeof V10 === 'undefined' || (!!V10.sandalAktif && V10.sandalAsama < 3),
+    p_z_sandal_doruk: () => typeof V10 === 'undefined' || !!V10.sandalAktif,
+    p_z_agac_kok: () => typeof ZAMAN10 === 'undefined' || ZAMAN10.finalAn() < 9,
+    p_z_agac_tac: () => typeof ZAMAN10 === 'undefined' || ZAMAN10.finalAn() < 22,
+    p_z_agac: () => typeof V10 === 'undefined' || !V10.final || (typeof ZAMAN10 !== 'undefined' && ZAMAN10.finalAn() < 8),
+    p_z_yardim: () => typeof V10 === 'undefined' || !V10.final,
+    p_dost_zaman: () => sesDostUygun(),
     p_sarki1: sesMiniSuruyor, p_sarki2: sesMiniSuruyor,
     p_takim1: sesMiniSuruyor, p_takim2: sesMiniSuruyor,
     p_v_mini: () => (typeof V5 === 'undefined' || !V5.mini) && (typeof KR5 === 'undefined' || !KR5.o || !KR5.o.kr5 || /^(wait|arrive|egg)$/.test(KR5.o.kr5.phase)),
@@ -499,7 +559,8 @@ const SES = (() => {
     p_e_pul2: () => !sesV9('final'), p_e_pul_son: () => !sesV9('final'), p_e_yavru_son: () => !sesV9('final'), p_e_yavru2: () => !sesV9('final'),
     p_dost_ejder: () => sesDostUygun(),
     p_yol: () => !(sesB8() && ((typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif) || (typeof om8MiniAktif === 'function' && om8MiniAktif())))
-      && !(sesB9() && typeof om9MiniAktif === 'function' && om9MiniAktif()),   // kapı sahnesinde / mini oyunda "bu tarafa gel" yok
+      && !(sesB9() && typeof om9MiniAktif === 'function' && om9MiniAktif())
+      && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10 && typeof ZAMAN10 !== 'undefined' && ZAMAN10.aktif),   // kapı sahnesinde / mini oyunda "bu tarafa gel" yok
     p_i_denizati: () => typeof DNZ === 'undefined' || DNZ.ati.some(o => !o.done),
     p_i_ahtapot: () => typeof DNZ === 'undefined' || !DNZ.oct || !DNZ.oct.done,
     p_i_vatoz: () => typeof DNZ === 'undefined' || !DNZ.ride || (!DNZ.ride.done && DNZ.ride.faz !== 'inis'),
@@ -547,7 +608,7 @@ const SES = (() => {
     if (sesEskidi[sesTaban(s.k)]) return 'olay eskitti';
     const durum = typeof DURUM !== 'undefined' ? DURUM : 'oyun';
     if (s.k === 'p_secim' && durum !== 'baslik') return 'seçim bitti';
-    if (/^(a_giris\d|p_[ybivfkce]_uyku)$/.test(s.k) && durum !== 'giris') return 'uyku sahnesi bitti';
+    if (/^(a_giris\d|p_[ybivfkcez]_uyku)$/.test(s.k) && durum !== 'giris') return 'uyku sahnesi bitti';
     if (anlatici(s.k)) return '';
     if (!sesSert(s)) return 'oyun bitti';
     if (agacYandi() && !ovguMu(s.k)) return 'ağaç yandı';
@@ -619,8 +680,8 @@ const SES = (() => {
   }
   function sesOnceden() {     // cümleleri boşta önceden çöz (ilk konuşmada gecikme olmasın); bu bölümün cümleleri önce
     if (!window.VOICE_MP3) return;
-    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c', 9: 'e' }[bn] || '';
-    const baska = k => { if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; if (ses9Aile(k)) return harf === 'e' ? 0 : 1; const m = /^[pa]_([ybivfkce])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
+    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c', 9: 'e', 10: 'z' }[bn] || '';
+    const baska = k => { if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; if (ses9Aile(k)) return harf === 'e' ? 0 : 1; const m = /^[pa]_([ybivfkcez])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
     // Diğer rüyalar sayfa yenilenerek açılır: onların PCM kayıtlarını bu oturumda
     // çözmek gereksiz iş ve bellektir. Beklenmeyen bir söz yine istenince çözülür.
     const ks = Object.keys(LINES).filter(k => VOICE_MP3[k] && !baska(k));
@@ -658,7 +719,7 @@ const SES = (() => {
     return !!(g2 && p && p.x > g2.x0 - 16 * T && p.x < g2.x1 + 2 * T);
   }
   // olay cümlesi → artık eskimiş talimatlar (oturumda bir kez söylenen talimatlar; tekrarlayanlar – p_uyuyor gibi – KOSUL ile denetlenir)
-  const SES_ESKITIR = { p_buyuk_kalk: ['p_buyuk', 'p_buyuk_goz', 'p_buyuk_esne'], p_y_hayvan_uyan: ['p_y_hayvan'], p_y_bitti: ['p_y_hayvan'],
+  const SES_ESKITIR = { p_z_selale_bitti:['p_z_selale','p_z_selale_ipucu'],p_z_tilki_bitti:['p_z_tilki','p_z_tilki_ipucu'],p_z_bahce_bitti:['p_z_bahce','p_z_bahce_ipucu','p_z_bahce_tohum','p_z_bahce_yaprak','p_z_bahce_kar'],p_z_kure_bitti:['p_z_kure','p_z_kure_ipucu','p_z_kure_yagmur','p_z_kure_gunes','p_z_kure_kus'],p_z_kure_gunes:['p_z_kure_yagmur'],p_z_kure_kus:['p_z_kure_yagmur','p_z_kure_gunes'],p_z_sandal_bitti:['p_z_sandal_giris','p_z_sandal_yildiz','p_z_sandal_doruk'],p_z_bitti:['p_z_agac','p_z_agac_kok','p_z_agac_tac'], p_buyuk_kalk: ['p_buyuk', 'p_buyuk_goz', 'p_buyuk_esne'], p_y_hayvan_uyan: ['p_y_hayvan'], p_y_bitti: ['p_y_hayvan'],
     p_b_kuzu_ilk: ['p_b_kuzu'], p_cicek_ilk: ['p_merhaba'], p_b_bitti: ['p_b_tepe'],
     p_f_midilli_uyan: ['p_f_midilli'], p_f_halka_bitti: ['p_f_halka_giris', 'p_f_halka'], p_f_kopru: ['p_f_halka'], p_f_final: ['p_f_kopru', 'p_f_fener2'],
     p_k_yavru_uyan: ['p_k_yavru'], p_k_kardan_bitti: ['p_k_kardan_giris', 'p_k_kardan_top'], p_k_kizak_bitti: ['p_k_kizak_giris', 'p_k_kizak'], p_k_final: ['p_k_kizak_bitti', 'p_k_fener2', 'p_k_buz'],
@@ -691,7 +752,13 @@ const SES = (() => {
       setTimeout(() => { if (typeof DNZ !== 'undefined' && DNZ.oct && !DNZ.oct.done && DURUM === 'oyun') soyle('p_i_ahtapot_yardim', { oncelik: 3 }); }, 4500);
     }
     const ko = k;   // çağıranın verdiği ad (konuşma tetikleyicisi anahtarı)
-    if (/^[ybivfkce]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
+    if (/^[ybivfkcez]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
+    if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10) {
+      if (/^a_(y_|b_|i_|v_|f_|k_|c_|e_)?final\d$/.test(k)) k = 'a_z_final' + k.slice(-1);
+      else if (k === 'p_y_uyku') k = 'p_z_uyku';
+      else if (k === 'p_y_giris' || k === 'p_uyan') k = 'p_z_giris';
+      else if (k === 'p_y_bitti') k = 'p_z_bitti';
+    }
     if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 9) {   // Ejderha Vadisi: sahne/CORE ortak adları çağırırsa Bölüm 9 cümlesi
       if (/^a_(y_|b_|i_|v_|f_|k_|c_)?final\d$/.test(k)) k = 'a_e_final' + k.slice(-1);
       else if (k === 'p_y_uyku') k = 'p_e_uyku';
@@ -1017,7 +1084,7 @@ const SES = (() => {
     const t = sesSaat();
     if (t - sesOyunT < 60 || t - sesDostT < 90 || t - sesSonBitis < 50 || !sesDostUygun()) return;
     const bolum = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1;
-    const ozel = bolum === 9 ? 'p_dost_ejder' : bolum === 8 ? 'p_dost_cadi' : bolum === 7 ? 'p_dost_kar' : bolum === 6 ? 'p_dost_senlik' : bolum === 5 ? 'p_dost_volkan' : bolum === 4 ? 'p_dost_deniz' : bolum === 3 ? 'p_dost_bulut' : bolum === 2 ? 'p_dost_yildiz' : 'p_dost_orman';
+    const ozel = bolum === 10 ? 'p_dost_zaman' : bolum === 9 ? 'p_dost_ejder' : bolum === 8 ? 'p_dost_cadi' : bolum === 7 ? 'p_dost_kar' : bolum === 6 ? 'p_dost_senlik' : bolum === 5 ? 'p_dost_volkan' : bolum === 4 ? 'p_dost_deniz' : bolum === 3 ? 'p_dost_bulut' : bolum === 2 ? 'p_dost_yildiz' : 'p_dost_orman';
     const aday = [ozel, 'p_dost1', 'p_dost2', 'p_dost3'].filter(k => LINES[k] && !sesSoylendi[k]);
     if (!aday.length) return;
     const k = sesDostN === 0 ? aday[0] : aday[Math.floor(Math.random() * aday.length)];
@@ -1271,6 +1338,12 @@ const SES = (() => {
     const m = gN().find(n => n.tip === 'ejderYumurta' && !n.om9 && !n.done && !n.cikti && n.x > p.x - 2 * T && n.x - p.x < 7 * T && Math.abs(n.y - p.y) < 5 * T);
     if (m) soyle('p_e_yumurta');
   }, 500);
+  // Ay sandalının anlatımı gerçek görüntü anlarına bağlı; efektleri zamanyol10.js çalar.
+  const sesB10 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10;
+  OLAY.on('z_sandalBasla', () => { if(sesB10())soyle('p_z_sandal_giris'); });
+  OLAY.on('z_sandalIlkCan', () => { if(sesB10())soyle('p_z_sandal_yildiz'); });
+  OLAY.on('z_sandalDoruk', () => { if(sesB10())soyle('p_z_sandal_doruk'); });
+  OLAY.on('z_sandalBitti', () => { if(sesB10())soyle('p_z_sandal_bitti'); });
   OLAY.on('secim', () => { sesSecimT = sesSaat(); });
   OLAY.on('secimIlgi', () => { sesSecimT = sesSaat(); });   // boş dokunuş: yalnız sayaç sıfırlanır (ses çalmaz)
   const sesSecimBasla = d => {

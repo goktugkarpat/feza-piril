@@ -6,7 +6,7 @@
    Yerleşim (bolum*.js): nesne('miniKapi', c, yuzey(c), { bagId: <mini oyun nesnesinin id'si>, stil: 'sarki'|'takim'|'sekil' }).
    Bağlı nesnenin bittiği: sarki .sk.bitti · takim .tk.bitti · sekil .skl.bitti. Sözleşme: src/SPEC.md. */
 'use strict';
-const KP_RENK = { sarki: ['#7fe9ff', '#c9a2ff', '#ff9fd3'], takim: ['#ffe08a', '#7fe9ff', '#c9a2ff'], sekil: ['#ffb3d9', '#c9a2ff', '#ffe5a0'], cadi: ['#ffb347', '#c39bff', '#7dffc4'], ejder: ['#b89cff', '#6fd8a8', '#ffd27a'] };   // ejder: Bölüm 9 lila, nane, altın
+const KP_RENK = { sarki: ['#7fe9ff', '#c9a2ff', '#ff9fd3'], takim: ['#ffe08a', '#7fe9ff', '#c9a2ff'], sekil: ['#ffb3d9', '#c9a2ff', '#ffe5a0'], cadi: ['#ffb347', '#c39bff', '#7dffc4'], ejder: ['#b89cff', '#6fd8a8', '#ffd27a'], zaman: ['#bda5ff', '#80dfdf', '#ffd68a'] };   // ejder: Bölüm 9 lila, nane, altın
 const KP_YUK = 250;     // perdenin yüksekliği (zeminden yukarı)
 const KP_TUT = 220;     // perdenin ötesinde, bu kadar uzaklığa kadar "geçmiş" sayılmaz (yeniden doğan/taşınan Feza takılmasın)
 // B8: kabak yüzü / iskelet orkestrası / Cadı Nine'nin kazanı bitince (modülün V8 bayrağı, o.done ya da oyun.js'in olayla yazdığı o.om8)
@@ -14,7 +14,7 @@ const KP_B8 = { kabakYuzMini: 'kabakYuz', iskeletMini: 'iskelet', kazanMini: 'ka
 // B9: yavrulara meyve / uçma dersi / Büyükanne'nin pul kolyesi bitince (V9 bayrağı, o.done ya da oyun.js'in olayla yazdığı o.om9)
 const KP_B9 = { meyveMini: 'meyve', kanatMini: 'kanat', kolyeMini: 'kolye' };
 function kpBitti(b) { return !!b && !!((b.sk && b.sk.bitti) || (b.tk && b.tk.bitti) || (b.skl && b.skl.bitti) || (b.tip === 'halkaMini' && (b.done || typeof V6 !== 'undefined' && V6.mini)) || (b.tip === 'kizakMini' && (b.done || typeof V7 !== 'undefined' && V7.kizak)) || (b.tip === 'kardanMini' && (b.done || typeof V7 !== 'undefined' && V7.kardan)) ||
-  (KP_B8[b.tip] && (b.done || b.om8 || typeof V8 !== 'undefined' && V8[KP_B8[b.tip]])) || (KP_B9[b.tip] && (b.done || b.om9 || typeof V9 !== 'undefined' && V9[KP_B9[b.tip]]))); }   // B6: halka kapma, B7: kardan adam bitince
+  (b.tip.startsWith('zaman') && b.done) || (KP_B8[b.tip] && (b.done || b.om8 || typeof V8 !== 'undefined' && V8[KP_B8[b.tip]])) || (KP_B9[b.tip] && (b.done || b.om9 || typeof V9 !== 'undefined' && V9[KP_B9[b.tip]]))); }   // B6: halka kapma, B7: kardan adam bitince
 // Asla takılmasın: bağlı nesne yoksa ya da türünün dosyası yüklenemediyse (zayıf ağ) perde açıktır. Mini oyun bir hata yüzünden hiç
 // bitmezse son çare: Feza perdenin önünde toplam KP_SABIR sn bekleyince (mini oyunların kendi Pırıl yardımı ~25 sn'de gelir) perde açılır.
 const KP_SABIR = 120;
@@ -23,6 +23,7 @@ TUR.kaydet('miniKapi', {
   kur(o) { o.a = 1; o.acik = false; o.acT = 0; o.vur = 0; o.ph = Math.random() * 6.283; o.bag = null; o.bekle = 0; o.stil = KP_RENK[o.stil] ? o.stil : 'sarki';
     if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 8) o.stil = 'cadi';   // Balkabağı Gecesi: kabak turuncusu, lila, nane
     if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 9) o.stil = 'ejder';  // Ejderha Vadisi: Pırıl leylağı, nane, altın
+    if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10) o.stil = 'zaman';
     o.grads = null; },
   guncelle(o, dt) {
     if (!o.bag && !o.bagArandi) { o.bag = NESNELER.find(n => n.id === o.bagId) || null; o.bagArandi = true; }
@@ -40,7 +41,7 @@ TUR.kaydet('miniKapi', {
       P.x = o.x - 14; if (P.vx > 0) P.vx = 0;
       o.bekle += dt;   // perdenin önünde geçen süre (son çare sayacı)
       // Pırıl'ın yardımı (Bölüm 8, 9): Feza perdeye ~5 sn dayanıp kaldıysa Pırıl mini oyunu gösterir (piril.js 'kayboldu' → yol gösterme; 10 sn'de bir)
-      if ((BOLUM_NO === 8 || BOLUM_NO === 9) && o.bekle - (o.ipucuT || 0) > 5 && o.bag && !kpYok(o)) { o.ipucuT = o.bekle + 5; OLAY.emit('kayboldu', o.bag); }
+      if ((BOLUM_NO === 8 || BOLUM_NO === 9 || BOLUM_NO === 10) && o.bekle - (o.ipucuT || 0) > 5 && o.bag && !kpYok(o)) { o.ipucuT = o.bekle + 5; OLAY.emit('kayboldu', o.bag); }
       if (o.vur < 0.25) {
         o.vur = 1;
         burst(o.x, P.y - 30, 5, KP_RENK[o.stil], 45, 0.5, 4);

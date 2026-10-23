@@ -34,6 +34,16 @@ Korkutucu hiçbir şey yoktur, kaybetmek yoktur. Feza okuma bilmediği için her
    uçmayı öğretme, Büyükanne Ejderha'nın kolyesine pulları takma, Büyükanne'nin sırtında gün batımında uçuş ve yuvada Ejderha Kalbi Şöleni:
    Pırıl'ın annesi, babası ve Büyükanne Feza'yı kucaklar, Feza'ya leylak bir pul hediye edilir.
 
+10. **Zamanın Uyuduğu Vadi** — Zaman hareketin ortasında durmuştur: su havada asılı, tilkiler sıçrayışta, kuşlar kanatları açık bekler.
+    Feza su damlalarını çalarak şelaleyi akıtır, bulut tramboliniyle altı tilkinin sıçrayışını tamamlar, mevsim çarkıyla çiçekleri
+    tohuma geri sarıp yeniden büyütür. Üç anı dünyasında yağmur yağdırır, güneşi kaldırır ve kuşlara rüzgâr verir.
+    Kum saati yelkenli ay sandalında dostlarıyla bulut denizini gezer; büyük çanlar donmuş kuşları, altın kum şelalesini ve çiçek adasını
+    yeniden hareketlendirir. Sonunda Zaman Ağacı'nın köklerinden tacına yayılan ışık bütün vadiyi uyandırır.
+    Her bölgenin rengi, manzarası ve müziği değişir; sabah hatırası yaşayan bir kum saati çiçeğidir.
+    Işıklı söğütler, çiçekli ve karlı masal ağaçları, ayrıntılı tilki/kuş çizimleri ve dokulu sandal bölüme eşlik eder.
+    Büyük dokunma hedefleri ve sürükleme alternatifleriyle okuma gerektirmez. Ana patikada zıplamak zorunlu değildir;
+    yanlış cevap, süre baskısı ve kaybetme yoktur. Pırıl uzun bekleyişlerde yardım eder.
+
 **Pofuduklar** ormanın ışığını karınlarında taşıyan tüylü orman dostlarıdır. Üstlerine zıplamak onları gıdıklayıp ışıklarını uyandırır:
 hapşırırlar, karınları parlar, çevrelerindeki mantarlar ve bitkiler renklenir, Feza'nın peşine takılırlar. Bazıları çok derin uyur;
 onları yalnızca ışık şarkısı uyandırır.
@@ -53,6 +63,7 @@ onları yalnızca ışık şarkısı uyandırır.
 - **Uyuyan Yanardağ'ın bahçeleri:** kırmızı bitkiler arasındaki yuvarlak, inci beyazı/turkuaz tomurcuklara dokun veya yanlarından yürü. Üç bahçede de bu iki yol çalışır; Pırıl geride kalan tomurcuklar için yardımcı olur.
 - **Anka'nın uyanışı:** büyük fildişi yumurtayı parmağınla okşa veya ona dokun; kabuğu ısınır, çatlar ve Anka açılır. Sonra kanadın iki ucundan birindeki parlayan tüyden başlayıp geniş tüy yayının üzerinden geç. Beş tüy renklenince Anka kanatlarını açıp Feza'ya bir tüy armağan eder. Yazı, nota bilgisi ve renk eşleştirmesi yoktur; Pırıl bekleyen çocuğa görünür biçimde yardımcı olur.
 - **Lav nehri:** kayık 35 saniyelik yolculukta kendisi ilerler, Anka ona eşlik eder. Parmağını yukarıda veya aşağıda tutarak nehrin akışı içinde yol göster; büyük inci beyazı ışık çiçeklerinin yanından geçmek onları açar. Yakındaki çiçeğe dokunmak da kayığı oraya yönlendirir. Kaçırılan çiçek veya ışık ilerlemeyi engellemez; kaçırılan hedefler toplanmış sayılmaz.
+- **Zaman Vadisi:** ışıklı damlalara dokun veya üzerlerinde parmağını gezdir. Yaprakları ve rüya baloncuklarını okşa; art arda dokunmak da çalışır. Küçük tilkilere dokunmak veya yanlarından yürümek onları uyandırır. Etkinlikler için başlat düğmesi yoktur.
 - **Zıplamak:** sol alttaki büyük yuvarlak düğmeye bas. Havadayken bir daha basınca Pırıl Feza'yı yukarı iter.
 - **Işık çiçekleri:** Feza dokununca açılır, çevre renklenir. Pırıl karanlık göllere ışık üfler, nilüfer yaprakları çıkar.
 - **Pofuduklar:** uyuyan Pofuduğun üstüne zıplayınca hapşırıp uyanır ve Feza'nın peşine takılır; bazıları zıplatma minderi ya da basamak olur.
@@ -65,12 +76,12 @@ onları yalnızca ışık şarkısı uyandırır.
 
 - **Sessiz açmak:** adrese `?sessiz` ekle. Açılışı atlamak için `?atla`, altyazı için `?altyazi`.
 - **Sesli açılış:** tarayıcı sesi ilk dokunuşa kadar kilitlerse müzik ve geçerli açılış konuşması o dokunuşta devam eder; konuşma ses bağlamı hazır olmadan söylenmiş sayılmaz. Sekmeye geri dönüldüğünde aynı ses bağlamı sürdürülür.
-- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=9`. Seçim ekranında en yeni rüya en baştadır.
+- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=10`. Seçim ekranında Zamanın Uyuduğu Vadi dördüncü sıradadır; raf Pırıl’ın Ejderha Vadisi, Balkabağı Gecesi ve Kuzey Işıkları ile başlar.
   Hepsinde yatak animasyonu tamamlanınca oyun doğrudan başlar; ayrıca oda dönüşümü, ikinci uyanış, ışıkla belirme veya kontrol beklemesi yoktur.
   Ormanın yatak girişi yaklaşık 13,4 saniye, diğer rüyalarınki 7,85 saniyedir. Yatağı da atlayan sessiz deneme: `?sessiz&atla&bolum=5`.
 - **Kayıtları sıfırlamak:** seçim ekranında sol üst köşeye 3 saniye basılı tut. Bitirilen rüyalar cihazda saklanır, kilit yoktur.
-- **Performans:** dokunmatik cihazlarda oyun en çok 60, masaüstünde en çok 120 kare/sn çizer; oyun hızı her ekranda aynıdır.
+- **Performans:** tablet/telefonda oyun en çok 60 kare/sn çizer. Masaüstünde yapay FPS tavanı yoktur; monitörün ve tarayıcının yenileme hızını izler. Dokunmatik Windows bilgisayarlar masaüstü sayılır; oyun hızı her ekranda aynıdır.
   Büyük ekranlarda çözünürlük otomatik uyarlanır.
 - **Seslendirme:** tr-TR-EmelNeural kadın sesiyle önceden kaydedilmiş, kırpılmış mp3'ler (`sesler.js`); cümleleri değiştirmek için
   `src/ses.js` düzenlenip `python gen_voice.py` çalıştırılır.
-- Teknik ayrıntı: `src/SPEC.md` (modül sözleşmesi), `src/BOLUM2.md`, `src/BOLUM3.md`, `src/BOLUM5.md` … `src/BOLUM9.md`.
+- Teknik ayrıntı: `src/SPEC.md` (modül sözleşmesi), `src/BOLUM2.md`, `src/BOLUM3.md`, `src/BOLUM5.md` … `src/BOLUM10.md`.

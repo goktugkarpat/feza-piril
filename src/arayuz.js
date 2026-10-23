@@ -285,7 +285,7 @@ const ARAYUZ = (() => {
     return false;
   }
   function ipucuGuncelle(dt) {
-    const agacYandi = typeof TREE !== 'undefined' && TREE && TREE.done || BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final || BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final || BOLUM_NO === 7 && typeof V7 !== 'undefined' && V7.final || BOLUM_NO === 8 && typeof V8 !== 'undefined' && V8.final || BOLUM_NO === 9 && typeof V9 !== 'undefined' && V9.final;
+    const agacYandi = typeof TREE !== 'undefined' && TREE && TREE.done || BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final || BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final || BOLUM_NO === 7 && typeof V7 !== 'undefined' && V7.final || BOLUM_NO === 8 && typeof V8 !== 'undefined' && V8.final || BOLUM_NO === 9 && typeof V9 !== 'undefined' && V9.final || BOLUM_NO === 10 && typeof V10 !== 'undefined' && V10.final;
     const sahne = DURUM !== 'oyun' || agacYandi || (typeof SAHNE !== 'undefined' && SAHNE.aktif && SAHNE.aktif()) || P.kilit > 0 || P.fade > 0 || !!P.ucus || (typeof KR5 !== 'undefined' && !!KR5.aktif) || dikkatAni();
     if (sahne) {
       ip.sahneT = now; ip.itT = 0;
@@ -661,6 +661,50 @@ const ARAYUZ = (() => {
     x.fillStyle = 'rgba(184,156,255,0.6)'; x.beginPath(); x.arc(-8, -48, 4, 0, 6.283); x.arc(9, -42, 3, 0, 6.283); x.fill();   // kabuktaki benekler
     x.fillStyle = '#ffffff'; yildiz4(x, 46, -46, 8, 0.28); x.fill();
   }
+  // Zaman Vadisi'nin sonuçları resimlerle anlatılır; her simge bir kez hazırlanır.
+  function zamanSimge(x, tur, sonuk) {
+    const renk = (a, b) => sonuk ? b : a;
+    if (tur === 'zamanSandal') {
+      x.strokeStyle = renk('#9a7a63', '#8f879d'); x.lineWidth = 4; x.beginPath(); x.moveTo(-13, 19); x.lineTo(-18, -49); x.stroke();
+      x.fillStyle = renk('#b6e3da', '#aaaabc'); x.strokeStyle = renk('#fff1c4', '#bdb8c6'); x.lineWidth = 2;
+      x.beginPath(); x.moveTo(-16, -47); x.quadraticCurveTo(5, -36, 30, -50); x.quadraticCurveTo(25, -29, 3, -18); x.quadraticCurveTo(9, -3, 30, 8); x.quadraticCurveTo(1, 17, -22, 7); x.quadraticCurveTo(-15, -9, 0, -18); x.quadraticCurveTo(-16, -31, -16, -47); x.fill(); x.stroke();
+      x.fillStyle = renk('#e6bd79', '#a99aab'); x.strokeStyle = renk('#ffedbc', '#c3b6c8'); x.lineWidth = 3;
+      x.beginPath(); x.moveTo(-50, 9); x.bezierCurveTo(-19, 33, 23, 35, 50, 3); x.bezierCurveTo(39, 48, -24, 60, -50, 9); x.fill(); x.stroke();
+      x.fillStyle = renk('#b9e4da', '#a5b0ba'); x.beginPath(); x.arc(3, 35, 8, 0, Math.PI * 2); x.fill();
+    } else if (tur === 'zamanTilki') {
+      x.fillStyle = renk('#e2b7ee', '#9b94af');
+      x.beginPath(); x.moveTo(-38, -8); x.lineTo(-42, -48); x.quadraticCurveTo(-17, -46, -10, -28);
+      x.quadraticCurveTo(0, -33, 10, -28); x.quadraticCurveTo(17, -46, 42, -48); x.lineTo(38, -8);
+      x.quadraticCurveTo(38, 21, 0, 39); x.quadraticCurveTo(-38, 21, -38, -8); x.fill();
+      x.fillStyle = renk('#f9d9e3', '#bab0c4');
+      for (const f of [-1, 1]) { x.beginPath(); x.moveTo(f * 17, -23); x.lineTo(f * 36, -39); x.lineTo(f * 32, -7); x.fill(); }
+      x.fillStyle = renk('#fff3df', '#c5bfcd');
+      x.beginPath(); x.moveTo(-36, -4); x.quadraticCurveTo(-12, -1, 0, 18); x.quadraticCurveTo(12, -1, 36, -4);
+      x.quadraticCurveTo(31, 22, 0, 36); x.quadraticCurveTo(-31, 22, -36, -4); x.fill();
+      x.strokeStyle = renk('#534469', '#746d86'); x.lineWidth = 3.5;
+      for (const f of [-1, 1]) { x.beginPath(); x.arc(f * 18, 3, 6, Math.PI + .2, Math.PI * 2 - .2); x.stroke(); }
+      x.fillStyle = renk('#64506d', '#82778e'); x.beginPath(); x.ellipse(0, 20, 6, 4.5, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = renk('#ee9ba7', '#a496b0');
+      for (const f of [-1, 1]) { x.beginPath(); x.ellipse(f * 26, 13, 6, 3.5, 0, 0, Math.PI * 2); x.fill(); }
+    } else if (tur === 'zamanDamla') {
+      const gr = x.createLinearGradient(-22, -40, 24, 42);
+      gr.addColorStop(0, renk('#ddfff3', '#bdb8cc')); gr.addColorStop(.5, renk('#81dddc', '#9693ad')); gr.addColorStop(1, renk('#7198d7', '#756c91'));
+      x.fillStyle = gr; x.beginPath(); x.moveTo(0, -50); x.bezierCurveTo(-13, -22, -39, 0, -32, 23);
+      x.bezierCurveTo(-23, 57, 28, 52, 34, 22); x.bezierCurveTo(39, 0, 14, -25, 0, -50); x.fill();
+      x.strokeStyle = renk('#effff8', '#d1cdda'); x.lineWidth = 4.5; x.beginPath(); x.moveTo(-10, -11); x.quadraticCurveTo(-25, 5, -20, 21); x.stroke();
+      x.fillStyle = renk('#fff4bc', '#b8b1c6'); yildiz4(x, 29, -32, 12, .3); x.fill();
+    } else {
+      const gr = x.createRadialGradient(-14, -18, 0, 0, 0, 42);
+      gr.addColorStop(0, renk('#daf6ee', '#bbb5c9')); gr.addColorStop(.7, renk('#a2c9ee', '#9893b0')); gr.addColorStop(1, renk('#c5a8e9', '#8b7d9f'));
+      x.fillStyle = gr; x.beginPath(); x.arc(0, 0, 40, 0, Math.PI * 2); x.fill();
+      x.save(); x.beginPath(); x.arc(0, 0, 37, 0, Math.PI * 2); x.clip();
+      x.fillStyle = renk('#f4d9a8', '#c5b5ba'); x.beginPath(); x.arc(10, -13, 11, 0, Math.PI * 2); x.fill();
+      x.fillStyle = renk('#81bca9', '#999aaa'); x.beginPath(); x.moveTo(-45, 30); x.quadraticCurveTo(-18, -22, 4, 15); x.quadraticCurveTo(20, 0, 45, 25); x.lineTo(45, 45); x.lineTo(-45, 45); x.fill();
+      x.fillStyle = renk('#6ca0b2', '#858ca2'); x.beginPath(); x.moveTo(-40, 35); x.quadraticCurveTo(2, 9, 40, 32); x.lineTo(40, 44); x.lineTo(-40, 44); x.fill(); x.restore();
+      x.strokeStyle = renk('#f0fff8', '#d0c8dd'); x.lineWidth = 3.5; x.beginPath(); x.arc(0, 0, 36, 3.7, 4.65); x.stroke();
+      x.fillStyle = renk('#fff3bf', '#b9b0c3'); yildiz4(x, 32, -34, 10, .3); x.fill();
+    }
+  }
   function simge(tur, acik) {
     const key = tur + (acik ? 1 : 0);
     if (C['s_' + key]) return C['s_' + key];
@@ -675,6 +719,7 @@ const ARAYUZ = (() => {
     }
     x.lineJoin = 'round'; x.lineCap = 'round';
     if (tur === 'denizati' && typeof DENIZ !== 'undefined' && typeof DENIZ.ikon === 'function') DENIZ.ikon(x, 0, 0, 42, acik);
+    else if (tur === 'zamanTilki' || tur === 'zamanDamla' || tur === 'zamanKure' || tur === 'zamanSandal') zamanSimge(x, tur, sonuk);
     else if (tur.startsWith('kuzu')) kuzuSimge(x, +tur.slice(4) || 0, sonuk);
     else if (tur === 'fener') fenerSimge(x, sonuk);
     else if (tur === 'midilli') midilliSimge(x, sonuk);
@@ -877,10 +922,12 @@ const ARAYUZ = (() => {
   }
   function baslikKucuk() {
     if (C.sonBaslik) return C.sonBaslik;
-    const fs = Math.round(Math.min(H * 0.06, W * 0.055)), w = Math.ceil(fs * 9), h = Math.ceil(fs * 2);
-    const c = tuval(w, h), x = c.getContext('2d');
+    const fs = Math.round(Math.min(H * 0.06, W * 0.055)), h = Math.ceil(fs * 2);
+    const c = tuval(Math.ceil(fs * 9), h), x = c.getContext('2d');
     const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1;
-    const bas = bn === 9 ? 'Ejderha Kalbi parladı!' : bn === 8 ? 'Balkabağı Şenliği!' : bn === 7 ? 'Kuzey ışıkları yandı!' : bn === 6 ? 'Şenlik başladı!' : bn === 5 ? 'Dağın kalbi uyandı!' : bn === 4 ? 'İnci Denizi ışıl ışıl!' : bn === 3 ? 'Gökkuşağı geldi!' : bn === 2 ? 'Gökyüzü ışıl ışıl!' : 'Orman ışıl ışıl!';
+    const bas = bn === 10 ? 'Vadi yeniden uyandı!' : bn === 9 ? 'Ejderha Kalbi parladı!' : bn === 8 ? 'Balkabağı Şenliği!' : bn === 7 ? 'Kuzey ışıkları yandı!' : bn === 6 ? 'Şenlik başladı!' : bn === 5 ? 'Dağın kalbi uyandı!' : bn === 4 ? 'İnci Denizi ışıl ışıl!' : bn === 3 ? 'Gökkuşağı geldi!' : bn === 2 ? 'Gökyüzü ışıl ışıl!' : 'Orman ışıl ışıl!';
+    x.font = `400 ${fs}px ${FONT_SERIF}`;
+    const w = Math.max(c.width, Math.ceil(x.measureText(bas).width + fs * 0.8)); c.width = w;
     x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = `400 ${fs}px ${FONT_SERIF}`;
     x.save(); x.shadowColor = 'rgba(255,190,90,0.9)'; x.shadowBlur = fs * 0.35; x.fillStyle = '#8a4fb0'; x.fillText(bas, w / 2, h / 2); x.restore();
     const gr = x.createLinearGradient(0, h * 0.25, 0, h * 0.75); gr.addColorStop(0, '#9b5cc4'); gr.addColorStop(1, '#6a3a94');
@@ -933,7 +980,9 @@ const ARAYUZ = (() => {
   function sonSatirlar() {   // her tür: toplam kadar yuva, toplanan kadar dolu/parlak (hiç toplanmayan tür çıkmaz)
     const say = v => Math.max(0, Math.min(40, Math.floor(v || 0)));
     const satir = [];
-    const liste = BOLUM_NO === 9   // Bölüm 9: açılan pul çiçekleri · yumurtadan çıkan yavrular · mini oyun yıldızları
+    const liste = BOLUM_NO === 10
+      ? [['zamanDamla', V10.damla, 9], ['zamanTilki', V10.tilki, 6], ['cicek', V10.bahce, 3], ['zamanKure', V10.kure, 3], ['zamanSandal', V10.sandal ? 1 : 0, 1]]
+      : BOLUM_NO === 9   // Bölüm 9: açılan pul çiçekleri · yumurtadan çıkan yavrular · mini oyun yıldızları
       ? [['pulCicek', SAYAC.pul, SAYAC.pulTop], ['ejderYavru', SAYAC.yavru, SAYAC.yavruTop], ['oyun', SAYAC.oyun, SAYAC.oyunTop]]
       : BOLUM_NO === 8   // Bölüm 8: yanan kabak fenerleri · bulunan hayaletçikler · toplanan şekerler (kapılar + süpürge) · mini oyun yıldızları
       ? [['kabakFener', SAYAC.fener, SAYAC.fenerTop], ['hayalet', SAYAC.hayalet, SAYAC.hayaletTop], ['seker', SAYAC.seker, 0], ['oyun', SAYAC.oyun, SAYAC.oyunTop]]
@@ -981,7 +1030,7 @@ const ARAYUZ = (() => {
   function sonOnHazirla() {
     const L = sonYerlesim(sonSatirlar());
     const isler = [() => uiIsit.push(sonKart(L.kw, L.kh).c), () => { for (let i = 0; i < 4; i++) pofSprite(i); }, () => uiIsit.push(baslikKucuk()), () => uiIsit.push(tekrarSprite(L.R).c), () => parlakSprite(), () => elSprite(),
-      () => { if (BOLUM_NO === 9) { for (const k of ['pulCicek', 'ejderYavru', 'oyun']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 8) { for (const k of ['kabakFener', 'hayalet', 'seker', 'oyun']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 7) { for (const k of ['karFener', 'yavru', 'kardan', 'kristal']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 6) { for (const k of ['fener', 'midilli', 'halka']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 3) { for (let k = 0; k < 7; k++) simge('kuzu' + k, true); simge('kuzu', false); } else simge(BOLUM_NO === 5 ? 'kor' : BOLUM_NO === 2 ? 'yildiz' : 'cicek', true); }, () => simge('pofuduk', true), () => simge('tohum', true)];
+      () => { if (BOLUM_NO === 10) { for (const k of ['zamanDamla', 'zamanTilki', 'cicek', 'zamanKure', 'zamanSandal']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 9) { for (const k of ['pulCicek', 'ejderYavru', 'oyun']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 8) { for (const k of ['kabakFener', 'hayalet', 'seker', 'oyun']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 7) { for (const k of ['karFener', 'yavru', 'kardan', 'kristal']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 6) { for (const k of ['fener', 'midilli', 'halka']) { simge(k, true); simge(k, false); } } else if (BOLUM_NO === 3) { for (let k = 0; k < 7; k++) simge('kuzu' + k, true); simge('kuzu', false); } else simge(BOLUM_NO === 5 ? 'kor' : BOLUM_NO === 2 ? 'yildiz' : 'cicek', true); }, () => simge('pofuduk', true), () => simge('tohum', true)];
     let i = 0;
     const adim = () => { if (i >= isler.length || DURUM === 'son') return; kontrol(); try { isler[i++](); } catch (e) {} setTimeout(adim, 120); };
     adim();
@@ -1061,7 +1110,7 @@ const ARAYUZ = (() => {
     }
   }
   // tür satırlarının arkasında çok hafif renkli, yuvarlak bir "raf" (her tür kendi yerinde dursun)
-  const UI_RAF = { kabakFener: '255,170,90', hayalet: '190,170,255', seker: '255,150,200', oyun: '255,205,110', kor: '255,178,140', kuzu: '255,190,215', yildiz: '255,225,140', cicek: '255,160,205', pofuduk: '200,160,255', tohum: '255,205,120' };
+  const UI_RAF = { zamanSandal: '220,202,159', zamanDamla: '140,225,230', zamanTilki: '220,180,235', zamanKure: '185,210,250', kabakFener: '255,170,90', hayalet: '190,170,255', seker: '255,150,200', oyun: '255,205,110', kor: '255,178,140', kuzu: '255,190,215', yildiz: '255,225,140', cicek: '255,160,205', pofuduk: '200,160,255', tohum: '255,205,120' };
   const uiIsit = [];   // ekran kartına bir kez minicik çizilip ısıtılacak tuvaller
   function sonCiz(tm, dt) {
     if (!son) sonKur();
@@ -1078,7 +1127,7 @@ const ARAYUZ = (() => {
     g.drawImage(kart.c, -kw / 2 - kart.pad, -kh / 2 - kart.pad); g.restore(); g.globalAlpha = 1;
     if (qk > 0) dene2('bakanOn', () => bakanCiz(tm, qk, L, true));
     // süs başlık (ebeveyn için; ekran onsuz da anlaşılır)
-    const bk = baslikKucuk(), ba = uiEase(uiSeg(u, 0.4, 1.3)), bs = Math.min(1, bh * 0.95 / bk.height * 1.6);
+    const bk = baslikKucuk(), ba = uiEase(uiSeg(u, 0.4, 1.3)), bs = Math.min(1, bh * 0.95 / bk.height * 1.6, kw * 0.86 / bk.width);
     g.globalAlpha = ba; g.drawImage(bk, kx - bk.width * bs / 2, ky + bh * 0.62 - bk.height * bs / 2, bk.width * bs, bk.height * bs); g.globalAlpha = 1;
     // tür rafları (her türün satır(lar)ının arkasında)
     son.satir.forEach((sat, si) => {
@@ -1240,7 +1289,7 @@ const ARAYUZ = (() => {
     dene('ipucu', () => ipucuGuncelle(dt));
     zipT = Math.max(0, zipT - dt * 2.5);
     uiKilitT = P.kilit > 0 ? uiKilitT + dt : 0;   // kontrol yarım saniyeden uzun kilitliyse (sahne anı: ağaç, gökkuşağından kayış...) düğme işe yaramaz → gizle
-    dugmeA = clamp(dugmeA + (DURUM === 'oyun' && !P.ucus && !(typeof KR5 !== 'undefined' && KR5.aktif) && !(BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final) && !(BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final) && !(BOLUM_NO === 7 && (typeof V7 !== 'undefined' && V7.final || typeof KARDAN !== 'undefined' && KARDAN && KARDAN.aktif)) && !(BOLUM_NO === 8 && (typeof V8 !== 'undefined' && V8.final || typeof om8MiniAktif === 'function' && om8MiniAktif() || typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif)) && !(BOLUM_NO === 9 && (typeof V9 !== 'undefined' && V9.final || typeof om9MiniAktif === 'function' && om9MiniAktif())) && uiKilitT < 0.5 ? dt * 1.5 : -dt * 3), 0, 1);   // yolculuk, çiçek uçuşu ve Kor Çiçeği kutlamasında zıplama düğmesi yok
+    dugmeA = clamp(dugmeA + (DURUM === 'oyun' && !P.ucus && !(typeof KR5 !== 'undefined' && KR5.aktif) && !(BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final) && !(BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final) && !(BOLUM_NO === 7 && (typeof V7 !== 'undefined' && V7.final || typeof KARDAN !== 'undefined' && KARDAN && KARDAN.aktif)) && !(BOLUM_NO === 8 && (typeof V8 !== 'undefined' && V8.final || typeof om8MiniAktif === 'function' && om8MiniAktif() || typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif)) && !(BOLUM_NO === 9 && (typeof V9 !== 'undefined' && V9.final || typeof om9MiniAktif === 'function' && om9MiniAktif())) && !(BOLUM_NO === 10 && (V10.final || typeof ZAMAN10 !== 'undefined' && ZAMAN10.aktif)) && uiKilitT < 0.5 ? dt * 1.5 : -dt * 3), 0, 1);   // yolculuk, çiçek uçuşu ve Kor Çiçeği kutlamasında zıplama düğmesi yok
     if (dugmeA > 0.005) { dene('parmak', () => parmakCiz(tm, dt)); dene('dugme', () => dugmeCiz(tm, dt, dugmeA)); }
     dene('ipucuCiz', () => ipucuCiz(tm));
     dene('bildirim', () => bildirimCiz(tm));

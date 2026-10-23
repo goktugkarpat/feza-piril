@@ -37,7 +37,8 @@ function omSfx(ad, v) { if (typeof AU !== 'undefined' && AU && typeof AU.sfx ===
 if (BOLUM_NO === 4) P.deniz = true;
 const GIRDI = { eksen: 0, ziplaBasili: false, dugme: { x: 0, y: 0, r: 0, basili: false }, hedefX: null, hedefY: null, hareket: false };
 let omFirlatT = -1;   // 'hayvanFirlat' anı (oyun saati)
-let omIsit = (typeof BOLUM_NO !== 'undefined' && BOLUM_NO >= 2 && BOLUM_NO <= 9);   // dn2Isit … dn9Isit her karede (true dönene kadar); işlev yoksa kapanır
+let omZamanIsit = BOLUM_NO === 10, omZamanYolIsit = BOLUM_NO === 10;
+let omIsit = (typeof BOLUM_NO !== 'undefined' && BOLUM_NO >= 2 && BOLUM_NO <= 10);   // dn2Isit … dn10Isit her karede (true dönene kadar); işlev yoksa kapanır
 let omGecis = null, omFinalPlan = false, omAcilis = null;   // Bölüm geçişi / Bölüm 2 final planı (başta tanımlı: kamera yüklenirken okur)
 let axis = 0, jumpHeld = false, jumpPressed = false, started = false, startT = 0, moved = false;
 const keys = {};
@@ -429,7 +430,7 @@ function omDusus(suda) {
 // yatay hızına hafifçe ekleyip kenara kondur. En çok ~24 birim (yarım kare) açık, en çok +150 birim/sn fark; gözle seçilmez.
 const OM_YARDIM = { ACIK: 24, FARK: 150 };
 // Bölüm 2 (suyun üstünde taştan taşa) ve Bölüm 3 (bulutlar): daha affedici fizik; Bölüm 1'e dokunmaz
-if (BOLUM_NO >= 2 && BOLUM_NO <= 9) { Object.assign(OM, { COYOTE: 0.23, TAMPON: 0.2, HAVA_IVME: 2300, KENAR: 17 }); OM_YARDIM.ACIK = 80; OM_YARDIM.FARK = 190; }
+if (BOLUM_NO >= 2 && BOLUM_NO <= 10) { Object.assign(OM, { COYOTE: 0.23, TAMPON: 0.2, HAVA_IVME: 2300, KENAR: 17 }); OM_YARDIM.ACIK = 80; OM_YARDIM.FARK = 190; }
 else { Object.assign(OM, { COYOTE: 0.20, HAVA_IVME: 1600, KENAR: 15 }); OM_YARDIM.ACIK = 44; }   // Bölüm 1: biraz daha affedici (5 yaş), ama ormanın hissi aynı
 let omYardimIstek = 0;   // omHavaYardim ara sonucu (her adımda yeni kapanış fonksiyonu yok)
 function omYardimDene(kenar, top, s, lead) {   // kenar: platformun Feza'ya bakan x'i, top: üst y
@@ -617,7 +618,7 @@ function stepPlayer(dt) {
   if (P.kilit > 0) { P.kilit -= dt; axis = 0; jumpPressed = false; }   // sahne anlarında kontrol kısa süre kapalı
   // Çiçek uçuşunun giriş/inişinde dokunuşlar hedeflere gider; Feza yanlışlıkla bahçeden uzaklaşmaz.
   if (BOLUM_NO === 5 && typeof KR5 !== 'undefined' && KR5.aktif) { axis = 0; jumpPressed = false; P.buf = 0; }
-  const agacBitti = typeof TREE !== 'undefined' && TREE && TREE.done || BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final || BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final || BOLUM_NO === 7 && typeof V7 !== 'undefined' && V7.final || BOLUM_NO === 8 && typeof V8 !== 'undefined' && V8.final || BOLUM_NO === 9 && typeof V9 !== 'undefined' && V9.final;
+  const agacBitti = typeof TREE !== 'undefined' && TREE && TREE.done || BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final || BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final || BOLUM_NO === 7 && typeof V7 !== 'undefined' && V7.final || BOLUM_NO === 8 && typeof V8 !== 'undefined' && V8.final || BOLUM_NO === 9 && typeof V9 !== 'undefined' && V9.final || BOLUM_NO === 10 && typeof V10 !== 'undefined' && V10.final;
   if (agacBitti) { axis = 0; jumpPressed = false; P.buf = 0; }   // ağaç yandı: finale kadar kontrol yok
   // yatay: yumuşak hızlanma, yumuşak ama kısa duruş, hızlı dönüş
   const target = axis * OM.KOS;
@@ -1087,6 +1088,7 @@ function HEDEF() {
   if (BOLUM_NO === 7) return om7Hedef();
   if (BOLUM_NO === 8) return om8Hedef();
   if (BOLUM_NO === 9) return om9Hedef();
+  if (BOLUM_NO === 10) { const h = typeof ZAMAN10 !== 'undefined' ? ZAMAN10.hedef() : null; return (!h || h.tip === 'zamanAgaci') && !V10.sandal && typeof ZAMAN_YOL !== 'undefined' ? ZAMAN_YOL.hedef() : h; }
   if (BOLUM_NO === 4 && typeof DENIZ !== 'undefined' && typeof DENIZ.hedef === 'function') return DENIZ.hedef();
   if (typeof TREE !== 'undefined' && TREE && TREE.done) return null;   // ağaç yandı: atlanmış çiçeğe geri çağırma yok
   let best = null, geri = null;
@@ -1432,7 +1434,7 @@ function omUcusKamera(dt, snap, px, py) {
   // Bölüm 6: midilli yolculuğu (halkaMini) normal uçuş kamerası · Bölüm 8: yalnız süpürge yolculuğu uçuştur; kabak yüzü, iskelet ve kazan
   // yerinde oynanan mini oyunlardır (P.ucus ile fiziği tutsalar da kardanMini gibi normal kamera) · Bölüm 9: yalnız Büyükanne'nin sırtında yolculuk
   // (buyukanneBinis) uçuştur; meyve, uçma dersi ve pul kolyesi yerinde oynanır
-  const hw = P.ucus && !(BOLUM_NO === 5 && P.ucus.tip === 'volkanMini') && !(BOLUM_NO === 7 && P.ucus.tip === 'kardanMini') && !(BOLUM_NO === 8 && P.ucus.tip !== 'supurgeMini') && !(BOLUM_NO === 9 && P.ucus.tip !== 'buyukanneBinis') ? 1 : 0;
+  const hw = P.ucus && BOLUM_NO !== 10 && !(BOLUM_NO === 5 && P.ucus.tip === 'volkanMini') && !(BOLUM_NO === 7 && P.ucus.tip === 'kardanMini') && !(BOLUM_NO === 8 && P.ucus.tip !== 'supurgeMini') && !(BOLUM_NO === 9 && P.ucus.tip !== 'buyukanneBinis') ? 1 : 0;
   if (snap || !(dt > 0)) { omUc.w = hw; omUc.wv = 0; omUc.vx = 0; }
   else {
     omUc.w = clamp(omSD(omUc.w, hw, omUc.wv, hw ? 0.55 : 0.7, dt), 0, 1); omUc.wv = omSdV;
@@ -1638,8 +1640,8 @@ function omPirilHale() {
     // Cadılar Bayramı gecesi: kabak fenerlerinin sıcak turuncusu baskın → küçük lila hâle, içinde fener balı
     dglow('#c39bff', D.x, D.y, 78, 0.065);
     dglow('#ffd27a', D.x, D.y, 26, 0.045);
-  } else if (BOLUM_NO === 9) {
-    // Ejderha Vadisi (aydınlık yeşil gün → gün batımı): yeşil üstünde 'lighter' kolayca pus olur → küçük leylak hâle, içinde altın
+  } else if (BOLUM_NO === 9 || BOLUM_NO === 10) {
+    // Ejderha Vadisi / Zaman Vadisi (aydınlık yeşil gün → gün batımı): yeşil üstünde 'lighter' kolayca pus olur → küçük leylak hâle, içinde altın
     dglow('#b89cff', D.x, D.y, 80, 0.07);
     dglow('#ffd27a', D.x, D.y, 24, 0.045);
   } else {
@@ -1681,13 +1683,19 @@ function drawFx(tm, dt) {
 // sürede geri düşülen basamak bir süre (her seferinde iki katı) denenmez, ikinci kezde hiç: gidip gelme olmaz.
 // 12,9" iPad Pro gibi çok büyük ekranlar 1,75'ten başlar. ?dpr=x → sabit yoğunluk (test; uyarlama kapalı).
 // W, H, DPR, S, VW tek yerden kurulur: omBoyutla → omOlcek; sonra OLAY 'boyut' (modüller önbelleklerini yeniler).
-// Cihaz profili: dokunmatik (iPad, telefon) → yoğunluk en çok 1,5 (biraz yumuşak, serin ve pil dostu), en çok 60 kare/sn.
-// Masaüstü (dokunmatik yok, fare) → monitörün gerçek çözünürlüğü (devicePixelRatio, en çok 3), ekran izin verirse 120 kare/sn.
+// Cihaz profili: iPad/tablet/telefon → yoğunluk en çok 1,5, en çok 60 kare/sn.
+// Masaüstü (dokunmatik ekran dahil) → yoğunluk en çok 3; çizim tarayıcının/monitörün yenilemesini izler.
 // ?cihaz=pc | ?cihaz=tablet → profili zorla (test).
 const OM_MASA = (() => {
   const z = Q.get('cihaz'); if (z === 'pc') return true; if (z === 'tablet') return false;
-  let ince = false; try { ince = matchMedia('(pointer: fine)').matches && !matchMedia('(any-pointer: coarse)').matches; } catch (_) { /* yoksay */ }
-  return ince && !(navigator.maxTouchPoints > 0);
+  const ua = navigator.userAgent || '', platform = navigator.userAgentData && navigator.userAgentData.platform || navigator.platform || '';
+  const dokunma = navigator.maxTouchPoints || 0;
+  // iPad masaüstü Safari kimliğiyle ve trackpad takılıyken de tablet kalır.
+  if (/iPad|iPhone|iPod|Android/i.test(ua) || (/Mac/i.test(platform + ' ' + ua) && dokunma > 1)) return false;
+  // Windows dokunmatik ekranı/kalemi bilgisayarı tablet profiline düşürmez.
+  if (/Windows|Macintosh|X11|CrOS/i.test(ua) || /Win|Mac|Linux|Chrome OS/i.test(platform)) return true;
+  try { if (matchMedia('(any-pointer: fine)').matches) return true; } catch (_) { /* yoksay */ }
+  return dokunma === 0;
 })();
 const OM_TABLET_TAVAN = 1.5, OM_MASA_TAVAN = 3;
 const OM_COZ = {
@@ -1745,9 +1753,9 @@ function omBoyutla() {
   OLAY.emit('boyut', { W, H, DPR });
 }
 function resize() { omCozSec(); omBoyutla(); }
-// Ekranın yenileme aralığı (ms): son 90 kare aralığının alt çeyreği; bilinen değerlere (144/120/90/60/30 Hz) oturtulur.
+// Ekranın yenileme aralığı (ms): son 90 kare aralığının alt çeyreği; bilinen monitör hızlarına oturtulur.
 // Görülen en kısa değer tutulur (yavaş başlangıç kareleri yanıltmasın).
-const OM_HZ = [1000 / 144, 1000 / 120, 1000 / 90, 1000 / 75, 1000 / 60, 1000 / 50, 1000 / 30];
+const OM_HZ = [360, 300, 240, 200, 180, 165, 144, 120, 100, 90, 75, 60, 50, 30].map(hz => 1000 / hz);
 function omCozHz(d) {
   const c = omCoz;
   c.hz[c.hzN++] = d;
@@ -1755,8 +1763,9 @@ function omCozHz(d) {
   c.hzN = 0;
   c.hz.sort();
   let p = c.hz[(c.hz.length / 4) | 0];
-  for (let i = 0; i < OM_HZ.length; i++) if (Math.abs(p - OM_HZ[i]) < OM_HZ[i] * 0.1) { p = OM_HZ[i]; break; }
-  if (p < 1000 / 120) p = 1000 / 120;   // 120 Hz'ten hızlı ekranda (ya da sınırsız rAF) hedef en çok 120 kare/sn
+  let yakin = -1, fark = 0.1;
+  for (let i = 0; i < OM_HZ.length; i++) { const f = Math.abs(p - OM_HZ[i]) / OM_HZ[i]; if (f < fark) { fark = f; yakin = i; } }
+  if (yakin >= 0) p = OM_HZ[yakin];
   if (p < c.hzMin) { c.hzMin = p; c.yenileme = p; }
 }
 // Her karede (omDongu): ms = rAF zamanı, js = frame() süresi (ms)
@@ -1768,7 +1777,7 @@ function omCozOlc(ms, js) {
   if (c.zorla || c.liste.length < 2 || !c.yenileme) return;
   if (DURUM !== 'oyun' || now < c.bekleT) return;
   if (c.bekleyen >= 0) { if (omCozSakin()) c.uygula = true; return; }   // karar verildi: sakin anı bekle (ölçme yok); değişim sonraki karenin başında (tuval silinmesin)
-  const y = OM_MASA ? c.yenileme : Math.max(c.yenileme, 1000 / 60);   // tablet: hedef 60 fps · masaüstü: ekranın hızı (en çok 120)
+  const y = OM_MASA ? c.yenileme : Math.max(c.yenileme, 1000 / 60);   // tablet: hedef 60 fps · masaüstü: ölçülen yenileme hızı
   c.pAralik += Math.min(d, y * 4); c.pJs += js; c.pN++; c.pT += d / 1000;
   if (d > y * 1.5) c.pUzun++;
   if (c.pT < OM_COZ.PENCERE) return;
@@ -1838,9 +1847,10 @@ function omDn6Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#2b24
 function omDn7Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#1d2556'; g.fillRect(0, 0, W, H); }   // Bölüm 7: mavi-mor kış gecesi
 function omDn8Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#2a1f4e'; g.fillRect(0, 0, W, H); }   // Bölüm 8: mor-turuncu Cadılar Bayramı gecesi
 function omDn9Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#9fd8c0'; g.fillRect(0, 0, W, H); }   // Bölüm 9: yeşil-turkuaz ejderha vadisi
-const OM_DR_ON = BOLUM_NO === 9 ? 'dn9' : BOLUM_NO === 8 ? 'dn8' : BOLUM_NO === 7 ? 'dn7' : BOLUM_NO === 6 ? 'dn6' : BOLUM_NO === 5 ? 'dn5' : BOLUM_NO === 4 ? 'dn4' : BOLUM_NO === 3 ? 'dn3' : 'dn2', OM_DR_YEDEK = BOLUM_NO === 9 ? omDn9Yedek : BOLUM_NO === 8 ? omDn8Yedek : BOLUM_NO === 7 ? omDn7Yedek : BOLUM_NO === 6 ? omDn6Yedek : BOLUM_NO === 3 ? omDn3Yedek : omDn2Yedek;
+function omDn10Yedek(tm) { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#252d54'; g.fillRect(0, 0, W, H); }
+const OM_DR_ON = BOLUM_NO === 10 ? 'dn10' : BOLUM_NO === 9 ? 'dn9' : BOLUM_NO === 8 ? 'dn8' : BOLUM_NO === 7 ? 'dn7' : BOLUM_NO === 6 ? 'dn6' : BOLUM_NO === 5 ? 'dn5' : BOLUM_NO === 4 ? 'dn4' : BOLUM_NO === 3 ? 'dn3' : 'dn2', OM_DR_YEDEK = BOLUM_NO === 10 ? omDn10Yedek : BOLUM_NO === 9 ? omDn9Yedek : BOLUM_NO === 8 ? omDn8Yedek : BOLUM_NO === 7 ? omDn7Yedek : BOLUM_NO === 6 ? omDn6Yedek : BOLUM_NO === 3 ? omDn3Yedek : omDn2Yedek;
 function omDr(ad) {   // çağrı anında seçilir (dunya2.js / dunya3.js sonradan tanımlanmış olabilir)
-  if (!(BOLUM_NO >= 2 && BOLUM_NO <= 9)) { const f = globalThis[OM_DR1[ad]]; return typeof f === 'function' ? f : null; }
+  if (!(BOLUM_NO >= 2 && BOLUM_NO <= 10)) { const f = globalThis[OM_DR1[ad]]; return typeof f === 'function' ? f : null; }
   const f2 = globalThis[OM_DR_ON + ad];
   if (typeof f2 === 'function') return f2;
   return ad === 'Background' ? OM_DR_YEDEK : null;
@@ -1890,14 +1900,14 @@ function omTamamYaz(n) { try { const a = omTamamOku(); if (a.indexOf(n) < 0) { a
 let omSecimAktif = false;
 function omSecimBaslat() {
   const tamam = omTamamOku(); let son = 0; try { son = +localStorage.getItem('fezaIsikSon') || 0; } catch (e) {}
-  // raf sırası: EN YENİ rüya en başta (ebeveyn isteği); sahne.js kavanozları bu sırayla dizer
-  const sec = [[9, 'ejderha'], [8, 'cadi'], [7, 'kar'], [6, 'senlik'], [5, 'volkan'], [4, 'deniz'], [3, 'bulut'], [2, 'gol'], [1, 'orman']].map(([id, ikon]) => ({ id, ikon, tamam: tamam.indexOf(id) >= 0, son: son === id }));
+  // Raf sırası ebeveyn seçimi: Zamanın Uyuduğu Vadi dördüncü; sahne listeyi aynen korur.
+  const sec = [[9, 'ejderha'], [8, 'cadi'], [7, 'kar'], [10, 'zaman'], [6, 'senlik'], [5, 'volkan'], [4, 'deniz'], [3, 'bulut'], [2, 'gol'], [1, 'orman']].map(([id, ikon]) => ({ id, ikon, tamam: tamam.indexOf(id) >= 0, son: son === id }));
   omSecimAktif = true;
   try { SAHNE.secim(sec, omSecildi); } catch (e) { omSecimAktif = false; omHataBildir('SAHNE.secim', e); }
 }
 function omSecildi(id) {
   if (!omSecimAktif) return; omSecimAktif = false;
-  if (+id >= 2 && +id <= 9) { try { sessionStorage.setItem('fezaIsikSec', String(+id)); } catch (e) {} try { location.replace(location.href.split('#')[0]); } catch (e) { location.reload(); } }
+  if (+id >= 2 && +id <= 10) { try { sessionStorage.setItem('fezaIsikSec', String(+id)); } catch (e) {} try { location.replace(location.href.split('#')[0]); } catch (e) { location.reload(); } }
   else begin();
 }
 // Bölüm 1 sonu (Tur 3: "her gece başka bir rüya"): Işık Ağacı yandı → kısa kutlama (ışık küreleri göğe yükselir) → sabah finali.
@@ -2018,7 +2028,7 @@ function omDevamGirisi() {
   P.kilit = 0; P.buf = 0; omHepsiniBirak();
   if (BOLUM_NO > 1) {
     OLAY.emit('bolum' + BOLUM_NO + 'Basla');
-    omZamanla(0.25, () => { if (DURUM === 'oyun' && typeof SES !== 'undefined' && SES && SES.soyle) { try { SES.soyle(BOLUM_NO === 9 ? 'p_e_giris' : BOLUM_NO === 8 ? 'p_c_giris' : BOLUM_NO === 7 ? 'p_k_giris' : BOLUM_NO === 6 ? 'p_f_giris' : BOLUM_NO === 5 ? 'p_v_giris' : BOLUM_NO === 4 ? 'p_i_giris' : BOLUM_NO === 3 ? 'p_b_giris' : 'p_y_giris'); } catch (e) { omHataBildir('p_giris', e); } } });
+    omZamanla(0.25, () => { if (DURUM === 'oyun' && typeof SES !== 'undefined' && SES && SES.soyle) { try { SES.soyle(BOLUM_NO === 10 ? 'p_z_giris' : BOLUM_NO === 9 ? 'p_e_giris' : BOLUM_NO === 8 ? 'p_c_giris' : BOLUM_NO === 7 ? 'p_k_giris' : BOLUM_NO === 6 ? 'p_f_giris' : BOLUM_NO === 5 ? 'p_v_giris' : BOLUM_NO === 4 ? 'p_i_giris' : BOLUM_NO === 3 ? 'p_b_giris' : 'p_y_giris'); } catch (e) { omHataBildir('p_giris', e); } } });
   }
   OLAY.emit('gecisAsama', { ad: 'oyun', bolum: BOLUM_NO, dogrudan: true });
   if (BOLUM_NO === 4) omZamanla(8, () => { if (DURUM === 'oyun' && typeof SES !== 'undefined' && SES.soyle) SES.soyle('p_i_yuz', { oncelik: 3 }); });
@@ -2047,7 +2057,9 @@ function frame(ms) {
   const t = omOyunT;
   if (omPerdeBek) omPerdeBekle(raw);
   for (let i = omZamanlar.length - 1; i >= 0; i--) if (omZamanlar[i].t <= t) { const z = omZamanlar[i]; omZamanlar.splice(i, 1); omCagir('zamanla', z.fn); }
-  if (omIsit) { const fI = globalThis[BOLUM_NO === 9 ? 'dn9Isit' : BOLUM_NO === 8 ? 'dn8Isit' : BOLUM_NO === 7 ? 'dn7Isit' : BOLUM_NO === 6 ? 'dn6Isit' : BOLUM_NO === 5 ? 'dn5Isit' : BOLUM_NO === 4 ? 'dn4Isit' : BOLUM_NO === 3 ? 'dn3Isit' : 'dn2Isit']; if (typeof fI !== 'function') omIsit = false; else { try { if (fI()) omIsit = false; } catch (e) { omIsit = false; omHataBildir('dnIsit', e); } } }   // Bölüm 2 önbelleklerini kareye yayarak (karanlık/uyku girişi altında) ısıt
+  if (omIsit) { const fI = globalThis[BOLUM_NO === 10 ? 'dn10Isit' : BOLUM_NO === 9 ? 'dn9Isit' : BOLUM_NO === 8 ? 'dn8Isit' : BOLUM_NO === 7 ? 'dn7Isit' : BOLUM_NO === 6 ? 'dn6Isit' : BOLUM_NO === 5 ? 'dn5Isit' : BOLUM_NO === 4 ? 'dn4Isit' : BOLUM_NO === 3 ? 'dn3Isit' : 'dn2Isit']; if (typeof fI !== 'function') omIsit = false; else { try { if (fI()) omIsit = false; } catch (e) { omIsit = false; omHataBildir('dnIsit', e); } } }   // Bölüm 2 önbelleklerini kareye yayarak (karanlık/uyku girişi altında) ısıt
+  if (omZamanYolIsit && !omIsit && !omZamanIsit && typeof ZAMAN_YOL !== 'undefined') { try { if (ZAMAN_YOL.isit()) omZamanYolIsit = false; } catch (e) { omZamanYolIsit = false; omHataBildir('zamanYolIsit', e); } }
+  if (omZamanIsit && !omIsit && typeof ZAMAN10 !== 'undefined') { try { if (ZAMAN10.isit()) omZamanIsit = false; } catch (e) { omZamanIsit = false; omHataBildir('zamanIsit', e); } }
   omCagir('readInput', readInput);
   if (DURUM !== 'oyun') { axis = 0; jumpPressed = false; }
   // fizik: 120 Hz sabit adım
@@ -2118,15 +2130,15 @@ function frame(ms) {
 // Yenileme aralığı: son 60 rAF aralığının medyanı. ≥ ~71 Hz değilse (aralık ≥ 14 ms, yani 60 Hz ve altı) HİÇ kare düşürülmez.
 // ≥ ~105 Hz (aralık ≤ 9,5 ms: 120/144 Hz) → her ikinci rAF (sayaç tabanlı, jitter yok). Arası (75-100 Hz) → birikimli zaman sınırlayıcı.
 // Fizik/animasyon zamanı frame() içinde gerçek rAF zaman damgasından (atlanan kareler dahil) hesaplanır: oyun hızı her Hz'de aynıdır.
-// Masaüstü profilinde (OM_MASA) kilit 120'dir: ≤ ~130 Hz ekranda her kare çizilir, 144 Hz+'ta zaman tabanlı en çok 120 kare/sn.
+// Masaüstünde yapay FPS tavanı yok: her rAF çizilir; fizik sabit adımlı ve gerçek zamanlı kalır.
 const omLim = { buf: new Float32Array(60), n: 0, son: -1, sonCiz: -1, aralik: 1000 / 60, mod: 1, par: 0, acc: 0, kare: 0, atla: 0, olc: new Float32Array(600), olcN: 0,
-  hedef: OM_MASA ? 1000 / 120 : 1000 / 60, masa: OM_MASA };
+  hedef: OM_MASA ? 0 : 1000 / 60, masa: OM_MASA };
 function omLimGuncelle(d) {
   const L = omLim; L.buf[L.n++ % 60] = d;
   if (L.n >= 40 && L.n % 20 === 0) {
     const k = Math.min(L.n, 60), a = Array.prototype.slice.call(L.buf, 0, k).sort((x, y) => x - y), med = a[k >> 1];
     L.aralik = med;
-    const yeni = L.masa ? (med >= 7.6 ? 1 : 3) : (med <= 9.5 && med >= 7.6) ? 2 : med >= 14 ? 1 : 3;   // 2: 105-130 Hz (120) her ikinci kare; <7,6 ms (144 Hz+) ve 75-100 Hz: zaman tabanlı   // 2: her ikinci kare · 1: hepsi · 3: birikimli
+    const yeni = L.masa ? 1 : (med <= 9.5 && med >= 7.6) ? 2 : med >= 14 ? 1 : 3;   // 2: 105-130 Hz (120) her ikinci kare; <7,6 ms (144 Hz+) ve 75-100 Hz: zaman tabanlı   // 2: her ikinci kare · 1: hepsi · 3: birikimli
     if (yeni !== L.mod) { L.mod = yeni; L.acc = 0; }
   }
 }
@@ -2151,7 +2163,7 @@ function omDongu(ms) {
   try { omCozOlc(ms, js); } catch (e) { omHataBildir('cozunurluk', e); }
 }
 requestAnimationFrame(omDongu);
-window.OYUN = { P, D, NESNELER, get FLOWERS() { return typeof FLOWERS !== 'undefined' ? FLOWERS : []; }, get TREE() { return typeof TREE !== 'undefined' ? TREE : null; }, get bolum() { return BOLUM_NO; }, bolumGecisi: () => omBolumGecisi(TREE), cam, SAYAC, GIRDI, CISIMLER, OM, get durum() { return DURUM; }, get light() { return light; }, set light(v) { light = lightTarget = v; },
+window.OYUN = { bolumSayisi: 10, P, D, NESNELER, get FLOWERS() { return typeof FLOWERS !== 'undefined' ? FLOWERS : []; }, get TREE() { return typeof TREE !== 'undefined' ? TREE : null; }, get bolum() { return BOLUM_NO; }, bolumGecisi: () => omBolumGecisi(TREE), cam, SAYAC, GIRDI, CISIMLER, OM, get durum() { return DURUM; }, get light() { return light; }, set light(v) { light = lightTarget = v; },
   begin, keys, press: () => { jumpPressed = true; }, finaleGec, HEDEF,
   get hiz() { return omHiz; }, set hiz(v) { omHiz = v; },   // yalnız test: zamanı hızlandır
   get ustundeki() { return ustundeki; }, get simX() { return omSimX; }, get simY() { return omSimY; },
@@ -2160,7 +2172,7 @@ window.OYUN = { P, D, NESNELER, get FLOWERS() { return typeof FLOWERS !== 'undef
   ucusGirdi: OM_UCUS_GIRDI, get ucusKamera() { return omUc.w; }, omDikkat, omDkEkle };   // ucusGirdi: P.ucus.adim'e giden girdi; ucusKamera: uçuş kamerası ağırlığı   // coz: uyarlanır çözünürlük durumu (log, yenileme...)
 // ?atla / ?bolum=N (test) ve Bölüm 1→2 geçişinden sonraki yeniden yükleme: başlık ekranı atlanır (ses, ilk dokunuşta açılır)
 let omOtoBasla = Q.has('atla') || Q.has('bolum');
-try { const sq = sessionStorage.getItem('fezaIsikSec'); if (sq === '2' || sq === '3' || sq === '4' || sq === '5' || sq === '6' || sq === '7' || sq === '8' || sq === '9') { sessionStorage.removeItem('fezaIsikSec'); omOtoBasla = true; omKilitIste = true; omPerde.a = omPerde.hedef = 1; } } catch (e) {}   // başlıktan rüya seçildi
+try { const sq = sessionStorage.getItem('fezaIsikSec'); if (sq === '2' || sq === '3' || sq === '4' || sq === '5' || sq === '6' || sq === '7' || sq === '8' || sq === '9' || sq === '10') { sessionStorage.removeItem('fezaIsikSec'); omOtoBasla = true; omKilitIste = true; omPerde.a = omPerde.hedef = 1; } } catch (e) {}   // başlıktan rüya seçildi
 try { if (sessionStorage.getItem('fezaGecis') === '1') { sessionStorage.removeItem('fezaGecis'); omOtoBasla = true; omKilitIste = true; omPerde.a = omPerde.hedef = 1; } } catch (e) {}   // ilk kareden karanlık: yeniden yükleme görünmez
 if (omOtoBasla) begin();
 else if (typeof SAHNE !== 'undefined' && SAHNE && typeof SAHNE.secim === 'function') omSecimBaslat();   // başlık = yatak başı seçim sahnesi
