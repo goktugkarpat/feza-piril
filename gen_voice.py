@@ -15,6 +15,8 @@ Voice: tr-TR-EmelNeural (natural Turkish female). Key prefix chooses the deliver
   cn_ Cadı Nine (warm grandma, a touch lower), kb_ the carved pumpkin that comes alive (warm, a little deep).
   Bölüm 9 Pırıl's family (same voice, small natural shifts): bn_ Büyükanne Ejderha (slow, warm, a little low: a loving grandma),
   ea_ Pırıl's mum (warm, gentle), eb_ Pırıl's dad (lower, cheerful), fs_ little cousin Fıstık (a tiny dragon: high, soft and shy).
+  Bölüm 11 the cute vampire family: vk_ Vela (a girl Feza's age: high, cheerful), vd_ Vampir Dede (round grandpa: slow, deep), vn_ Vampir Nine
+  (warm grandma, a little low), vb_ baby Pıtır (one or two words, very high and sweet).
 Output: sesler.js  →  window.VOICE_MP3 = {key: base64 mp3}  and  window.VOICE_DUR = {key: seconds}.
 """
 import asyncio
@@ -65,6 +67,10 @@ STYLE = {            # prefix → (rate, pitch, volume)
     "ea_": ("-6%", "-3Hz", "+0%"),     # Pırıl'ın annesi (sıcak, yumuşak)
     "eb_": ("-5%", "-20Hz", "+0%"),    # Pırıl'ın babası (biraz kalın, neşeli)
     "fs_": ("-9%", "+30Hz", "-8%"),    # minik kuzen Fıstık (ince, utangaç, yavaş)
+    "vk_": ("+4%", "+26Hz", "+0%"),    # Bölüm 11 Vela (vampir kız: neşeli, Feza yaşında)
+    "vd_": ("-10%", "-22Hz", "+0%"),   # Vampir Dede (tombul, neşeli: tok ve ağır)
+    "vn_": ("-9%", "-10Hz", "+0%"),    # Vampir Nine (sıcak, yumuşak: anlatıcıdan biraz pes, şefkatli)
+    "vb_": ("-4%", "+40Hz", "+0%"),    # Pıtır (bebek; çok kısa sözler: ince, tatlı)
 }
 # Second take mixed under the first one (same rate → same timing): two children saying it together.
 CHORUS = {"k2_": ("+6%", "+38Hz", "+0%")}

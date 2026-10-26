@@ -351,17 +351,90 @@ const SES = (() => {
     "p_z_sandal_doruk": "Bak Feza! Havada duran altın kumlar yeniden akıyor!",
     "p_z_sandal_bitti": "Ne güzel süzüldük! İşte, Zaman Ağacı’nın yanına geldik.",
     "p_z_agac_kok": "Işık köklerden yukarı çıkıyor! Ağacımız uyanıyor.",
-    "p_z_agac_tac": "Bak, yapraklar tek tek açılıyor! Ne kocaman bir çiçek!"
+    "p_z_agac_tac": "Bak, yapraklar tek tek açılıyor! Ne kocaman bir çiçek!",
+    "p_s_uyku": "Bu gece, Ay Işığı Şatosu'na gidiyoruz!",
+    "p_s_giris": "Bak Feza, tepede kocaman bir şato! Ay bulutların arkasına saklanmış, şatonun bütün ışıkları sönmüş. Hadi, ay ışığını geri getirelim!",
+    "p_s_pelerin": "Bak, havada pelerinler süzülüyor! Hangisini istersin? Birine dokun!",
+    "p_s_ayna": "Şu kocaman aynaya bak! Ay ışığı ona düşüyor. Dokun, ışığı şatoya göndersin!",
+    "p_s_ayna2": "Vay, şatonun yarısı aydınlandı! Pencereler gülümsüyor.",
+    "p_s_ayna_son": "Bütün aynalar döndü! Şatonun her yeri ışıl ışıl.",
+    "p_s_salon_giris": "Burası aynalı salon! Aynalar buğulanmış. Parmağınla sil, bakalım içlerinden ne çıkacak!",
+    "p_s_salon_bitti": "Ne komik yansımalardı! Bütün aynalar parlıyor.",
+    "p_s_org_giris": "Kocaman bir org! Parlayan boruya dokun, Vampir Dede dans etsin!",
+    "p_s_org_bitti": "Vampir Dede ne güzel dans etti!",
+    "p_s_pasta_giris": "Vampir Nine'nin çilekli pastası! Hadi, süsleri pastaya koyalım.",
+    "p_s_pasta_bitti": "Pasta ışıl ışıl oldu!",
+    "p_s_ucus_giris": "Pelerinini kanat gibi aç, Feza! Hadi, kuleye uçuyoruz!",
+    "p_s_ucus": "Bak, Ay'ın önünden geçiyoruz! Yarasa dostlarımız da yanımızda.",
+    "p_s_ucus_bitti": "Kuleye vardık! Ay Balosu birazdan başlıyor.",
+    "p_s_final": "Bak, bulutlar dağılıyor! Kocaman Ay çıktı! Ay Balosu başladı, hadi dans edelim!",
+    "p_dost_sato": "Seninle bu şatoda olmak çok güzel, Feza.",
+    "a_s_final1": "Feza ile Pırıl, aynalarla ay ışığını şatoya taşımışlar. Bulutlar dağılmış, kocaman Ay gökyüzüne çıkmış ve Ay Balosu başlamış.",
+    "a_s_final2": "Sabah Feza, yatağında gözlerini açmış. Komodinin üstünde minicik, lila bir yarasa peluşu ve kıpkırmızı bir çilek duruyormuş.",
+    "a_s_final3": "Ve Ay Işığı Şatosu'ndaki dostları, Feza'yı bir sonraki baloya hep beklemişler.",
+    "vk_merhaba": "Merhaba, ben Vela! Ay saklandı, bize yardım eder misin?",
+    "p_s_pelerin_mor": "Mor pelerin! Üstünde minicik yıldızlar parlıyor. Sana çok yakıştı!",
+    "p_s_pelerin_lacivert": "Gece mavisi pelerin! Tıpkı benimki gibi, ay işlemeli.",
+    "p_s_pelerin_kirmizi": "Çilek kırmızısı pelerin! İçi pembe, tokası da kalp şeklinde.",
+    "p_s_pelerin_pembe": "Pembe lila pelerin! Gümüş yıldız tozları saçıyor.",
+    "p_s_ayna_ilk": "Bak bak! Işık aynadan sekti, şatonun kapısı ışıl ışıl oldu!",
+    "p_s_ayna_ipucu": "Parlayan aynaya dokun, Feza! Işık şatoya koşsun.",
+    "p_s_ayna_selale": "Vay! Aynalar art arda döndü, ışık şelale gibi aktı!",
+    "p_s_ovgu1": "Şato seninle uyanıyor, Feza!",
+    "p_s_ovgu2": "Ne güzel parladı!",
+    "p_s_ovgu3": "Işık toplamakta çok ustasın!",
+    "p_s_yarasa": "Bak, minik lila yarasalar! Baş aşağı uyukluyorlar, ne tatlılar.",
+    "p_s_kopru": "Asma köprü! Altında pamuk gibi yumuşacık sis var.",
+    "p_s_magara": "Kristal mağaraya geldik! Bak, şirin hayaletler bize el sallıyor.",
+    "p_s_galeri": "Şatonun resim galerisi! Portrelerdeki herkes bize gülümsüyor.",
+    "p_s_salon_ipucu": "Buğulu aynaya dokun ya da parmağınla sil!",
+    "p_s_salon_yardim": "Gel, birlikte silelim! Bak, ben de siliyorum.",
+    "p_s_org_yardim": "Parlayan boruya dokun! Hangisi parlıyorsa ona.",
+    "p_s_org_birlikte": "Ben de çalıyorum, sen de katıl!",
+    "p_s_pasta_ipucu": "Bir süse dokun, pastaya uçsun!",
+    "p_s_pasta_cilek": "Şimdi en üste kocaman çileği koy!",
+    "p_s_pasta_yardim": "Bak, ben de bir süs koyuyorum! Sen de bir tane seç.",
+    "p_s_balkon": "Hadi balkona çıkalım! Oradan kuleye uçacağız.",
+    "p_s_ucus_yardim": "Ekrana basılı tut, yükselelim! Bırakınca yavaşça süzülürüz.",
+    "p_s_ucus_sato": "Bak, şatonun bütün pencereleri yanıyor!",
+    "p_s_balo_ipucu": "Şu büyük ay taşına dokun! Ay'ı birlikte çağıralım.",
+    "vk_gorusuruz": "Şatoda görüşürüz! Hadi, peşimden gel!",
+    "vk_ayna": "Ben aynada görünmem ki! Bak, sadece tacım görünüyor.",
+    "vk_salon": "Bak, şimdi ben de göründüm! Göz kırpıyorum!",
+    "vk_org": "Yaşasın! Dedem dans ediyor!",
+    "vk_ucus": "Pelerinini aç, benimle uç! Yaşasın, uçuyoruz!",
+    "vk_balo": "Ay çıktı! Balo başlıyor!",
+    "vk_tesekkur": "Teşekkürler Feza! Bu en güzel Ay Balosu!",
+    "vd_merhaba": "Hoş geldin küçük dostum! Orgumu birlikte çalalım mı?",
+    "vd_dans": "Ne güzel bir vals!",
+    "vd_tesekkur": "Harika çaldın, küçük dostum!",
+    "vd_vals": "Haydi, herkes vals yapsın!",
+    "vn_pasta": "Hoş geldin tatlım! Pastamı birlikte süsleyelim mi?",
+    "vn_kat1": "Ne güzel oldu!",
+    "vn_kat2": "Pastam parlıyor! Çok güzel.",
+    "vn_tesekkur": "Teşekkürler Feza! Pastam baloya hazır!",
+    "vb_merhaba": "Merhaba Feza!",
+    "vb_mutlu": "Yaşasın!",
+    "vb_balo": "Dans edelim!",
+    "p_s_ayna_sapka": "Bak bak, şapkalı ben!",
+    "p_s_ayna_kedi": "Dede kedi olmuş! Miyav!",
+    "p_s_ayna_pitir": "Pıtır sana göz kırptı!",
+    "p_s_ayna_cilek": "Nine'nin topuzu çilek olmuş!",
+    "p_s_ayna_ay": "Bak, Ay gülüyor!",
+    "p_s_ayna_feza": "Feza, upuzun oldun!",
+    "vk_gidik": "Gıdıklandım!",
+    "vb_alkis": "Bir daha!"
 }
   /*SESLER-SON*/;
 
   const sesSaat = () => performance.now() / 1000;
   const ovguMu = k => /^p_aferin/.test(k);
-  const SES_SAHNE = { p_z_uyku: 1, p_z_giris: 1, p_z_bitti: 1, p_uyan: 1, p_gecis: 1, p_y_giris: 1, p_y_bitti: 1, p_secim: 1, p_y_uyku: 1, p_b_uyku: 1, p_b_giris: 1, p_b_bitti: 1, p_i_uyku: 1, p_i_giris: 1, p_i_yuz: 1, p_i_bitti: 1, p_i_inci_uyan: 1, p_i_dostlar: 1, p_i_deniz_uyandi: 1, p_f_uyku: 1, p_f_giris: 1, p_f_final: 1, p_k_uyku: 1, p_k_giris: 1, p_k_final: 1, p_c_uyku: 1, p_c_giris: 1, p_c_final: 1, p_e_uyku: 1, p_e_giris: 1, p_e_final: 1 };   // sahne cümleleri: öncelik 3, ağaç yandı/oyun bitti diye atılmaz
+  const SES_SAHNE = { p_z_uyku: 1, p_z_giris: 1, p_z_bitti: 1, p_uyan: 1, p_gecis: 1, p_y_giris: 1, p_y_bitti: 1, p_secim: 1, p_y_uyku: 1, p_b_uyku: 1, p_b_giris: 1, p_b_bitti: 1, p_i_uyku: 1, p_i_giris: 1, p_i_yuz: 1, p_i_bitti: 1, p_i_inci_uyan: 1, p_i_dostlar: 1, p_i_deniz_uyandi: 1, p_f_uyku: 1, p_f_giris: 1, p_f_final: 1, p_k_uyku: 1, p_k_giris: 1, p_k_final: 1, p_c_uyku: 1, p_c_giris: 1, p_c_final: 1, p_e_uyku: 1, p_e_giris: 1, p_e_final: 1, p_s_uyku: 1, p_s_giris: 1, p_s_final: 1 };   // sahne cümleleri: öncelik 3, ağaç yandı/oyun bitti diye atılmaz
   const anlatici = k => k.startsWith('a_') || k === 'p_v_uyku' || k === 'p_v_giris' || !!SES_SAHNE[k];
   const ses8Komsu = k => /^(kd|in|ck|kk|ht|k2|cn|kb)_/.test(k);   // Bölüm 8 komşu sesleri (Pırıl değil: onun ağzı oynamaz)
   const ses9Aile = k => /^(bn|ea|eb|fs)_/.test(k);   // Bölüm 9: Pırıl'ın ailesi ve Fıstık (Pırıl değil)
-  const sesKim = k => k.startsWith('a_') ? 'a' : ses8Komsu(k) || ses9Aile(k) ? 'k' : 'p';
+  const ses11Aile = k => /^(vk|vd|vn|vb)_/.test(k);   // Bölüm 11: vampir ailesi (Vela, Dede, Nine, Pıtır; Pırıl değil)
+  const sesKim = k => k.startsWith('a_') ? 'a' : ses8Komsu(k) || ses9Aile(k) || ses11Aile(k) ? 'k' : 'p';
   // ── cümle bilgisi: oncelik (3 sahne · 2 oyun · 1 yönlendirme · 0 övgü), acil (2 araya girer · 1 olay tepkisi), ömür (sn), konu ──
   const KONU_SIRA = { p_buyuk: 1, p_buyuk_goz: 2, p_buyuk_esne: 3, p_buyuk_kalk: 4, p_agac: 5, p_karanlik: 1, p_nilufer: 2, p_karanlik2: 1, p_nilufer2: 2 };
   const sesTaban = k => (k === 'p_karanlik2' || k === 'p_nilufer2') ? k.slice(0, -1) : k;   // ikinci göl cümlesi → asıl anahtar (kurallar için)
@@ -394,6 +467,17 @@ const SES = (() => {
     if (/^bn_pul/.test(k)) return { oncelik: 2, acil: 1, omur: 4, konu: null };
     if (k === 'bn_selam' || k === 'fs_ilk') return { oncelik: 2, acil: 1, omur: 5, konu: null };   // uzak ejderhalar geçerken / ilk kanat çırpışı (anlık)
     if (ses9Aile(k)) return { oncelik: 2, acil: 1, omur: 12, konu: null };
+    // Bölüm 11 (Ay Işığı Şatosu): Vela'nın ayna şakası anlık; mini oyunların ve uçuşun tek talimatı gerekirse çalanı cümle sonunda keser; pelerin rengi hemen
+    if (k === 'vk_gidik' || k === 'vb_alkis') return { oncelik: 1, acil: 0, omur: 2, konu: null };   // dokununca ara sıra kısa tepki: ses boşsa, yoksa atılır
+    if (k === 'vk_ayna' || k === 'vk_salon' || k === 'vd_dans' || k === 'vk_org') return { oncelik: 2, acil: 2, omur: 6, konu: null };
+    if (/^p_s_ayna_(sapka|kedi|pitir|cilek|ay|feza)$/.test(k)) return { oncelik: 2, acil: 2, omur: 5, konu: null };   // ayna salonundaki komik yansımaya anlık tepki
+    if (k === 'vd_merhaba' || k === 'vn_pasta') return { oncelik: 2, acil: 2, omur: 10, konu: null };   // mini oyunu açan karşılama: Pırıl'ın talimatından önce
+    if (/^v[kdnb]_(merhaba|gorusuruz)$/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
+    if (ses11Aile(k)) return { oncelik: 2, acil: 1, omur: 12, konu: null };
+    if (/^p_s_(salon|org|pasta|ucus)_giris$/.test(k) || /^p_s_pelerin_/.test(k)) return { oncelik: 2, acil: 2, omur: 15, konu: null };
+    if (/^p_s_(.*_ipucu|.*_yardim|org_birlikte|pasta_cilek|ayna_selale|ucus_sato|ucus)$/.test(k)) return { oncelik: 2, acil: 1, omur: 7, konu: null };
+    if (/^p_s_ovgu/.test(k)) return { oncelik: 1, acil: 0, omur: 3, konu: null };   // sıcak söz: ses boşsa
+    if (/^p_s_/.test(k) && k !== 'p_s_pelerin' && k !== 'p_s_ayna') return { oncelik: 2, acil: 1, omur: 12, konu: null };
     if (/^p_e_(meyve|kanat|kolye|binis)_giris$/.test(k)) return { oncelik: 2, acil: 2, omur: 15, konu: null };
     if (k === 'p_e_yumurta' || k === 'p_e_pul' || k === 'p_e_yavru') return { oncelik: 2, acil: 1, omur: 14, konu: null };   // ilk kez öğreten tepkiler: giriş konuşması sürerken de beklesin
     if (/^p_e_/.test(k)) return { oncelik: 2, acil: 1, omur: 8, konu: null };
@@ -558,9 +642,11 @@ const SES = (() => {
     p_e_binis_bitti: () => !sesV9('final'),
     p_e_pul2: () => !sesV9('final'), p_e_pul_son: () => !sesV9('final'), p_e_yavru_son: () => !sesV9('final'), p_e_yavru2: () => !sesV9('final'),
     p_dost_ejder: () => sesDostUygun(),
+    p_dost_sato: () => sesDostUygun(),
     p_yol: () => !(sesB8() && ((typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif) || (typeof om8MiniAktif === 'function' && om8MiniAktif())))
       && !(sesB9() && typeof om9MiniAktif === 'function' && om9MiniAktif())
-      && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10 && typeof ZAMAN10 !== 'undefined' && ZAMAN10.aktif),   // kapı sahnesinde / mini oyunda "bu tarafa gel" yok
+      && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10 && typeof ZAMAN10 !== 'undefined' && ZAMAN10.aktif)
+      && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 11 && typeof om11MiniAktif === 'function' && om11MiniAktif()),   // kapı sahnesinde / mini oyunda "bu tarafa gel" yok
     p_i_denizati: () => typeof DNZ === 'undefined' || DNZ.ati.some(o => !o.done),
     p_i_ahtapot: () => typeof DNZ === 'undefined' || !DNZ.oct || !DNZ.oct.done,
     p_i_vatoz: () => typeof DNZ === 'undefined' || !DNZ.ride || (!DNZ.ride.done && DNZ.ride.faz !== 'inis'),
@@ -680,8 +766,8 @@ const SES = (() => {
   }
   function sesOnceden() {     // cümleleri boşta önceden çöz (ilk konuşmada gecikme olmasın); bu bölümün cümleleri önce
     if (!window.VOICE_MP3) return;
-    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c', 9: 'e', 10: 'z' }[bn] || '';
-    const baska = k => { if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; if (ses9Aile(k)) return harf === 'e' ? 0 : 1; const m = /^[pa]_([ybivfkcez])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
+    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c', 9: 'e', 10: 'z', 11: 's' }[bn] || '';
+    const baska = k => { if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; if (ses9Aile(k)) return harf === 'e' ? 0 : 1; if (ses11Aile(k)) return harf === 's' ? 0 : 1; const m = /^[pa]_([ybivfkcezs])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
     // Diğer rüyalar sayfa yenilenerek açılır: onların PCM kayıtlarını bu oturumda
     // çözmek gereksiz iş ve bellektir. Beklenmeyen bir söz yine istenince çözülür.
     const ks = Object.keys(LINES).filter(k => VOICE_MP3[k] && !baska(k));
@@ -752,7 +838,13 @@ const SES = (() => {
       setTimeout(() => { if (typeof DNZ !== 'undefined' && DNZ.oct && !DNZ.oct.done && DURUM === 'oyun') soyle('p_i_ahtapot_yardim', { oncelik: 3 }); }, 4500);
     }
     const ko = k;   // çağıranın verdiği ad (konuşma tetikleyicisi anahtarı)
-    if (/^[ybivfkcez]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
+    if (/^[ybivfkcezs]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
+    if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 11) {   // Ay Işığı Şatosu: sahne/CORE ortak adları çağırırsa Bölüm 11 cümlesi
+      if (/^a_(y_|b_|i_|v_|f_|k_|c_|e_|z_)?final\d$/.test(k)) k = 'a_s_final' + k.slice(-1);
+      else if (k === 'p_y_uyku') k = 'p_s_uyku';
+      else if (k === 'p_y_giris' || k === 'p_uyan') k = 'p_s_giris';
+      if (ses11Aile(k) && typeof V11 !== 'undefined' && V11 && V11.final && !(ops && ops.oncelik != null)) ops = Object.assign({}, ops, { oncelik: 3 });
+    }
     if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10) {
       if (/^a_(y_|b_|i_|v_|f_|k_|c_|e_)?final\d$/.test(k)) k = 'a_z_final' + k.slice(-1);
       else if (k === 'p_y_uyku') k = 'p_z_uyku';
@@ -1084,7 +1176,7 @@ const SES = (() => {
     const t = sesSaat();
     if (t - sesOyunT < 60 || t - sesDostT < 90 || t - sesSonBitis < 50 || !sesDostUygun()) return;
     const bolum = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1;
-    const ozel = bolum === 10 ? 'p_dost_zaman' : bolum === 9 ? 'p_dost_ejder' : bolum === 8 ? 'p_dost_cadi' : bolum === 7 ? 'p_dost_kar' : bolum === 6 ? 'p_dost_senlik' : bolum === 5 ? 'p_dost_volkan' : bolum === 4 ? 'p_dost_deniz' : bolum === 3 ? 'p_dost_bulut' : bolum === 2 ? 'p_dost_yildiz' : 'p_dost_orman';
+    const ozel = bolum === 11 ? 'p_dost_sato' : bolum === 10 ? 'p_dost_zaman' : bolum === 9 ? 'p_dost_ejder' : bolum === 8 ? 'p_dost_cadi' : bolum === 7 ? 'p_dost_kar' : bolum === 6 ? 'p_dost_senlik' : bolum === 5 ? 'p_dost_volkan' : bolum === 4 ? 'p_dost_deniz' : bolum === 3 ? 'p_dost_bulut' : bolum === 2 ? 'p_dost_yildiz' : 'p_dost_orman';
     const aday = [ozel, 'p_dost1', 'p_dost2', 'p_dost3'].filter(k => LINES[k] && !sesSoylendi[k]);
     if (!aday.length) return;
     const k = sesDostN === 0 ? aday[0] : aday[Math.floor(Math.random() * aday.length)];
@@ -1344,6 +1436,141 @@ const SES = (() => {
   OLAY.on('z_sandalIlkCan', () => { if(sesB10())soyle('p_z_sandal_yildiz'); });
   OLAY.on('z_sandalDoruk', () => { if(sesB10())soyle('p_z_sandal_doruk'); });
   OLAY.on('z_sandalBitti', () => { if(sesB10())soyle('p_z_sandal_bitti'); });
+  // ── Bölüm 11 (Ay Işığı Şatosu) olayları (ayna11.js, pelerin11.js, aynasalon11.js, org11.js, pasta11.js, ucus11.js, balo11.js, vampir11.js).
+  // Pırıl yol gösterir (ilk ayna, takılınca ipucu, bölge girişleri), mini oyunların tek talimatı + ipucu/yardım; vampir ailesi kendi sesiyle
+  // (vk_ Vela · vd_ Dede · vn_ Nine · vb_ Pıtır) kendi anında konuşur; finalde aile sözleri Ay Balosu'nun anlarına zamanlanır (sahne cümlesi gibi sırada
+  // bekler). Tek seferlik cümleler oyun başına bir kez; övgü ara sıra ve çeşitli (aynalarda ~üçte bir, mini oyunlarda yer yer).
+  const sesB11 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 11;
+  const sesV11 = ad => typeof V11 !== 'undefined' && !!V11 && !!V11[ad];
+  const ses11Ovgu = (sans, ms) => { if (Math.random() < sans) setTimeout(() => { if (!sesCalan && !sesSira.length) soyle('p_aferin'); }, ms || 700); };
+  const ses11Uc = () => { const p = gP(); return !!(p && p.ucus); };
+  const ses11Yer = () => { const p = gP(); if (!p || typeof BOLUM === 'undefined' || !BOLUM.bolgeler) return ''; for (const b of BOLUM.bolgeler) if (p.x >= b.x0 && p.x < b.x1) return b.ad; return ''; };
+  // mini oyun ipucu: talimat yeni bittiyse çocuğa deneme zamanı tanı – Pırıl ≥3,5 sn sustuktan sonra ve çocuk bu arada hiç ilerlemediyse söyle
+  let ses11DokunT = -1e9, ses11DokunN = 0;
+  let ses11SalonN = 0, ses11OrgN = 0, ses11PastaN = 0;
+  const ses11Ipucu = (k, say, oyun) => {
+    const n0 = say(), t0 = sesSaat(); let sus = 0;
+    const dene = () => {
+      if (!sesB11() || sesV11(oyun) || say() !== n0 || sesSaat() - t0 > 25) return;
+      if (sesCalan || sesSira.length) sus = 0; else if ((sus += 0.5) >= 3.5) { soyle(k); return; }
+      setTimeout(dene, 500);
+    };
+    dene();
+  };
+  let ses11AynaN = 0, ses11AynaZ = [], ses11Bekle = 0, ses11BeklO = null, ses11BaloT = 0;
+  Object.assign(SES_TEK, { p_s_pelerin: 1, p_s_pelerin_mor: 1, p_s_pelerin_lacivert: 1, p_s_pelerin_kirmizi: 1, p_s_pelerin_pembe: 1, p_s_ayna: 1, p_s_ayna_ilk: 1,
+    p_s_ayna_ipucu: 1, p_s_ayna_selale: 1, p_s_ayna2: 1, p_s_ayna_son: 1, p_s_ovgu1: 1, p_s_ovgu2: 1, p_s_ovgu3: 1, p_s_yarasa: 1, p_s_kopru: 1, p_s_magara: 1, p_s_galeri: 1,
+    p_s_salon_giris: 1, p_s_salon_ipucu: 1, p_s_ayna_sapka: 1, p_s_ayna_kedi: 1, p_s_ayna_pitir: 1, p_s_ayna_cilek: 1, p_s_ayna_ay: 1, p_s_ayna_feza: 1, p_s_salon_yardim: 1, p_s_salon_bitti: 1, p_s_org_giris: 1, p_s_org_yardim: 1, p_s_org_birlikte: 1, p_s_org_bitti: 1,
+    p_s_pasta_giris: 1, p_s_pasta_ipucu: 1, p_s_pasta_cilek: 1, p_s_pasta_yardim: 1, p_s_pasta_bitti: 1, p_s_balkon: 1, p_s_ucus_giris: 1, p_s_ucus: 1, p_s_ucus_sato: 1,
+    p_s_ucus_bitti: 1, p_s_balo_ipucu: 1, p_s_final: 1, vk_merhaba: 1, vk_gorusuruz: 1, vk_ayna: 1, vk_salon: 1, vk_org: 1, vk_ucus: 1, vk_balo: 1, vk_tesekkur: 1,
+    vd_merhaba: 1, vd_dans: 1, vd_tesekkur: 1, vd_vals: 1, vn_pasta: 1, vn_kat1: 1, vn_kat2: 1, vn_tesekkur: 1, vb_merhaba: 1, vb_mutlu: 1, vb_balo: 1 });
+  Object.assign(KOSUL, {   // talimat konusu bittiyse (oyun bitti, uçuş başladı...) söylenmez
+    p_s_pelerin: () => !sesV11('pelerin'),
+    p_s_ayna: () => ses11AynaN === 0 && !ses11Uc(), p_s_ayna_ipucu: () => !sesV11('final') && !ses11Uc() && !(typeof om11MiniAktif === 'function' && om11MiniAktif()),
+    p_s_ayna2: () => !sesV11('final'), p_s_ayna_son: () => !sesV11('final'), p_s_ayna_ilk: () => !sesV11('final'), p_s_ayna_selale: () => !sesV11('final'),
+    p_s_yarasa: () => !sesV11('final') && !ses11Uc(), p_s_kopru: () => !sesV11('final') && !ses11Uc(), p_s_magara: () => !sesV11('final') && !ses11Uc(), p_s_galeri: () => !sesV11('final') && !ses11Uc(),
+    vk_merhaba: () => !sesV11('final'), vk_gorusuruz: () => !sesV11('salon'), vb_merhaba: () => !sesV11('final'),
+    p_s_salon_giris: () => !sesV11('salon'), p_s_salon_ipucu: () => !sesV11('salon'), p_s_salon_yardim: () => !sesV11('salon'), p_s_ayna_sapka: () => !sesV11('salon'), p_s_ayna_kedi: () => !sesV11('salon'), p_s_ayna_pitir: () => !sesV11('salon'),
+    p_s_ayna_cilek: () => !sesV11('salon'), p_s_ayna_ay: () => !sesV11('salon'), p_s_ayna_feza: () => !sesV11('salon'), vk_ayna: () => !sesV11('salon'),
+    p_s_org_giris: () => !sesV11('org'), p_s_org_yardim: () => !sesV11('org'), p_s_org_birlikte: () => !sesV11('org'), vd_merhaba: () => !sesV11('org'), vd_dans: () => !sesV11('org'), vk_org: () => !sesV11('org'),
+    p_s_pasta_giris: () => !sesV11('pasta'), p_s_pasta_ipucu: () => !sesV11('pasta'), p_s_pasta_cilek: () => !sesV11('pasta'), p_s_pasta_yardim: () => !sesV11('pasta'),
+    vn_pasta: () => !sesV11('pasta'), vn_kat1: () => !sesV11('pasta'), vn_kat2: () => !sesV11('pasta'),
+    p_s_balkon: () => !sesV11('ucus') && !ses11Uc(), p_s_ucus_giris: () => !sesV11('ucus'), vk_ucus: () => !sesV11('ucus') && ses11Uc(),
+    p_s_ucus: () => !sesV11('ucus') && ses11Uc(), p_s_ucus_sato: () => !sesV11('ucus') && ses11Uc(), p_s_ucus_yardim: () => !sesV11('ucus') && ses11Uc(),
+    p_s_ucus_bitti: () => !sesV11('final'), p_s_balo_ipucu: () => !sesV11('final') && !ses11Uc(),
+  });
+  // giriş: pelerin baloncukları belirince (ya da oyun başlayınca 7 sn içinde seçilmediyse) Pırıl gösterir; seçilince rengini sever
+  OLAY.on('pelerinGoster', () => { if (sesB11()) setTimeout(() => soyle('p_s_pelerin'), 1500); });
+  OLAY.on('durum', d => { if (sesB11() && d === 'oyun') setTimeout(() => { if (!sesV11('pelerin') && typeof DURUM !== 'undefined' && DURUM === 'oyun') soyle('p_s_pelerin'); }, 7000); });
+  OLAY.on('bolum11Basla', () => { if (sesB11()) setTimeout(() => { if (!sesV11('pelerin') && typeof DURUM !== 'undefined' && DURUM === 'oyun') soyle('p_s_pelerin'); }, 7000); });
+  let ses11Pelerin = false;
+  OLAY.on('pelerinSec', e => { if (!sesB11() || ses11Pelerin) return; ses11Pelerin = true; const k = 'p_s_pelerin_' + (e && e.ad); if (LINES[k]) setTimeout(() => soyle(k), 900); });
+  // vampir durakları (vampir11.js): Vela bahçe kapısında karşılar ve şatoya süzülür; Pıtır galeride beşiğinde uyanır
+  OLAY.on('vampirDurak', e => {
+    if (!sesB11() || !e) return;
+    if (e.kim === 'kiz' && e.an === 'selam') soyle('vk_merhaba');
+    else if (e.kim === 'kiz' && e.an === 'veda') soyle('vk_gorusuruz');
+    else if (e.kim === 'bebek' && (e.an === 'uyandi' || e.an === 'selam')) soyle('vb_merhaba');
+    else if (e.an === 'dokun' && (e.kim === 'kiz' || e.kim === 'bebek')) {   // Feza Vela'ya / Pıtır'a dokununca: her seferinde değil (≥10 sn arayla, yarı şans, en çok 3 kez)
+      const t = sesSaat();
+      if (t - ses11DokunT < 10 || ses11DokunN >= 3 || Math.random() < 0.5 || sesCalan || sesSira.length) return;
+      ses11DokunT = t; ses11DokunN++; soyle(e.kim === 'kiz' ? 'vk_gidik' : 'vb_alkis');
+    }
+  });
+  // ay ışığı aynaları: ilk dönüş, art arda dönen aynalar (ışık şelalesi), yarısı, hepsi; arada ara sıra övgü ya da sıcak bir söz
+  OLAY.on('aynaDondu', () => {
+    if (!sesB11()) return;
+    ses11AynaN++; ses11Bekle = 0;
+    const t = sesSaat(); ses11AynaZ.push(t); ses11AynaZ = ses11AynaZ.filter(z => t - z < 2.5);
+    if (ses11AynaZ.length >= 3) { soyle('p_s_ayna_selale'); return; }
+    const top = (typeof SAYAC !== 'undefined' && SAYAC.aynaTop) || (typeof V11 !== 'undefined' && V11.aynaTop) || 12;
+    if (ses11AynaN === 1) setTimeout(() => soyle('p_s_ayna_ilk'), 1300);   // önce şato kapısı canlansın
+    else if (ses11AynaN === Math.ceil(top / 2)) soyle('p_s_ayna2');
+    else if (ses11AynaN === top) soyle('p_s_ayna_son');
+    else if (ses11AynaN === 4) setTimeout(() => soyle('p_s_ovgu1'), 1000);
+    else if (ses11AynaN === 9 && Math.random() < 0.6) setTimeout(() => soyle('p_s_ovgu2'), 1000);
+    else if (ses11AynaN > 2) ses11Ovgu(0.2, 900);   // ara sıra (aynaların ~beşte biri): 4. ve 9. aynada zaten sıcak söz var
+  });
+  // mini oyun 1: ayna salonu (aynasalon11.js) – Vela'nın "aynada görünmem" şakası, sonra silme talimatı
+  OLAY.on('salonSaka', () => { if (sesB11()) soyle('vk_ayna'); });
+  OLAY.on('salonOyun', () => { if (sesB11()) soyle('p_s_salon_giris'); });
+  OLAY.on('salonBasla', () => { if (sesB11()) setTimeout(() => { if (!sesSoylendi.vk_ayna && !sesSira.some(s => s.k === 'vk_ayna')) soyle('p_s_salon_giris'); }, 6000); });   // şaka olayı gelmezse yedek
+  OLAY.on('salonIpucu', () => { if (sesB11()) ses11Ipucu('p_s_salon_ipucu', () => ses11SalonN, 'salon'); });
+  OLAY.on('salonYardim', () => { if (sesB11()) soyle('p_s_salon_yardim'); });
+  const SES11_YANSIMA = { sapkaPiril: 'p_s_ayna_sapka', kediDede: 'p_s_ayna_kedi', pitirKirp: 'p_s_ayna_pitir', cilekNine: 'p_s_ayna_cilek', gulenAy: 'p_s_ayna_ay', uzunFeza: 'p_s_ayna_feza' };
+  OLAY.on('salonBul', e => { if (!sesB11() || !e) return; ses11SalonN++; const k = SES11_YANSIMA[e.ad]; if (k) setTimeout(() => soyle(k), 350); else if (e.n === 3 && !e.yardim) ses11Ovgu(0.5, 900); });   // her komik yansımaya kısa bir tepki
+  OLAY.on('salonVela', () => { if (sesB11()) soyle('vk_salon'); });
+  OLAY.on('salonBitti', () => { if (sesB11()) setTimeout(() => soyle('p_s_salon_bitti'), 500); });
+  // mini oyun 2: org konseri (org11.js) – Dede karşılar, Pırıl gösterir; cümle sonu dansında Dede neşelenir
+  OLAY.on('orgBasla', () => { if (!sesB11()) return; soyle('vd_merhaba'); soyle('p_s_org_giris'); });
+  OLAY.on('orgIpucu', () => { if (sesB11()) ses11Ipucu('p_s_org_yardim', () => ses11OrgN, 'org'); });
+  OLAY.on('orgYardim', () => { if (sesB11()) soyle('p_s_org_birlikte'); });
+  OLAY.on('orgDans', e => { if (!sesB11() || !e) return; if (e.n === 1) soyle('vd_dans'); else if (e.n === 2) soyle('vk_org'); });
+  OLAY.on('orgNota', e => { if (sesB11() && e) ses11OrgN++; if (sesB11() && e && e.n === 8 && !e.yardim) ses11Ovgu(0.4, 2600); });
+  OLAY.on('orgBitti', () => { if (!sesB11()) return; soyle('vd_tesekkur'); setTimeout(() => soyle('p_s_org_bitti'), 500); });
+  // mini oyun 3: Vampir Nine'nin pastası (pasta11.js)
+  OLAY.on('pastaBasla', () => { if (!sesB11()) return; soyle('vn_pasta'); soyle('p_s_pasta_giris'); });
+  OLAY.on('pastaSus', e => { if (sesB11() && e) ses11PastaN++; if (sesB11() && e && e.n === 3 && !e.yardim) ses11Ovgu(0.4, 800); });
+  OLAY.on('pastaKat', e => { if (!sesB11() || !e) return; if (e.kat === 1) soyle('vn_kat1'); else if (e.kat === 2) soyle('vn_kat2'); });
+  OLAY.on('pastaBuyukCilek', () => { if (sesB11()) soyle('p_s_pasta_cilek'); });
+  OLAY.on('pastaIpucu', () => { if (sesB11()) ses11Ipucu('p_s_pasta_ipucu', () => ses11PastaN, 'pasta'); });
+  OLAY.on('pastaYardim', () => { if (sesB11()) soyle('p_s_pasta_yardim'); });
+  OLAY.on('pastaKapak', () => { if (sesB11()) soyle('vn_tesekkur'); });
+  OLAY.on('pastaBitti', () => { if (!sesB11()) return; soyle('vn_tesekkur'); soyle('vb_mutlu'); setTimeout(() => { if (!ses11Balkon) soyle('p_s_pasta_bitti'); }, 500); });   // balkon çağrısı sıradaysa Pırıl onu söyler (dört cümle art arda olmasın)
+  // pelerinle uçuş (ucus11.js)
+  let ses11Balkon = false;
+  OLAY.on('pelerinUcusHazir', () => { if (sesB11()) { ses11Balkon = true; setTimeout(() => soyle('p_s_balkon'), 1500); } });
+  OLAY.on('pelerinUcusBasla', () => { if (sesB11()) soyle('p_s_ucus_giris'); });
+  OLAY.on('pelerinUcusVela', () => { if (sesB11()) soyle('vk_ucus'); });
+  OLAY.on('pelerinUcusAy', () => { if (sesB11()) soyle('p_s_ucus'); });
+  OLAY.on('pelerinUcusSato', () => { if (sesB11()) soyle('p_s_ucus_sato'); });
+  OLAY.on('pelerinUcusYardim', () => { if (sesB11()) soyle('p_s_ucus_yardim'); });
+  OLAY.on('pelerinUcusIsik', e => { if (!sesB11() || !e || !(e.n > 0) || e.yardim) return; if (e.n === 10) soyle('p_s_ovgu3'); else if (e.n % 7 === 0) ses11Ovgu(0.4); });
+  OLAY.on('pelerinUcusBitti', () => { if (sesB11()) setTimeout(() => soyle('p_s_ucus_bitti'), 400); });
+  // final: Ay Balosu (balo11.js anları; anlatıcı oyun.js'te 6. sn) – aile sözleri sahne cümlesi gibi sırada bekler
+  const ses11Final = (k, ms) => setTimeout(() => { if (sesB11() && typeof DURUM !== 'undefined' && DURUM === 'oyun') soyle(k, { oncelik: 3 }); }, ms || 0);
+  OLAY.on('baloFinal', () => { if (sesB11()) soyle('p_s_final'); });
+  OLAY.on('baloAy', () => ses11Final('vk_balo', 1000));
+  // Dans uzun bir konuşma zinciri olmasın: Pırıl → Vela → anlatıcı → Dede, sonra müzik nefes alır; doruk (27,7. sn) sözsüz ve temiz
+  // duyulur (konuşma müziği kısar), Vela teşekkürünü doruktan sonra, kapanış ölçüsünde eder. (Pıtır'ın vb_balo'su finalde söylenmez.)
+  OLAY.on('baloVals', () => ses11Final('vd_vals', 2000));
+  OLAY.on('baloDoruk', () => ses11Final('vk_tesekkur', 5200));
+  setInterval(() => {   // yakınlık / bölge cümleleri: Vela kapıda karşılar, ilk ayna, takılınca ipucu, köprü, mağara, uyuyan yarasalar, galeri, kule terası
+    if (!sesB11() || typeof DURUM === 'undefined' || DURUM !== 'oyun' || sesV11('final')) return;
+    const p = gP(); if (!p || p.ucus || p.kilit > 0) return;
+    const yer = ses11Yer();
+    if (!sesSoylendi.vk_merhaba) { const v = gN().find(n => n.tip === 'vampirDurak' && n.kim === 'kiz'); if (v && Math.abs(v.x - p.x) < 5 * T) { soyle('vk_merhaba'); return; } }
+    if (!sesSoylendi.p_s_ayna && ses11AynaN === 0 && sesV11('pelerin')) { const m = gN().find(n => n.tip === 'ayAyna' && !n.donmus && n.x > p.x - 2 * T && n.x - p.x < 7 * T); if (m) soyle('p_s_ayna'); }
+    if (yer === 'kopru' && !sesSoylendi.p_s_kopru) soyle('p_s_kopru');
+    else if (yer === 'magara' && !sesSoylendi.p_s_magara) soyle('p_s_magara');
+    else if (yer === 'galeri' && !sesSoylendi.p_s_galeri) soyle('p_s_galeri');
+    if (!sesSoylendi.p_s_yarasa && sesSoylendi.p_s_magara) { const y = gN().find(n => n.tip === 'yarasaDekor' && n.uyku && Math.abs(n.x - p.x) < 4 * T); if (y) soyle('p_s_yarasa'); }
+    // bekleyen aynanın yanında oyalanıp ona dokunmazsa (≈8 sn) bir kez ipucu
+    let h = null; try { h = typeof AYNA11 !== 'undefined' && AYNA11.hedef ? AYNA11.hedef() : null; } catch (e) {}
+    if (h && ses11AynaN > 0 && Math.abs(h.x - p.x) < 4 * T) { if (ses11BeklO !== h) { ses11BeklO = h; ses11Bekle = 0; } if ((ses11Bekle += 0.5) >= 8) soyle('p_s_ayna_ipucu'); } else ses11Bekle = 0;
+    // kule terasına indi, ay taşına dokunmadan bekliyor
+    if (yer === 'balo' && sesV11('ucus')) { if ((ses11BaloT += 0.5) >= 10) soyle('p_s_balo_ipucu'); } else ses11BaloT = 0;
+  }, 500);
   OLAY.on('secim', () => { sesSecimT = sesSaat(); });
   OLAY.on('secimIlgi', () => { sesSecimT = sesSaat(); });   // boş dokunuş: yalnız sayaç sıfırlanır (ses çalmaz)
   const sesSecimBasla = d => {

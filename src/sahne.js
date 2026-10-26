@@ -186,7 +186,7 @@ function shIsCalis() {
   if (shIsQ.length) shIsZ = setTimeout(shIsCalis, 40);
 }
 function shGeceBirak() {   // açılışın üç tam ekran önbelleği (≈67 MB, 2732×2048'de) oyun boyunca tutulmaz
-  for (const ad of ['oda', 'orman', 'gol', 'bulut', 'deniz', 'denizOyun', 'onPlan', 'onPlanB', 'onPlanI', 'cadi', 'onPlanC', 'ejderha', 'onPlanE', 'zaman']) { sh[ad] = shBirak(sh[ad]); if (shYap[ad]) { shBirak(shYap[ad].c); shYap[ad] = null; } }
+  for (const ad of ['oda', 'orman', 'gol', 'bulut', 'deniz', 'denizOyun', 'onPlan', 'onPlanB', 'onPlanI', 'cadi', 'onPlanC', 'ejderha', 'onPlanE', 'zaman', 'sato', 'onPlanS']) { sh[ad] = shBirak(sh[ad]); if (shYap[ad]) { shBirak(shYap[ad].c); shYap[ad] = null; } }
 }
 
 // ── küçük şekiller ──
@@ -1487,7 +1487,7 @@ function shOnPlanCiz() {
   }
   return c;
 }
-const shOnPlanAd = () => sh.tema === 'ejderha' ? 'onPlanE' : sh.tema === 'cadi' ? 'onPlanC' : sh.tema === 'kar' ? 'onPlanK' : sh.tema === 'senlik' ? 'onPlanF' : sh.tema === 'volkan' ? 'onPlanV' : sh.tema === 'deniz' ? 'onPlanI' : sh.tema === 'bulut' ? 'onPlanB' : 'onPlan';
+const shOnPlanAd = () => sh.tema === 'sato' ? 'onPlanS' : sh.tema === 'ejderha' ? 'onPlanE' : sh.tema === 'cadi' ? 'onPlanC' : sh.tema === 'kar' ? 'onPlanK' : sh.tema === 'senlik' ? 'onPlanF' : sh.tema === 'volkan' ? 'onPlanV' : sh.tema === 'deniz' ? 'onPlanI' : sh.tema === 'bulut' ? 'onPlanB' : 'onPlan';
 function shOnPlan(a, tm) {
   if (a <= 0.01) return;
   const ad = shOnPlanAd(), OP = shHazir(ad);
@@ -1497,7 +1497,8 @@ function shOnPlan(a, tm) {
   g.setTransform(1, 0, 0, 1, 0, 0);
   if (sh.tema === 'kar') sh7OnKar(tm || 0, a);   // ön planda iri, yavaş kar taneleri (canlı)
   if (sh.tema === 'cadi') sh8OnToz(tm || 0, a);   // ön planda süzülen iri ışık tozları
-  if (sh.tema === 'ejderha') sh9OnToz(tm || 0, a);   // ön planda süzülen taç yaprakları
+  if (sh.tema === 'ejderha') sh9OnToz(tm || 0, a);
+  if (sh.tema === 'sato' && typeof sh11OnToz === 'function') sh11OnToz(tm || 0, a);   // ön planda ay ışığı tozu, yarasa flamaları   // ön planda süzülen taç yaprakları
 }
 function shGirisCiz(tm, dt) {
   const t = sh.t, P = sh.plan;
@@ -1564,6 +1565,7 @@ function shGirisCiz(tm, dt) {
   if (sh.tema === 'kar') sh7Oda(p, tm, 1 - halka, sh.atla >= 0 ? 1 : shEase(shSeg(t, P.uyudu - 1.0, P.uyudu + 0.4)));   // Kuzey Işıkları: kâğıt kar taneleri
   if (sh.tema === 'cadi') { const uy = sh.atla >= 0 ? 1 : shEase(shSeg(t, P.uyudu - 1.0, P.uyudu + 0.4)), kg = sh.atla >= 0 ? 0 : Math.sin(Math.PI * shSeg(t, P.uyudu - 0.7, P.uyudu - 0.15)); sh8Oda(p, tm, 1 - halka, uy, kg); }
   if (sh.tema === 'zaman') sh10Oda(tm, 1 - halka, true);
+  if (sh.tema === 'sato' && typeof sh11Oda === 'function') sh11Oda(tm, 1 - halka, true);   // Bölüm 11 (sahne11.js)
   if (sh.tema === 'ejderha') { const uy = sh.atla >= 0 ? 1 : shEase(shSeg(t, P.uyudu - 1.0, P.uyudu + 0.4)), sl = sh.atla >= 0 ? 0 : Math.sin(Math.PI * 3 * shSeg(t, P.uyudu - 0.9, P.uyudu - 0.1)) * (1 - shSeg(t, P.uyudu - 0.9, P.uyudu - 0.1)); sh9Oda(p, tm, 1 - halka, uy, sl); }   // Ejderha Vadisi: pul flamalar, kâğıt ejderha, yumurta gece lambası   // Balkabağı Gecesi: kâğıt yarasa süsü, kabak gece lambası
   shHali(p, hali, tm);
   sh.yDy = (sh.secDy || 0) * (1 - shEase(clamp(cerceve * 1.6, 0, 1)));   // seçimden gelen yatak kayması oda eridikçe söner
@@ -1720,12 +1722,12 @@ function shGirisAcilis(tm, t, P) {
 function shFk(k) {
   try {
     const b = sh.fBolum || (typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1);
-    if (b >= 2 && typeof SES !== 'undefined' && SES.LINES) { const k2 = (b === 10 ? 'a_z_' : b === 9 ? 'a_e_' : b === 8 ? sh8Harf('a_') : b === 7 ? sh7Harf('a_') : b === 6 ? 'a_f_' : b === 5 ? 'a_v_' : b === 4 ? 'a_i_' : b === 3 ? 'a_b_' : 'a_y_') + k.slice(2); if (SES.LINES[k2] || (window.VOICE_DUR && VOICE_DUR[k2])) return k2; }
+    if (b >= 2 && typeof SES !== 'undefined' && SES.LINES) { const k2 = (b === 11 ? 'a_s_' : b === 10 ? 'a_z_' : b === 9 ? 'a_e_' : b === 8 ? sh8Harf('a_') : b === 7 ? sh7Harf('a_') : b === 6 ? 'a_f_' : b === 5 ? 'a_v_' : b === 4 ? 'a_i_' : b === 3 ? 'a_b_' : 'a_y_') + k.slice(2); if (SES.LINES[k2] || (window.VOICE_DUR && VOICE_DUR[k2])) return k2; }
   } catch (e) {}
   return k;
 }
 // Bölüm 6–8: ilk final cümlesi dünyadaki kutlamada söylendiyse sabaha durmadan geçilir (Bölüm 4/5 gibi)
-function shF6Hizli() { const b = sh.fBolum || 1; return (b === 6 || b === 7 || b === 8 || b === 9 || b === 10) && !!sh.f6Ozet; }
+function shF6Hizli() { const b = sh.fBolum || 1; return (b === 6 || b === 7 || b === 8 || b === 9 || b === 10 || b === 11) && !!sh.f6Ozet; }
 function shFinalPlan() {
   const d1 = shSure(shFk('a_final1')), d2 = shSure(shFk('a_final2')), d3 = shSure(shFk('a_final3'));
   const P = { s1: 0.6 };
@@ -1803,6 +1805,7 @@ function shSabahCiz(tm, t, P, sonKirp) {
   const fb = sh.fBolum || 1, b2 = fb === 2, b3 = fb === 3;
   if (fb === 4) shDenizSabah(tm);
   if (fb === 4) shSabahPencere(tm, true);
+  else if (fb === 11) { if (typeof sh11Sabah === 'function') sh11Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1); }
   else if (fb === 10) sh10Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1);
   else if (fb === 9) sh9Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1);
   else if (fb === 8) sh8Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1);
@@ -1816,6 +1819,7 @@ function shSabahCiz(tm, t, P, sonKirp) {
   shLamba(p, 0, tm, false, 0);
   if (fb === 7) { sh7Oda(p, tm, 1, 0); sh7Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // kâğıt kar taneleri gün ışığında; komodinde kar küresi ve buz kristali
   if (fb === 8) { sh8Oda(p, tm, 1, 0, 0); sh8Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.6) : 1); }
+  if (fb === 11 && typeof sh11Hediye === 'function') { sh11Oda(tm, 1, false); sh11Hediye(tm, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // komodinde lila yarasa peluşu + çilek (sahne11.js)
   if (fb === 10) { sh10Oda(tm, 1, false); sh10Hediye(tm, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }
   if (fb === 9) { sh9Oda(p, tm, 1, 0, 0); sh9Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // süsler gün ışığında; komodinde rüyadan kalan ejderha pulu ve yumurta kabuğu   // gece süsleri gün ışığında; komodinde rüyadan kalan kabak ve şeker
   shHali(p, 0, tm);
@@ -2397,6 +2401,7 @@ function shIkonCiz(x, ad, d) {   // DURAĞAN iç resim, d×d kare; çağıran da
   if (ad === 'kar') { sh7Fon(x, d, d); return; }
   if (ad === 'cadi') { sh8Fon(x, d, d); return; }
   if (ad === 'zaman') { sh10Fon(x, d, d); return; }
+  if (ad === 'sato') { if (typeof sh11Fon === 'function') sh11Fon(x, d, d); return; }
   if (ad === 'ejderha') { sh9Fon(x, d, d); return; }
   if (ad === 'deniz') { shDenizResim(x, d); return; }
   if (ad === 'orman') {   // gece ormanı: katmanlı siluetler, ay ışığı hüzmesi, ışıklı ağaç, parlayan çiçek
@@ -2501,6 +2506,7 @@ function shIkonCanli(ad, ox, oy, q, tm, a, i0, hov) {
   if (ad === 'kar') { sh7Canli(ox, oy, q, q, tm, a, hov); return; }
   if (ad === 'cadi') { sh8Canli(ox, oy, q, q, tm, a, hov); return; }
   if (ad === 'zaman') { sh10Canli(ox, oy, q, q, tm, a, hov); return; }
+  if (ad === 'sato') { if (typeof sh11Canli === 'function') sh11Canli(ox, oy, q, q, tm, a, hov); return; }
   if (ad === 'ejderha') { sh9Canli(ox, oy, q, q, tm, a, hov); return; }
   const hovAmp = 1 + 0.35 * hov;
   const U = (u, v) => [ox + u * q, oy + v * q];
@@ -2808,6 +2814,7 @@ function shKavIkon(x, ad, cx, cy, r, col) {
   else if (ad === 'kar') { x.strokeStyle = '#7ab8f0'; x.lineWidth = r * 0.13; for (let k = 0; k < 3; k++) { x.save(); x.rotate(k * Math.PI / 3); x.beginPath(); x.moveTo(0, -0.85 * r); x.lineTo(0, 0.85 * r); for (const sd of [-1, 1]) { x.moveTo(0, sd * 0.5 * r); x.lineTo(0.24 * r, sd * 0.72 * r); x.moveTo(0, sd * 0.5 * r); x.lineTo(-0.24 * r, sd * 0.72 * r); } x.stroke(); x.restore(); } daire(0, 0, 0.14, '#cfe6ff'); }
   else if (ad === 'cadi') { x.fillStyle = '#c4581f'; for (const [px, rr] of [[-0.38, 0.5], [0.38, 0.5], [0, 0.58]]) { x.beginPath(); x.ellipse(px * r, 0.15 * r, rr * r, 0.62 * r, 0, 0, 6.283); x.fill(); } x.fillStyle = '#ff9a3c'; for (const [px, rr] of [[-0.38, 0.42], [0.38, 0.42], [0, 0.5]]) { x.beginPath(); x.ellipse(px * r, 0.15 * r, rr * r, 0.55 * r, 0, 0, 6.283); x.fill(); } x.strokeStyle = '#4f7a34'; x.lineWidth = r * 0.16; x.beginPath(); x.moveTo(0, -0.38 * r); x.quadraticCurveTo(0.04 * r, -0.62 * r, 0.24 * r, -0.7 * r); x.stroke(); x.fillStyle = '#7a3414'; x.beginPath(); x.arc(-0.24 * r, 0.02 * r, 0.1 * r, 0, 6.283); x.arc(0.24 * r, 0.02 * r, 0.1 * r, 0, 6.283); x.fill(); x.beginPath(); x.moveTo(-0.3 * r, 0.3 * r); x.quadraticCurveTo(0, 0.58 * r, 0.3 * r, 0.3 * r); x.quadraticCurveTo(0, 0.42 * r, -0.3 * r, 0.3 * r); x.fill(); }
   else if (ad === 'zaman') sh10Ikon(x, r);
+  else if (ad === 'sato' && typeof sh11Ikon === 'function') sh11Ikon(x, r);
   else if (ad === 'ejderha') sh9Ikon(x, r);
   else { x.fillStyle = mixc(col, '#ffffff', 0.15); shYildiz5(x, 0, 0, 0.8 * r); x.fill(); x.strokeStyle = mixc(col, '#2a1f4e', 0.4); x.lineWidth = r * 0.08; x.stroke(); }
   x.restore();
@@ -3308,8 +3315,8 @@ const SAHNE = {
     opt = opt || {};
     const bolum = opt.bolum || 1, kisa = opt.kisa === true || (bolum >= 2 && opt.kisa !== false);
     shBalonBirak();
-    sh.dan = sh.mod === 'secim' || kisa; sh.kisa = kisa; sh.fon = bolum === 10 ? 'zaman' : bolum === 9 ? 'ejderha' : bolum === 8 ? 'cadi' : bolum === 7 ? 'kar' : bolum === 6 ? 'senlik' : bolum === 5 ? 'volkan' : bolum === 4 ? 'deniz' : bolum === 1 ? 'orman' : bolum === 3 ? 'bulut' : 'gol'; sh.secBitti = null;
-    sh.tema = bolum === 10 ? 'zaman' : bolum === 9 ? 'ejderha' : bolum === 8 ? 'cadi' : bolum === 7 ? 'kar' : bolum === 6 ? 'senlik' : bolum === 5 ? 'volkan' : bolum === 4 ? 'deniz' : bolum === 3 ? 'bulut' : bolum === 2 ? 'gol' : null; sh.uykuK = bolum === 10 ? 'p_z_uyku' : bolum === 9 ? 'p_e_uyku' : bolum === 8 ? sh8Harf('p_') + 'uyku' : bolum === 7 ? sh7Harf('p_') + 'uyku' : bolum === 6 ? 'p_f_uyku' : bolum === 5 ? 'p_v_uyku' : bolum === 4 ? 'p_i_uyku' : bolum === 3 ? 'p_b_uyku' : 'p_y_uyku';
+    sh.dan = sh.mod === 'secim' || kisa; sh.kisa = kisa; sh.fon = bolum === 11 ? 'sato' : bolum === 10 ? 'zaman' : bolum === 9 ? 'ejderha' : bolum === 8 ? 'cadi' : bolum === 7 ? 'kar' : bolum === 6 ? 'senlik' : bolum === 5 ? 'volkan' : bolum === 4 ? 'deniz' : bolum === 1 ? 'orman' : bolum === 3 ? 'bulut' : 'gol'; sh.secBitti = null;
+    sh.tema = bolum === 11 ? 'sato' : bolum === 10 ? 'zaman' : bolum === 9 ? 'ejderha' : bolum === 8 ? 'cadi' : bolum === 7 ? 'kar' : bolum === 6 ? 'senlik' : bolum === 5 ? 'volkan' : bolum === 4 ? 'deniz' : bolum === 3 ? 'bulut' : bolum === 2 ? 'gol' : null; sh.uykuK = bolum === 11 ? 'p_s_uyku' : bolum === 10 ? 'p_z_uyku' : bolum === 9 ? 'p_e_uyku' : bolum === 8 ? sh8Harf('p_') + 'uyku' : bolum === 7 ? sh7Harf('p_') + 'uyku' : bolum === 6 ? 'p_f_uyku' : bolum === 5 ? 'p_v_uyku' : bolum === 4 ? 'p_i_uyku' : bolum === 3 ? 'p_b_uyku' : 'p_y_uyku';
     shOlc(); sh.mod = 'giris'; sh.t = 0; sh.nefesFaz = 0;  sh.kirpK = 0; sh.kalkis = null; sh.bitti = bitince; sh.atla = -1; sh.sesler = {}; sh.nefesN = -1; sh.zz.length = 0; sh.tam = false;
     sh.anlar = {}; sh.parca.length = 0; sh.camOturdu = 0; sh.izlendi = 0;
     sh.gBolum = bolum; sh.atlanabilir = shDahaOnce(bolum);   // atla düğmesi: bu rüya daha önce oynandıysa (her bölümde)
@@ -3650,7 +3657,7 @@ function sh6Sabah(tm, a) {
 function sh6Hatira(tm, a) {
   if (a <= 0.01) return;
   g.setTransform(1, 0, 0, 1, 0, 0);
-  const R = ['orman', 'gol', 'bulut', 'deniz', 'volkan', 'senlik', 'kar', 'cadi', 'ejderha', 'zaman'].slice(0, Math.min(10, Math.max(6, sh.fBolum || 1))), n = R.length;
+  const R = ['orman', 'gol', 'bulut', 'deniz', 'volkan', 'senlik', 'kar', 'cadi', 'ejderha', 'zaman', 'sato'].slice(0, Math.min(11, Math.max(6, sh.fBolum || 1))), n = R.length;
   const k = sh.k0 * sh.zoom, hx = SH_FEZA.x + 7, hy = 38.5;   // Feza ile Pırıl'ın başlarının üstünde
   for (let i = 0; i < n; i++) {
     const an = tm * 0.22 + i * Math.PI * 2 / n, nf = 0.5 + 0.5 * Math.sin(tm * 1.3 + i * 1.9);
