@@ -2922,6 +2922,9 @@ function drTac9(x, tm, gor) {
 // (om11MiniAktif), uçuşta ve finalde kendiliğinden bir şey yapmaz; Ay Balosu'nda 2,4 sn sonra dans.
 const DR11 = { mavi: '#2f3f96', maviA: '#4c60c4', maviK: '#1f2a6c', maviC: '#131a48', astar: '#ff7a9a', yil: '#ffd76a', yilK: '#c88a22', ay: '#eef3ff', ayK: '#9aa8d4' };
 const DR11S = { aynaT: -99, gosterN: 0, selam: {} };
+// hacim (kalite): feza.js'in pişmiş kumaş dokuları (fz11Doku / fz11Leke / fz11Rim) bu küçük pelerine de uygulanır; karede gradyan yok
+const DR11P = { d: DR11.mavi, dA: DR11.maviA, dK: DR11.maviK, a: DR11.astar, aK: '#d4496f' };
+function dr11Hacim() { return typeof fz11Doku === 'function' && typeof fz11Leke === 'function' && typeof fz11Rim === 'function'; }
 function dr11Pel() { return BOLUM_NO === 11 && typeof DURUM !== 'undefined' && DURUM === 'oyun' && !(D.plush > 0.5); }
 function drB11Mesgul() {
   if (typeof V11 !== 'undefined' && V11 && V11.final) return true;
@@ -2947,17 +2950,25 @@ function drPelerin11(x, tm, gor, ek) {
   const sw = Math.sin(tm * 3.3) * 0.6 + (D.glide || 0) * 1.4, fl = Math.sin(tm * 5.1) * 0.5;
   x.save(); x.lineJoin = 'round'; x.lineCap = 'round';
   if (gor === 1) {   // yandan: boyundan sırta, geriye doğru savrulan kısa pelerin; etek iki taraklı (gövdenin ardından taşar)
-    x.beginPath(); x.moveTo(3.2, -7.6); x.quadraticCurveTo(-2.4, -10.2, -7.4, -7.6);
-    x.quadraticCurveTo(-14.2 - sw, -3.4, -19.0 - sw * 1.8, 3.8 + fl);
-    x.quadraticCurveTo(-16.0 - sw, 3.4, -14.6 - sw * 1.2, 7.4 + fl * 0.6); x.quadraticCurveTo(-12.4 - sw * 0.5, 5.4, -9.6, 9.0);
-    x.quadraticCurveTo(-5.0, 1.0, 0.6, -4.0); x.closePath();
-    x.fillStyle = DR11.mavi; x.fill();
+    const yolY = () => { x.beginPath(); x.moveTo(3.2, -7.6); x.quadraticCurveTo(-2.4, -10.2, -7.4, -7.6);
+      x.quadraticCurveTo(-14.2 - sw, -3.4, -19.0 - sw * 1.8, 3.8 + fl);
+      x.quadraticCurveTo(-16.0 - sw, 3.4, -14.6 - sw * 1.2, 7.4 + fl * 0.6); x.quadraticCurveTo(-12.4 - sw * 0.5, 5.4, -9.6, 9.0);
+      x.quadraticCurveTo(-5.0, 1.0, 0.6, -4.0); x.closePath(); };
+    yolY(); x.fillStyle = DR11.mavi; x.fill();
     x.save(); x.clip();
-    x.fillStyle = DR11.astar; x.beginPath(); x.moveTo(-21 - sw * 1.8, 1.6 + fl); x.quadraticCurveTo(-14, 2.4, -8.6, 6.6); x.lineTo(-8.6, 11); x.lineTo(-21 - sw * 1.8, 11); x.closePath(); x.fill();
+    const hc = dr11Hacim();
+    if (hc) {   // hacim: boyundan geriye-aşağı açılan kumaş kıvrımları (rüzgârda ikincil dalga), sırtta gölge
+      x.save(); x.translate(-1.2, -8.6); x.rotate(0.78 + Math.sin(tm * 2.7) * 0.05); x.drawImage(fz11Doku(DR11P, 0), -11 + fl * 0.6, 0, 22, 21); x.restore();
+      x.globalAlpha = 0.45; x.drawImage(fz11Leke(0), -6, -9.5, 11, 8); x.globalAlpha = 1;
+    }
+    const asP = (dy) => { x.beginPath(); x.moveTo(-21 - sw * 1.8, 1.6 + fl + dy); x.quadraticCurveTo(-14, 2.4 + dy, -8.6, 6.6 + dy); x.lineTo(-8.6, 11); x.lineTo(-21 - sw * 1.8, 11); x.closePath(); };
+    x.fillStyle = DR11.astar; asP(0); x.fill();
+    if (hc) { x.fillStyle = DR11P.aK; x.globalAlpha = 0.65; asP(1.0); x.fill(); x.globalAlpha = 1; x.strokeStyle = 'rgba(255,226,236,0.75)'; x.lineWidth = 0.45; x.beginPath(); x.moveTo(-21 - sw * 1.8, 1.8 + fl); x.quadraticCurveTo(-14, 2.6, -8.6, 6.8); x.stroke(); }   // astarın içe dönük koyu kısmı, kıvrım kenarında ışık
     x.fillStyle = 'rgba(255,255,255,0.16)'; x.beginPath(); x.ellipse(-5.0, -6.6, 4.4, 1.5, -0.35, 0, 6.283); x.fill();
     x.fillStyle = DR11.yil; dr11Yildiz(x, -9.4, -3.0, 1.2, 0.3); dr11Yildiz(x, -14.2 - sw * 0.9, 0.6, 1.0, 1.1); dr11Yildiz(x, -9.0, 3.2, 0.9, 0.7);
+    if (hc) fz11Rim(x, yolY, 0.6, 0.9, '#dcecff');   // ay ışığından gümüş kenar
     x.restore();
-    x.strokeStyle = DR11.maviC; x.lineWidth = 0.75; x.stroke();
+    yolY(); x.strokeStyle = DR11.maviC; x.lineWidth = 0.75; x.stroke();
   } else if (gor === 0) {   // önden: omuzlardan iki yana açılan kısa pelerin (astar), kenarda dış kumaş
     const yw = ek || 0;
     x.beginPath(); x.moveTo(-6.4 + yw * 1.5, -6.6); x.quadraticCurveTo(-16.4 - fl, -2.0, -17.6 - sw, 9.4);
@@ -2965,21 +2976,32 @@ function drPelerin11(x, tm, gor, ek) {
     x.quadraticCurveTo(14.2, 7.4, 17.6 + sw, 9.4); x.quadraticCurveTo(16.4 + fl, -2.0, 6.4 + yw * 1.5, -6.6); x.closePath();
     x.fillStyle = DR11.astar; x.fill();
     x.save(); x.clip();
+    if (dr11Hacim()) {   // hacim: astarda kıvrımlar, gövdenin ardında yumuşak gölge, astar kenarında ışık
+      x.save(); x.translate(yw * 1.5, -8.0); x.transform(1, 0, Math.sin(tm * 2.7) * 0.05, 1, 0, 0); x.drawImage(fz11Doku(DR11P, 1), -20, 0, 40, 21); x.restore();
+      x.globalAlpha = 0.55; x.drawImage(fz11Leke(0), -9 + yw * 1.5, -7, 18, 17); x.globalAlpha = 1;
+      x.strokeStyle = 'rgba(255,224,236,0.6)'; x.lineWidth = 4.4; x.beginPath(); x.moveTo(-6.4 + yw * 1.5, -6.6); x.quadraticCurveTo(-16.4 - fl, -2.0, -17.6 - sw, 9.4); x.moveTo(6.4 + yw * 1.5, -6.6); x.quadraticCurveTo(16.4 + fl, -2.0, 17.6 + sw, 9.4); x.stroke();
+    }
     x.strokeStyle = DR11.mavi; x.lineWidth = 3.2; x.beginPath(); x.moveTo(-6.4 + yw * 1.5, -6.6); x.quadraticCurveTo(-16.4 - fl, -2.0, -17.6 - sw, 9.4); x.moveTo(6.4 + yw * 1.5, -6.6); x.quadraticCurveTo(16.4 + fl, -2.0, 17.6 + sw, 9.4); x.stroke();
+    x.strokeStyle = DR11.maviA; x.lineWidth = 1.2; x.stroke();
     x.restore();
     x.strokeStyle = DR11.maviC; x.lineWidth = 0.7; x.stroke();
   } else {   // arkadan: sırtı örten kısa pelerin, yıldızlı, dik yaka
     const mid = ek || 0;
-    x.beginPath(); x.moveTo(-6.6 + mid * 0.5, -7.0); x.quadraticCurveTo(-11.6 - fl, 0, -12.4 - sw, 8.0);
-    x.quadraticCurveTo(-9.6, 6.0, -6.2, 9.2); x.quadraticCurveTo(-3.2, 7.0, 0 + mid * 0.3, 9.8); x.quadraticCurveTo(3.2, 7.0, 6.2, 9.2);
-    x.quadraticCurveTo(9.6, 6.0, 12.4 + sw, 8.0); x.quadraticCurveTo(11.6 + fl, 0, 6.6 + mid * 0.5, -7.0); x.quadraticCurveTo(mid * 0.5, -8.6, -6.6 + mid * 0.5, -7.0); x.closePath();
-    x.fillStyle = DR11.mavi; x.fill();
+    const yolA = () => { x.beginPath(); x.moveTo(-6.6 + mid * 0.5, -7.0); x.quadraticCurveTo(-11.6 - fl, 0, -12.4 - sw, 8.0);
+      x.quadraticCurveTo(-9.6, 6.0, -6.2, 9.2); x.quadraticCurveTo(-3.2, 7.0, 0 + mid * 0.3, 9.8); x.quadraticCurveTo(3.2, 7.0, 6.2, 9.2);
+      x.quadraticCurveTo(9.6, 6.0, 12.4 + sw, 8.0); x.quadraticCurveTo(11.6 + fl, 0, 6.6 + mid * 0.5, -7.0); x.quadraticCurveTo(mid * 0.5, -8.6, -6.6 + mid * 0.5, -7.0); x.closePath(); };
+    yolA(); x.fillStyle = DR11.mavi; x.fill();
     x.save(); x.clip();
+    if (dr11Hacim()) {   // hacim: sırtta kıvrımlar (ikincil dalga), kanat kenarlarında ışık geçişi, yakanın altında gölge
+      x.save(); x.translate(mid * 0.5, -8.6); x.transform(1, 0, Math.sin(tm * 2.7) * 0.05, 1, 0, 0); x.drawImage(fz11Doku(DR11P, 0), -15, 0, 30, 19); x.restore();
+      x.globalAlpha = 0.45; x.drawImage(fz11Leke(0), -6 + mid * 0.5, -9, 12, 6); x.globalAlpha = 1;
+    }
     x.fillStyle = 'rgba(255,255,255,0.14)'; x.beginPath(); x.ellipse(-4 + mid * 0.5, -2, 3.6, 6, 0.3, 0, 6.283); x.fill();
     x.strokeStyle = 'rgba(15,20,70,0.35)'; x.lineWidth = 0.55; x.beginPath(); x.moveTo(-2 + mid * 0.5, -5); x.quadraticCurveTo(-3.6, 2, -6.2, 8.6); x.moveTo(2 + mid * 0.5, -5); x.quadraticCurveTo(3.6, 2, 6.2, 8.6); x.stroke();
     x.fillStyle = DR11.yil; dr11Yildiz(x, -6.6, 1.0, 1.0, 0.2); dr11Yildiz(x, 5.8, 2.6, 0.9, 0.9); dr11Yildiz(x, mid * 0.4, 5.4, 0.85, 1.5); dr11Yildiz(x, 1.6 + mid * 0.4, -2.4, 0.7, 0.5); dr11Yildiz(x, -9.0, 6.0, 0.7, 1.2);
+    if (dr11Hacim()) fz11Rim(x, yolA, 0.55, 0.9, '#dcecff');
     x.restore();
-    x.strokeStyle = DR11.maviC; x.lineWidth = 0.7; x.stroke();
+    yolA(); x.strokeStyle = DR11.maviC; x.lineWidth = 0.7; x.stroke();
     x.fillStyle = DR11.maviK; x.beginPath(); x.moveTo(-6.4 + mid * 0.5, -7.4); x.quadraticCurveTo(-8.4 + mid * 0.5, -10.6, -7.6 + mid * 0.5, -12.2); x.quadraticCurveTo(mid * 0.5, -10.4, 7.6 + mid * 0.5, -12.2); x.quadraticCurveTo(8.4 + mid * 0.5, -10.6, 6.4 + mid * 0.5, -7.4); x.quadraticCurveTo(mid * 0.5, -8.8, -6.4 + mid * 0.5, -7.4); x.closePath(); x.fill(); x.stroke();
   }
   x.restore();
@@ -2991,6 +3013,7 @@ function dr11Yildiz(x, cx, cy, r, rot) {
 }
 function drToka11(x, cx, cy, s) {   // boyundaki yıldız toka
   x.fillStyle = DR11.yilK; dr11Yildiz(x, cx, cy, 1.75 * s, 0.1); x.fillStyle = DR11.yil; dr11Yildiz(x, cx, cy, 1.4 * s, 0.1);
+  x.fillStyle = 'rgba(168,104,20,0.3)'; x.beginPath(); x.ellipse(cx + 0.2 * s, cy + 0.55 * s, 0.9 * s, 0.45 * s, 0, 0, 6.283); x.fill();   // alt yarı gölgede (hacim)
   x.fillStyle = 'rgba(255,255,255,0.8)'; x.beginPath(); x.arc(cx - 0.4 * s, cy - 0.5 * s, 0.3 * s, 0, 6.283); x.fill();
 }
 function drAy11(x, tm, gor) {   // ibiğin önünde gümüş hilal toka (ucunda minik yıldız); ibiğin yayıyla hafifçe sallanır
@@ -2999,8 +3022,15 @@ function drAy11(x, tm, gor) {   // ibiğin önünde gümüş hilal toka (ucunda 
   const r = gor === 1 ? 4.0 : 3.8;
   x.globalCompositeOperation = 'lighter'; x.globalAlpha = 0.16 + 0.08 * Math.sin(tm * 3); x.fillStyle = '#cfe6ff'; x.beginPath(); x.arc(-0.6, 0, r * 1.15, 0, 6.283); x.fill(); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
   x.beginPath(); x.moveTo(1.4, -r); x.quadraticCurveTo(-r * 1.75, 0, 1.4, r); x.quadraticCurveTo(-r * 0.35, 0, 1.4, -r); x.closePath();
-  x.fillStyle = DR11.ay; x.fill(); x.strokeStyle = DR11.ayK; x.lineWidth = 0.6; x.stroke();
+  x.fillStyle = DR11.ay; x.fill();
+  x.save(); x.clip();   // hacim: hilalin iç kıvrımı ve alt ucu gölgede (gümüş-mavi), dış sırtı parlak
+  x.fillStyle = '#b9c6ea'; x.globalAlpha = 0.85; x.beginPath(); x.moveTo(1.4, -r); x.quadraticCurveTo(-r * 0.75, 0, 1.4, r); x.lineTo(3, r); x.lineTo(3, -r); x.closePath(); x.fill();
+  x.globalAlpha = 0.5; x.beginPath(); x.ellipse(0.2, r * 0.8, 2.6, 1.6, 0, 0, 6.283); x.fill(); x.globalAlpha = 1;
+  x.restore();
+  x.beginPath(); x.moveTo(1.4, -r); x.quadraticCurveTo(-r * 1.75, 0, 1.4, r); x.quadraticCurveTo(-r * 0.35, 0, 1.4, -r); x.closePath();
+  x.strokeStyle = DR11.ayK; x.lineWidth = 0.6; x.stroke();
   x.strokeStyle = 'rgba(255,255,255,0.9)'; x.lineWidth = 0.5; x.lineCap = 'round'; x.beginPath(); x.moveTo(-0.6, -2.2); x.quadraticCurveTo(-1.8, -0.8, -1.6, 0.6); x.stroke();
+  x.fillStyle = '#ffffff'; x.beginPath(); x.arc(-1.1, -1.9, 0.38, 0, 6.283); x.fill();   // parlak nokta
   x.fillStyle = DR11.yilK; dr11Yildiz(x, 2.6, -0.2, 1.35, 0.2 + Math.sin(tm * 2) * 0.3); x.fillStyle = DR11.yil; dr11Yildiz(x, 2.6, -0.2, 1.05, 0.2 + Math.sin(tm * 2) * 0.3);
 }
 // sıradaki (bekleyen) aynayı göster: Feza oyalanıyorsa ya da bir ayna yeni döndüyse (en çok bir kez / 9 sn)

@@ -128,6 +128,10 @@ function as11CamCiz(ust) {   // küçük oval cam: arka plan (gümüş lila) ya 
   } else {
     const gr = q.createRadialGradient(0, 0, Math.min(RX, RY) * 0.7, 0, 0, RY * 1.05); gr.addColorStop(0, 'rgba(60,44,120,0)'); gr.addColorStop(0.7, 'rgba(60,44,120,0.08)'); gr.addColorStop(1, 'rgba(40,28,96,0.42)');
     q.fillStyle = gr; q.fillRect(-w, -h, 2 * w, 2 * h); as11CamParla(q, RX, RY);
+    // derinlik: çerçeve camın içine üst-soldan gölge düşürür, alt-sağda kalın camın parlak pahı
+    q.lineWidth = 7; q.strokeStyle = 'rgba(30,20,80,0.32)'; q.beginPath(); q.ellipse(2.5, 3.5, RX - 1, RY - 1, 0, Math.PI * 0.85, Math.PI * 1.75); q.stroke();
+    q.lineWidth = 2; q.strokeStyle = 'rgba(234,244,255,0.75)'; q.beginPath(); q.ellipse(-1, -1, RX - 3.5, RY - 3.5, 0, -Math.PI * 0.1, Math.PI * 0.62); q.stroke();
+    q.lineWidth = 1; q.strokeStyle = 'rgba(255,255,255,0.5)'; q.beginPath(); q.ellipse(0, 0, RX - 8, RY - 8, 0, Math.PI * 1.08, Math.PI * 1.42); q.stroke();
   }
   return cv;
 }
@@ -146,6 +150,8 @@ function as11BuyukCamCiz(ust) {   // büyük kemerli cam (yarı genişlik AS11_B
     const gr = q.createLinearGradient(-hw, 0, hw, 0); gr.addColorStop(0, 'rgba(40,28,96,0.36)'); gr.addColorStop(0.18, 'rgba(40,28,96,0)'); gr.addColorStop(0.82, 'rgba(40,28,96,0)'); gr.addColorStop(1, 'rgba(40,28,96,0.36)');
     q.fillStyle = gr; q.fillRect(-w, yt - 4, 2 * w, h + 8);
     q.save(); q.translate(0, (yt + yb) / 2); as11CamParla(q, hw * 1.1, (yb - yt) * 0.6); q.restore();
+    q.lineWidth = 9; q.strokeStyle = 'rgba(30,20,80,0.28)'; as11Kemer(q, 3, yb + 8, yt + 4, hw - 1); q.stroke();   // çerçevenin camdaki gölgesi
+    q.lineWidth = 2; q.strokeStyle = 'rgba(234,244,255,0.6)'; as11Kemer(q, -1, yb - 3, yt + 3, hw - 4); q.stroke();   // cam pahı
   }
   return cv;
 }
@@ -415,6 +421,8 @@ function as11Toz(tip, x, y, vx, vy, max, s, col) {
 function as11IsikSac(x, y, n, hiz, cols) { cols = cols || AS11_ISIK; for (let i = 0; i < n; i++) { const a = Math.random() * 6.2832, v = hiz * (0.3 + Math.random() * 0.8); as11Toz(i % 4 === 0 ? 2 : 0, x, y, Math.cos(a) * v, Math.sin(a) * v - 20, 0.7 + Math.random() * 0.7, i % 4 === 0 ? 7 + Math.random() * 5 : 6 + Math.random() * 7, cols[i % cols.length]); } }
 function as11Halka(x, y, r, col) { as11Toz(3, x, y, 0, 0, 0.5, r, col); }
 function as11TozAdim(dt) {
+  for (const p of AS11_IZ) if (p.a) { p.t += dt; if (p.t >= 1.1) p.a = false; }
+  AS11_EK = Math.max(0, AS11_EK - dt * 2.2);
   for (const p of AS11_TZ) {
     if (!p.a) continue; p.t += dt; if (p.t >= p.max) { p.a = false; continue; }
     if (p.tip === 0 || p.tip === 2 || p.tip === 6) { p.vx *= Math.exp(-dt * 2.4); p.vy = p.vy * Math.exp(-dt * 2.4) - 16 * dt; p.r += dt * 2; }
@@ -517,8 +525,24 @@ function as11FotoCiz(c, sp, x, y, sx, sy) { c.drawImage(sp.cv, x - sp.ox * sx, y
 
 // ── buğu silme ──
 function as11Icinde(m, x, y, pay) { const dx = (x - m.x) / (AS11_RX + pay), dy = (y - m.y) / (AS11_RY + pay); return dx * dx + dy * dy <= 1; }
+// parmağın buğudaki izi: silinen yerden sızan ay ışığı + nemli camda yumuşak parmak izi (sabit havuz)
+const AS11_IZ = []; for (let i = 0; i < 48; i++) AS11_IZ.push({ a: false, m: -1, x: 0, y: 0, t: 0 });
+let AS11_IZI = 0, AS11_EK = 0;
+function as11IzEkle(m, x, y) {
+  const s = AS11_IZ[(AS11_IZI + 47) % 48]; if (s.a && s.m === m.i && Math.abs(s.x - x) + Math.abs(s.y - y) < 9) return;
+  const p = AS11_IZ[AS11_IZI]; AS11_IZI = (AS11_IZI + 1) % 48; p.a = true; p.m = m.i; p.x = x; p.y = y; p.t = 0;
+}
+function as11IzCiz(m) {   // cam kırpmasının içinde, buğunun üstünde
+  let var_ = false; for (const p of AS11_IZ) if (p.a && p.m === m.i) { var_ = true; break; } if (!var_) return;
+  g.globalCompositeOperation = 'lighter';
+  for (const p of AS11_IZ) { if (!p.a || p.m !== m.i) continue; const f = 1 - p.t / 1.1; as11Glow(g, '#cfe6ff', p.x, p.y, 26 + 12 * (1 - f), 26 + 12 * (1 - f), f * 0.24); as11Glow(g, '#ffffff', p.x, p.y, 10, 10, f * 0.18); }
+  g.globalCompositeOperation = 'source-over';
+  for (const p of AS11_IZ) { if (!p.a || p.m !== m.i) continue; const f = 1 - p.t / 1.1; g.globalAlpha = f * 0.22; g.strokeStyle = '#ffffff'; g.lineWidth = 1.2; g.beginPath(); g.ellipse(p.x, p.y, 9, 11, 0.2, 0, 6.2832); g.stroke(); g.beginPath(); g.ellipse(p.x, p.y, 5, 6.5, 0.2, 0, 6.2832); g.stroke(); }
+  g.globalAlpha = 1;
+}
 function as11Damga(o, m, wx, wy, r) {   // buğuya fırça damgası (+ ızgara); damga bu cama değdiyse true
   if (m.bulundu || !m.sis || !as11Icinde(m, wx, wy, r * 0.7)) return false;
+  as11IzEkle(m, wx, wy);
   const F = AS11_FPX, lx = wx - m.x, ly = wy - m.y, q = m.sq;
   q.globalCompositeOperation = 'destination-out'; q.drawImage(AS11S.firca, (lx + AS11_RX + 4 - r) * F, (ly + AS11_RY + 4 - r) * F, 2 * r * F, 2 * r * F); q.globalCompositeOperation = 'source-over';
   const cw = 2 * AS11_RX / AS11_GX, ch = 2 * AS11_RY / AS11_GY, rr = r * 0.85, rr2 = rr * rr;
@@ -539,7 +563,8 @@ function as11Bul(o, m, yardim) {
   for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + (i - 3) * 0.42, v = 170 + Math.random() * 90; as11Toz(5, m.x + Math.cos(a) * 20, m.y - 10, Math.cos(a) * v, Math.sin(a) * v, 1.3 + Math.random() * 0.4, 8 + Math.random() * 4, '#ffd27a'); }
   as11IsikSac(m.x, m.y, 14, 150, AS11_ISIK);
   for (let i = 0; i < 10; i++) as11Toz(6, m.x + (Math.random() - 0.5) * AS11_RX * 1.4, m.y + (Math.random() - 0.5) * AS11_RY * 1.4, (Math.random() - 0.5) * 60, -20 - Math.random() * 30, 0.9, 22, '#e2daf6');   // buğu dağılır
-  as11Sfx('aynaBul', k.n); as11Sfx('aynaKikir', 0.5);
+  as11Sfx('aynaBul', k.n); as11Sfx('aynaKikir', 0.5); AS11_EK = 1;
+  for (let i = 0; i < 6; i++) as11Toz(5, m.x + (Math.random() - 0.5) * 30, m.y - AS11_RY - 10, (Math.random() - 0.5) * 220, -180 - Math.random() * 120, 1.2, 9, '#ffd27a');
   k.sevT = 1.4; as11VelaPoz(k, k.n % 2 ? 'kikir' : 'alkis', 1.5); k.idle = 0; k.helpOn = false; k.helpT = 0;
   if (yardim) k.helpN++;
   OLAY.emit('salonBul', { o, n: k.n, ad: m.ad, i: m.i, yardim: !!yardim });
@@ -750,6 +775,7 @@ function as11AynaCiz(o, m, tm) {
     g.globalAlpha = m.bulundu ? m.fogA : 1; const F = AS11_FPX;
     g.drawImage(m.sis, x - RX - 4, y - RY - 4, m.sis.width / F, m.sis.height / F); g.globalAlpha = 1;
   }
+  as11IzCiz(m);
   g.drawImage(AS11S.ust, x - AS11S.ust.bw / 2, y - AS11S.ust.bh / 2, AS11S.ust.bw, AS11S.ust.bh);
   if (m.bulundu && m.at < 1.3) {   // bulununca camdan geçen parlama şeridi
     const u = m.at / 1.3, M = g.getTransform(); g.translate(x - RX * 1.4 + u * RX * 2.8, y); g.rotate(0.5); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.45 * Math.sin(u * Math.PI);
@@ -757,7 +783,7 @@ function as11AynaCiz(o, m, tm) {
   }
   g.restore();
   // çerçeve + parıltı
-  const cf = AS11S.cerceve[AS11_SUS[m.i]], sk = m.parla > 0 ? 1 + 0.03 * Math.sin(Math.min(1, m.parla) * Math.PI) : 1;
+  const cf = AS11S.cerceve[AS11_SUS[m.i]], sk = (m.parla > 0 ? 1 + 0.03 * Math.sin(Math.min(1, m.parla) * Math.PI) : 1) + (m.bulundu && m.at >= 0 && m.at < 0.7 ? 0.09 * Math.sin(m.at / 0.7 * Math.PI * 2.5) * (1 - m.at / 0.7) : 0);
   if (m.parla > 0) { g.globalCompositeOperation = 'lighter'; as11Glow(g, '#fff4d6', x, y, RX * 1.3, RY * 1.25, 0.22 * Math.min(1, m.parla)); g.globalCompositeOperation = 'source-over'; }   // kısa ışık parlaması
   g.drawImage(cf, x - cf.ox * sk, y - cf.oy * sk, cf.bw * sk, cf.bh * sk);
   if (vurgu > 0.3) for (let i = 0; i < 10; i++) {   // ipucu: çerçevenin çevresinde dönen ışık zerreleri
@@ -983,6 +1009,7 @@ function as11CizOn(o, tm) {
     if (typeof pirilCizPoz === 'function') { const pr = k.pr; as11Dis(k, 'pirilG', () => { g.translate(pr.x, pr.y); if (pr.f < 0) g.scale(-1, 1); pirilCizPoz(g, 0, 0, 1, as11PirilPoz(k), tm); }); }
   }
   as11TozCiz(g);
+  if (AS11_EK > 0.01) { const z = cam.zoom || 1, W = VW / z, H = VH / z; g.globalCompositeOperation = 'lighter'; as11Glow(g, '#cfe6ff', cam.x + W / 2, cam.y + H * 0.42, W * 0.8, H * 0.75, AS11_EK * 0.15); g.globalCompositeOperation = 'source-over'; }   // kısa ekran parıltısı
 }
 
 // ── girdi: parmak buğuyu siler (sürükleme), dokunuş/basılı tutma kendi siler; pencere yakalama evresi (yürüme parmağına gitmez) ──

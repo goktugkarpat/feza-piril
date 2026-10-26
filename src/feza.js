@@ -818,7 +818,8 @@ const FZ_AMB = { patika: [[150, 225, 255], [90, 150, 220]], pofuduk: [[255, 190,
 const FZ_AMB2 = [[175, 190, 255], [120, 96, 220]];   // Bölüm 2: ay/yıldız kenarı soluk mavi, gölün yansıması mor
 const FZ_AMB4 = [[189, 236, 217], [96, 150, 178]];
 const FZ_AMB3 = [[255, 216, 166], [217, 166, 236]];   // Bölüm 3: gün doğumu – güneşin pembe-altın kenarı, alttan bulutların lila yansıması
-const FZ_AMB9 = [[255, 214, 158], [126, 206, 160]];   // Bölüm 9: altın saat – güneşin şeftali-altın kenarı, alttan çayırın zümrüt yansıması
+const FZ_AMB9 = [[255, 214, 158], [126, 206, 160]];
+const FZ_AMB11 = [[214, 232, 255], [170, 128, 236]];   // Bölüm 11: ay ışığının gümüş-mavi kenarı, alttan lila yer sisinin yansıması   // Bölüm 9: altın saat – güneşin şeftali-altın kenarı, alttan çayırın zümrüt yansıması
 const fzAmbS = ['', ''], fzAmbK = [-1, -1], FZ_AMB_N = Object.keys(FZ_AMB);
 const FZ_HALE = [[0, 1], [0.22, 0.55], [0.5, 0.16], [1, 0]], FZ_HALE_K = 0.24 * 0.85;   // ortak.js glow() profili × hale gücü
 function fzAmb() {
@@ -827,7 +828,7 @@ function fzAmb() {
     let r = 0, gg = 0, b = 0, t = 0;
     if (w && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO >= 2)) for (let i = 0; i < FZ_AMB_N.length; i++) { const k = FZ_AMB_N[i], q = w[k] || 0; if (q > 0) { const c = FZ_AMB[k][j]; r += c[0] * q; gg += c[1] * q; b += c[2] * q; t += q; } }
     if (t < 0.01) {   // bölge ağırlığı yoksa: Bölüm 2'de yıldızlı göl gecesi (mavi-mor), değilse patika
-      const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, c = (bn === 9 ? FZ_AMB9 : bn === 8 ? FZ_AMB8 : bn === 4 ? FZ_AMB4 : bn === 3 ? FZ_AMB3 : bn === 2 ? FZ_AMB2 : FZ_AMB.patika)[j]; r = c[0]; gg = c[1]; b = c[2]; t = 1;
+      const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, c = (bn === 11 ? FZ_AMB11 : bn === 9 ? FZ_AMB9 : bn === 8 ? FZ_AMB8 : bn === 4 ? FZ_AMB4 : bn === 3 ? FZ_AMB3 : bn === 2 ? FZ_AMB2 : FZ_AMB.patika)[j]; r = c[0]; gg = c[1]; b = c[2]; t = 1;
     }
     const L = j || (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 3) ? 0 : light * 0.35;   // gün ağarınca ay kenarı beyazlaşır
     const R = Math.round(lerp(r / t, 255, L)), G = Math.round(lerp(gg / t, 250, L)), B = Math.round(lerp(b / t, 235, L)), key = R * 65536 + G * 256 + B;
@@ -959,6 +960,12 @@ function drawFeza(tm) {
     x.globalAlpha = 0.05; x.fillStyle = '#3fbf8a'; x.fillRect(0, px * 0.66, px, px * 0.34);
     x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
   }
+  const b11 = BOLUM_NO === 11;
+  if (b11) {   // Bölüm 11 (ay ışığı gecesi): tende/pijamada çok hafif gümüş-lila gece tonu, alt yarıda yer sisinin lila gölgesi (sıcak ten korunur)
+    x.globalCompositeOperation = 'source-atop'; x.globalAlpha = 0.06; x.fillStyle = '#8f9cff'; x.fillRect(0, 0, px, px);
+    x.globalAlpha = 0.07; x.fillStyle = '#5a3f9e'; x.fillRect(0, px * 0.64, px, px * 0.36);
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+  }
   if (deniz) {
     // Suyun üstten mint yansıması; arkadaki koyu, sıcak saç/ten korunur.
     x.globalCompositeOperation = 'source-atop'; x.globalAlpha = 0.055; x.fillStyle = '#559cab'; x.fillRect(0, px * 0.43, px, px * 0.57);
@@ -970,6 +977,7 @@ function drawFeza(tm) {
   fzRim(-0.25, 0.97, 0.6 * S, amb[1], 0.4);
   if (b3) fzRim(-0.85, -0.3, 0.55 * S, '#ffb3cf', 0.42);   // arkadan pembe gökyüzü kenarı (Gris tadında)
   if (b9) fzRim(-0.85, -0.35, 0.5 * S, '#ffb3cf', 0.3);    // Bölüm 9: arkadan gül rengi gök kenarı
+  if (b11) { fzRim(0.72, -0.69, 0.42 * S, '#f2f8ff', 0.38); fzRim(-0.88, -0.3, 0.5 * S, '#c9a6ff', 0.32); }   // Bölüm 11: ayın ince parlak gümüş kenarı + arkadan lila gece göğü kenarı
   if (b2) fzRim(0.9, 0.1, 0.6 * S, '#ffe2a8', 0.32 * (1 - light * 0.5));   // yıldız ışığının sıcak altın kenarı
   const ddx = D.x - bx, ddy = D.y - (by - 38), dd = Math.hypot(ddx, ddy) || 1;
   fzRim(ddx / dd, ddy / dd, 0.7 * S, '#e2b8ff', 0.5 * clamp(1.2 - dd / 220, 0, 1));
@@ -3680,6 +3688,57 @@ const FZ11_PAL = {   // d dış, dA dış açık, dK dış koyu, dC kontur, a as
 for (const k in FZ11_PAL) { const c = FZ11_PAL[k]; c.gol = 'rgba(30,14,70,0.28)'; c.kat = 'rgba(30,12,80,0.32)'; c.aKat = 'rgba(140,20,70,0.3)'; }
 const FZ11_KOS = { p11mor: FZ11_PAL.mor, p11lacivert: FZ11_PAL.lacivert, p11kirmizi: FZ11_PAL.kirmizi, p11pembe: FZ11_PAL.pembe };
 const FZ11_ADLAR = ['mor', 'lacivert', 'kirmizi', 'pembe'], FZ11_2PI = Math.PI * 2;
+// ── hacim (kalite): kumaş kıvrımı dokuları, silindir gölgesi ve yumuşak lekeler YALNIZ ilk kullanımda bir kez pişirilir (gradyan
+//    yalnız burada); karede yalnız drawImage + kırpma. Doku 128×128 px = yerel (u −16..16, v 0..32), tepeden yelpaze gibi açılan kıvrımlar.
+const FZ11_DK = {};
+let fz11BlobC = null, fz11SilC = null;
+function fz11Rgb(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+function fz11Doku(C, astar) {
+  const k = (astar ? 'a' : 'd') + C.d + C.a; let c = FZ11_DK[k]; if (c) return c;
+  c = FZ11_DK[k] = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d'), koyu = astar ? C.aK : C.dK, acik = astar ? '#ffe2ec' : C.dA, KV = [-0.44, -0.3, -0.17, -0.05, 0.08, 0.2, 0.33, 0.45], KW = [16, 12, 18, 13, 17, 12, 16, 14];
+  for (let i = 0; i < KV.length; i++) {   // her kıvrım: önce gölge, sonra parlak sırt (kesit boyunca gradyan)
+    x.save(); x.translate(64 + (i % 2 ? 3 : -2), -46); x.rotate(KV[i]);
+    const w = KW[i], g = x.createLinearGradient(-w / 2, 0, w / 2, 0);
+    g.addColorStop(0, fz11Rgb(koyu, 0)); g.addColorStop(0.32, fz11Rgb(koyu, astar ? 0.5 : 0.62)); g.addColorStop(0.55, fz11Rgb(koyu, 0.05));
+    g.addColorStop(0.72, fz11Rgb(acik, astar ? 0.42 : 0.5)); g.addColorStop(1, fz11Rgb(acik, 0));
+    x.fillStyle = g; x.fillRect(-w / 2, 30, w, 230); x.restore();
+  }
+  x.globalCompositeOperation = 'destination-in';   // kıvrımlar boyunda incelir, etekte belirginleşir
+  let g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, 'rgba(0,0,0,0.25)'); g.addColorStop(0.45, 'rgba(0,0,0,0.85)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  x.globalCompositeOperation = 'source-over';   // yakanın altında yumuşak gölge, etek ucunda hafif koyulaşma
+  g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, fz11Rgb(koyu, 0.55)); g.addColorStop(0.16, fz11Rgb(koyu, 0)); g.addColorStop(0.86, fz11Rgb(koyu, 0)); g.addColorStop(1, fz11Rgb(koyu, 0.3));
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  return c;
+}
+function fz11Sil() {   // yandan silindir gölgesi (sol: arka, gölgede · sağ: aya bakan ön kenar)
+  if (fz11SilC) return fz11SilC;
+  const c = fz11SilC = document.createElement('canvas'); c.width = 128; c.height = 8;
+  const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 128, 0);
+  g.addColorStop(0, 'rgba(16,6,46,0.55)'); g.addColorStop(0.3, 'rgba(16,6,46,0.22)'); g.addColorStop(0.55, 'rgba(16,6,46,0)');
+  g.addColorStop(0.74, 'rgba(255,255,255,0.2)'); g.addColorStop(0.87, 'rgba(255,255,255,0.04)'); g.addColorStop(1, 'rgba(16,6,46,0.2)');
+  x.fillStyle = g; x.fillRect(0, 0, 128, 8); return c;
+}
+function fz11Leke(i) {   // 0 koyu gölge lekesi · 1 beyaz ışık lekesi · 2 gümüş-mavi ay ışığı lekesi
+  if (!fz11BlobC) {
+    fz11BlobC = [];
+    for (const r of ['22,10,52', '255,255,255', '200,225,255']) {
+      const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, `rgba(${r},1)`); g.addColorStop(0.4, `rgba(${r},0.6)`); g.addColorStop(0.75, `rgba(${r},0.16)`); g.addColorStop(1, `rgba(${r},0)`);
+      x.fillStyle = g; x.fillRect(0, 0, 64, 64); fz11BlobC.push(c);
+    }
+  }
+  return fz11BlobC[i];
+}
+const FZ11_LV = [0, 1];
+// ay ışığı kenarı (kırpma içinde): şekilden, aydan uzağa kaydırılmış kendisi çıkınca aya bakan ince kenar kalır (ekranda sağ üst)
+function fz11Rim(x, yol, a, d, col) {
+  const L = fz8EkranYon(x, 2.34, FZ11_LV);
+  x.save(); x.translate(-L[0] * d, -L[1] * d); yol(); x.restore(); x.rect(-90, -90, 180, 180);
+  x.globalAlpha = a; x.fillStyle = col; x.fill('evenodd'); x.globalAlpha = 1;
+  x.beginPath();   // yardımcı dikdörtgen geçerli yolda kalmasın (sonraki bir stroke() onu çizmesin)
+}
 function fz11P() { return fzKos ? FZ11_KOS[fzKos] || null : null; }
 function fz11Kos(ad) { return FZ11_KOS['p11' + ad] ? 'p11' + ad : null; }
 function fz11Acik() { const k = fz8M.kn; return k > 0.08 ? smooth(clamp((k - 0.08) / 0.72, 0, 1)) : 0; }   // kanat açıklığı 0..1
@@ -3723,13 +3782,22 @@ function fz11PelerinYan(x, R, hip, by) {
   const Lc = 26.4 - 2.0 * clamp(M.pa - 0.9, 0, 1) - 2.6 * ac, fl = 1.5 + 1.7 * pf + 1.8 * ac;   // yandan da baldıra kadar uzun
   fz8PelerinYolY(x, Lc, fl, pf, true); x.fillStyle = C.d; x.fill();
   x.save(); x.clip();
-  x.fillStyle = C.gol; x.beginPath(); fz8P(x, -1.0, -1, true); fz8P(x, -7.5 - fl, Lc + 3); fz8P(x, -12, Lc + 3); fz8P(x, -12, -2); x.fill();   // geride kalan kenar gölgede
-  x.fillStyle = 'rgba(255,255,255,0.13)'; x.beginPath(); fz8P(x, 2.2, 0.5, true); fz8Q(x, 2.9, 8, 1.4, Lc - 2); fz8P(x, 0.2, Lc - 2.4); fz8Q(x, 1.2, 8, 0.9, 0.6); x.fill();   // aya bakan ön kenarda yumuşak parlaklık
-  const ah = 0.9 + 1.7 * pf + 1.2 * ac;   // etekte kıvrılan astar (hareketle görünür)
-  x.fillStyle = C.a; x.beginPath(); fz8P(x, -9 - fl, Lc - ah + fz8Dalga(1) * 0.3, true); fz8Q(x, -3.2, Lc - ah - 0.7 + fz8Dalga(2) * 0.4, 2.8, Lc - ah * 0.45 - 1.0); fz8P(x, 2.8, Lc + 3); fz8P(x, -9 - fl, Lc + 3); x.fill();
+  {   // hacim: kumaş kıvrımları (pişmiş doku; rüzgârda ikincil dalga — etekte daha çok salınır) + silindir gölgesi (arka gölgede, ön aya bakar)
+    const tm = M.tm, sw = Math.sin(tm * 2.9) * (0.035 + 0.075 * pf) + Math.sin(tm * 4.7 + 1.0) * 0.03 * pf + 0.04 * ac, kay = Math.sin(tm * 3.7) * 0.45 * pf, w = 9 + fl * 0.9;
+    x.save(); x.transform(fz8Fx, fz8Fy, fz8Ax, fz8Ay, 0, 0);
+    x.save(); x.transform(1, 0, sw, 1, 0, 0); x.drawImage(fz11Doku(C, 0), -1.6 - fl * 0.55 + kay - w, -1.2, w * 2, Lc + 4.2); x.restore();
+    x.drawImage(fz11Sil(), -6.8 - fl, -2, 10.6 + fl, Lc + 5);
+    x.restore();
+  }
+  const ah = 0.9 + 1.7 * pf + 1.2 * ac;   // etekte kıvrılan astar (hareketle görünür): üstte ışık alan kıvrım, altta içe dönük koyu kısım
+  const asY = (dv) => { x.beginPath(); fz8P(x, -9 - fl, Lc - ah + fz8Dalga(1) * 0.3 + dv, true); fz8Q(x, -3.2, Lc - ah - 0.7 + fz8Dalga(2) * 0.4 + dv, 2.8, Lc - ah * 0.45 - 1.0 + dv); fz8P(x, 2.8, Lc + 3); fz8P(x, -9 - fl, Lc + 3); };
+  x.fillStyle = C.a; asY(0); x.fill();
+  x.fillStyle = C.aK; x.globalAlpha = 0.7; asY(0.9 + 0.3 * pf); x.fill(); x.globalAlpha = 1;
+  x.strokeStyle = 'rgba(255,226,236,0.75)'; x.lineWidth = 0.42; x.beginPath(); fz8P(x, -9 - fl, Lc - ah + fz8Dalga(1) * 0.3 + 0.2, true); fz8Q(x, -3.2, Lc - ah - 0.5 + fz8Dalga(2) * 0.4, 2.8, Lc - ah * 0.45 - 0.8); x.stroke();
   x.strokeStyle = C.kat; x.lineWidth = 0.45; x.lineCap = 'round'; x.beginPath();
   fz8P(x, -1.2, 2.5, true); fz8Q(x, -2.4 - 0.4 * pf, 9, -3.2 - fl * 0.4, Lc - ah - 0.6); fz8P(x, 0.8, 4.0, true); fz8Q(x, 0.1, 10, -0.6, Lc - ah - 0.9); x.stroke();
   fz11Isleme(x, C, Lc - ah * 0.6, fl, M.tm);
+  fz11Rim(x, () => fz8PelerinYolY(x, Lc, fl, pf, true), 0.6, 0.85, '#dcecff');   // ay ışığından gümüş kenar
   x.restore();
   fz8PelerinYolY(x, Lc, fl, pf, true); x.strokeStyle = C.dC; x.lineWidth = 0.5; x.lineJoin = 'round'; x.stroke();
   x.restore();
@@ -3758,6 +3826,13 @@ function fz11Zar(x, sx, sy, ex, ey, wx, wy, bx, by, far, ac, C) {
   };
   yol(); x.fillStyle = far ? C.a : C.d; x.fill();
   x.save(); x.clip();
+  {   // zar hissi: ay ışığı açık kanadın içinden yumuşakça geçer (yarı saydam ışık), gövdeye yakın kök gölgede (pişmiş lekeler)
+    const cx = (ex + wx + bx + FZ11_KP[2]) / 4, cy = (ey + wy + by + FZ11_KP[3]) / 4, r = span * (0.55 + 0.1 * ac) + 2;
+    x.globalAlpha = far ? 0.5 : 0.42; x.drawImage(fz11Leke(0), sx - 5, sy - 3, 10, 12);
+    x.globalCompositeOperation = 'lighter'; x.globalAlpha = (far ? 0.2 : 0.26) * (0.35 + 0.65 * ac);
+    x.drawImage(fz11Leke(far ? 1 : 2), cx - r, cy - r * 0.8, r * 2, r * 1.6);
+    x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+  }
   if (far) { x.fillStyle = 'rgba(120,20,60,0.22)'; x.beginPath(); x.moveTo(sx, sy); x.lineTo(bx, by); x.lineTo(lerp(wx, bx, 0.5), lerp(wy, by, 0.5) + 6); x.closePath(); x.fill(); }   // gövdeye yakın astar gölgede
   else {
     x.fillStyle = 'rgba(255,255,255,0.14)'; x.beginPath(); x.moveTo(sx, sy); x.lineTo(ex, ey); x.lineTo(wx, wy); x.lineTo(lerp(wx, FZ11_KP[0], 0.35), lerp(wy, FZ11_KP[1], 0.35)); x.lineTo(lerp(ex, bx, 0.3), lerp(ey, by, 0.3)); x.closePath(); x.fill();   // üst kenarda parlaklık
@@ -3772,6 +3847,9 @@ function fz11Zar(x, sx, sy, ex, ey, wx, wy, bx, by, far, ac, C) {
   yol(); x.strokeStyle = C.dC; x.lineWidth = 0.42; x.lineJoin = 'round'; x.stroke();
   x.strokeStyle = far ? C.aKat : C.kat; x.lineWidth = 0.42; x.lineCap = 'round'; x.beginPath();   // kumaş kıvrımları (dirsekten tarak uçlarına)
   x.moveTo(ex, ey); x.lineTo(FZ11_KP[0], FZ11_KP[1]); x.moveTo(ex, ey); x.lineTo(FZ11_KP[2], FZ11_KP[3]); x.stroke();
+  x.strokeStyle = far ? 'rgba(255,225,236,0.4)' : 'rgba(235,240,255,0.32)'; x.lineWidth = 0.38; x.beginPath();   // kıvrım sırtında ışık (iki tonlu kıvrım)
+  x.moveTo(ex + 0.45, ey + 0.35); x.lineTo(FZ11_KP[0] + 0.45, FZ11_KP[1] + 0.2); x.moveTo(ex + 0.45, ey + 0.35); x.lineTo(FZ11_KP[2] + 0.45, FZ11_KP[3] + 0.2); x.stroke();
+  if (!far) { x.strokeStyle = 'rgba(222,238,255,0.6)'; x.lineWidth = 0.32; x.beginPath(); x.moveTo(sx + 0.2, sy + 0.25); x.lineTo(ex + 0.1, ey + 0.35); x.lineTo(wx - 0.1, wy + 0.35); x.stroke(); }   // üst kenarda gümüş ay ışığı
   if (!far) { x.strokeStyle = C.a; x.lineWidth = 0.5; x.beginPath(); x.moveTo(lerp(sx, ex, 0.4), lerp(sy, ey, 0.4)); x.lineTo(ex, ey); x.lineTo(wx, wy); x.stroke(); }   // kolun kenarında kıvrılan astar
 }
 function fz11KanatYan(x, R, hip, by, near) {
@@ -3823,16 +3901,28 @@ function fz11PelerinOn(x, R, hip, by) {
   A[6] = lerp(-8.6 - 0.6 * fl, L[2] - 2.0, ac); A[7] = lerp(hy, L[3] + 0.9, ac);                // sol bilek
   A[12] = lerp(8.0 + 0.3 * fl, Rr[0] + 2.2, ac); A[13] = lerp(lerp(sy, hy, 0.5), Rr[1], ac);    // sağ dirsek
   A[14] = lerp(8.6 + 0.6 * fl, Rr[2] + 2.0, ac); A[15] = lerp(hy, Rr[3] + 0.9, ac);             // sağ bilek
-  fz11OnYol(x, A); x.fillStyle = C.a; x.fill();
+  const cLx = fz11OnYol(x, A), cRx = -cLx; x.fillStyle = C.a; x.fill();
   x.save(); x.clip();
-  x.fillStyle = C.aK; x.globalAlpha = 0.55; x.beginPath(); x.ellipse(0, lerp(sy, hem, 0.45), 6.5, (hem - sy) * 0.62, 0, 0, 6.2832); x.fill(); x.globalAlpha = 1;   // gövdenin ardında gölge
-  x.strokeStyle = C.d; x.lineWidth = 3.4; x.lineJoin = 'round'; x.beginPath();   // kenarlarda dışa kıvrılan dış kumaş
+  {   // hacim: astarda kumaş kıvrımları (pişmiş doku, rüzgârda ikincil dalga), gövdenin ardında yumuşak gölge, açık kanatta ışık geçişi
+    const tm = M.tm, sw = Math.sin(tm * 2.9) * (0.03 + 0.06 * pf), kay = Math.sin(tm * 3.7) * 0.4 * pf, w = Math.max(10, (A[14] - A[6]) * 0.5 + 3);
+    x.save(); x.translate(0, sy - 1.4); x.transform(1, 0, sw, 1, 0, 0); x.drawImage(fz11Doku(C, 1), -w + kay, 0, w * 2, hem - sy + 4); x.restore();
+    x.globalAlpha = 0.6; x.drawImage(fz11Leke(0), -8.5, sy - 2, 17, (hem - sy) * 1.15); x.globalAlpha = 1;
+    if (ac > 0.15) {
+      x.globalCompositeOperation = 'lighter'; x.globalAlpha = 0.22 * ac;
+      for (let s = -1; s <= 1; s += 2) { const qx = s < 0 ? (A[6] + cLx) / 2 : (A[14] + cRx) / 2, qy = lerp(s < 0 ? A[7] : A[15], hem, 0.45); x.drawImage(fz11Leke(1), qx - 7, qy - 6, 14, 12); }
+      x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+    }
+  }
+  x.strokeStyle = 'rgba(255,224,236,0.55)'; x.lineWidth = 4.6; x.lineJoin = 'round'; x.beginPath();   // astarın kenarı ışık alır, ardından dışa kıvrılan dış kumaş
   x.moveTo(-7.2, sy + 0.6); x.lineTo(A[4], A[5]); x.lineTo(A[6], A[7]); x.moveTo(7.2, sy + 0.6); x.lineTo(A[12], A[13]); x.lineTo(A[14], A[15]); x.stroke();
+  x.strokeStyle = C.d; x.lineWidth = 3.4; x.stroke();
+  x.strokeStyle = C.dA; x.lineWidth = 1.3; x.stroke();
   if (ac > 0.25) {   // açık kanatta kumaş kıvrımları
     x.strokeStyle = C.aKat; x.lineWidth = 0.42; x.lineCap = 'round'; x.beginPath();
     for (let s = -1; s <= 1; s += 2) { const ex = s < 0 ? A[4] : A[12], ey = s < 0 ? A[5] : A[13]; x.moveTo(ex, ey); x.lineTo(s * (7.5 + 2 * ac), hem - 0.5); x.moveTo(ex, ey); x.lineTo(s * 3.8, hem - 0.3); }
     x.stroke();
   }
+  fz11Rim(x, () => fz11OnYol(x, A), 0.5, 0.8, '#dcecff');   // ay ışığından gümüş kenar
   x.restore();
   fz11OnYol(x, A); x.strokeStyle = C.dC; x.lineWidth = 0.5; x.lineJoin = 'round'; x.stroke();
   x.restore();
@@ -3841,6 +3931,7 @@ function fz11PelerinOn(x, R, hip, by) {
 function fz11Toka(x, px, py, r, C) {
   x.fillStyle = C.mK; fz11Motif(x, px, py, r * 1.22, C.tur === 3 ? 0 : C.tur, 0.1);
   x.fillStyle = C.tur === 2 ? '#ff6f96' : C.m; fz11Motif(x, px, py, r, C.tur === 3 ? 0 : C.tur, 0.1);
+  x.fillStyle = 'rgba(40,16,60,0.22)'; x.beginPath(); x.ellipse(px + r * 0.15, py + r * 0.38, r * 0.62, r * 0.34, 0, 0, 6.2832); x.fill();   // alt yarı gölgede (hacim)
   x.fillStyle = 'rgba(255,255,255,0.85)'; x.beginPath(); x.arc(px - r * 0.3, py - r * 0.35, r * 0.2, 0, 6.2832); x.fill();
 }
 function fz11Yaka(x, by, on) {
@@ -3848,12 +3939,15 @@ function fz11Yaka(x, by, on) {
   x.save(); x.lineJoin = 'round'; x.lineCap = 'round';
   if (b !== 1) { const ny = -13.4 + by; x.translate(on ? 0 : 1.8, ny); x.scale(b, b); x.translate(on ? 0 : -1.8, -ny); }
   if (on) {
+    x.globalAlpha = 0.34; x.drawImage(fz11Leke(0), -6.2, -14.6 + by, 12.4, 5.2); x.globalAlpha = 1;   // pelerinin ve yakanın Feza'ya düşen yumuşak gölgesi
     for (let s = -1; s <= 1; s += 2) {
       x.beginPath(); x.moveTo(s * 2.2, -13.9 + by); x.lineTo(s * 5.9, -12.7 + by); x.quadraticCurveTo(s * 9.2, -14.2 + by, s * 10.4, -19.4 + by);
       x.quadraticCurveTo(s * 10.6, -21.3 + by, s * 9.0, -20.9 + by); x.quadraticCurveTo(s * 6.2, -17.8 + by, s * 2.6, -14.9 + by); x.closePath();
       x.fillStyle = C.a; x.fill();
       x.save(); x.clip(); x.fillStyle = C.aK; x.globalAlpha = 0.5; x.beginPath(); x.ellipse(s * 4.2, -14.6 + by, 2.4, 1.6, 0, 0, 6.2832); x.fill(); x.globalAlpha = 1; x.restore();
       x.strokeStyle = C.d; x.lineWidth = 1.1; x.beginPath(); x.moveTo(s * 5.9, -12.7 + by); x.quadraticCurveTo(s * 9.2, -14.2 + by, s * 10.4, -19.4 + by); x.quadraticCurveTo(s * 10.6, -21.3 + by, s * 9.0, -20.9 + by); x.stroke();
+      x.strokeStyle = s > 0 ? 'rgba(222,238,255,0.85)' : C.dA; x.lineWidth = 0.4; x.stroke();   // yakanın dış kenarında ay ışığı (hacim)
+      x.strokeStyle = 'rgba(255,226,238,0.7)'; x.lineWidth = 0.35; x.beginPath(); x.moveTo(s * 8.7, -20.2 + by); x.quadraticCurveTo(s * 6.0, -17.4 + by, s * 3.0, -15.0 + by); x.stroke();   // astarın iç kıvrımı ışık alır
       x.strokeStyle = C.dC; x.lineWidth = 0.42; x.beginPath(); x.moveTo(s * 2.2, -13.9 + by); x.lineTo(s * 5.9, -12.7 + by); x.quadraticCurveTo(s * 9.2, -14.2 + by, s * 10.4, -19.4 + by);
       x.quadraticCurveTo(s * 10.6, -21.3 + by, s * 9.0, -20.9 + by); x.quadraticCurveTo(s * 6.2, -17.8 + by, s * 2.6, -14.9 + by); x.stroke();
     }
@@ -3861,11 +3955,14 @@ function fz11Yaka(x, by, on) {
     x.strokeStyle = C.d; x.lineWidth = 0.7; x.stroke();
     fz11Toka(x, 0, -12.2 + by, 1.3, C);
   } else {
+    x.globalAlpha = 0.32; x.drawImage(fz11Leke(0), -5.4, -15.4 + by, 9.6, 5.0); x.globalAlpha = 1;   // yakanın boyna düşen yumuşak gölgesi
     x.beginPath(); x.moveTo(1.4, -12.3 + by); x.lineTo(-1.6, -12.9 + by); x.quadraticCurveTo(-7.0, -14.0 + by, -9.6, -20.4 + by);
     x.quadraticCurveTo(-10.6, -22.8 + by, -8.4, -22.0 + by); x.quadraticCurveTo(-4.2, -18.8 + by, -0.6, -15.9 + by); x.lineTo(1.4, -14.6 + by); x.closePath();
     x.fillStyle = C.d; x.fill();
     x.save(); x.clip(); x.fillStyle = 'rgba(30,14,70,0.22)'; x.beginPath(); x.ellipse(-4.2, -15.0 + by, 2.8, 1.6, -0.6, 0, 6.2832); x.fill(); x.restore();
     x.strokeStyle = C.a; x.lineWidth = 1.0; x.beginPath(); x.moveTo(-8.6, -21.6 + by); x.quadraticCurveTo(-4.2, -18.6 + by, -0.8, -15.6 + by); x.stroke();   // içteki astar kenarı
+    x.strokeStyle = 'rgba(255,228,238,0.75)'; x.lineWidth = 0.35; x.stroke();
+    x.strokeStyle = 'rgba(222,238,255,0.8)'; x.lineWidth = 0.4; x.beginPath(); x.moveTo(-1.6, -12.9 + by); x.quadraticCurveTo(-7.0, -14.0 + by, -9.6, -20.4 + by); x.stroke();   // yakanın sırtında gümüş ay ışığı
     x.strokeStyle = C.dC; x.lineWidth = 0.42; x.beginPath(); x.moveTo(1.4, -12.3 + by); x.lineTo(-1.6, -12.9 + by); x.quadraticCurveTo(-7.0, -14.0 + by, -9.6, -20.4 + by); x.quadraticCurveTo(-10.6, -22.8 + by, -8.4, -22.0 + by); x.stroke();
     x.strokeStyle = C.dK; x.lineWidth = 1.5; x.beginPath(); x.moveTo(-2.8, -14.6 + by); x.quadraticCurveTo(0.6, -12.6 + by, 3.9, -13.4 + by); x.stroke();
     x.strokeStyle = C.d; x.lineWidth = 0.7; x.stroke();
@@ -3877,8 +3974,15 @@ function fz11Yaka(x, by, on) {
 function fz11Kanatcik(x, C) {   // sağa uzanan minik yarasa kanadı (alt kenar iki taraklı)
   x.beginPath(); x.moveTo(0.4, -0.7); x.quadraticCurveTo(2.0, -3.7, 5.3, -3.3);
   x.quadraticCurveTo(4.1, -2.0, 3.7, -0.6); x.quadraticCurveTo(2.7, -1.3, 1.7, 0.3); x.quadraticCurveTo(1.1, -0.4, 0.4, 0.4); x.closePath();
-  x.fillStyle = C.kn; x.fill(); x.strokeStyle = C.dC; x.lineWidth = 0.35; x.stroke();
-  x.strokeStyle = 'rgba(255,255,255,0.4)'; x.lineWidth = 0.3; x.beginPath(); x.moveTo(1.0, -1.1); x.quadraticCurveTo(2.4, -2.9, 4.6, -3.0); x.stroke();
+  x.fillStyle = C.kn; x.fill();
+  x.save(); x.clip();   // hacim: alt kenar gölgede, üst kenar parlak, ince zar kemikleri
+  x.fillStyle = C.dC; x.globalAlpha = 0.38; x.beginPath(); x.ellipse(2.4, 0.9, 3.6, 1.7, -0.15, 0, 6.2832); x.fill();
+  x.fillStyle = '#ffffff'; x.globalAlpha = 0.3; x.beginPath(); x.ellipse(2.6, -2.7, 2.6, 0.8, -0.12, 0, 6.2832); x.fill(); x.globalAlpha = 1;
+  x.strokeStyle = 'rgba(30,14,70,0.35)'; x.lineWidth = 0.22; x.beginPath(); x.moveTo(0.8, -1.0); x.lineTo(3.7, -0.6); x.moveTo(0.8, -1.0); x.lineTo(1.7, 0.3); x.stroke();
+  x.restore();
+  x.strokeStyle = C.dC; x.lineWidth = 0.35; x.stroke();
+  x.strokeStyle = 'rgba(232,242,255,0.85)'; x.lineWidth = 0.3; x.beginPath(); x.moveTo(1.0, -1.3); x.quadraticCurveTo(2.4, -3.1, 4.8, -3.1); x.stroke();
+  x.fillStyle = '#ffffff'; x.beginPath(); x.arc(3.9, -2.75, 0.32, 0, 6.2832); x.fill();   // parlak nokta
 }
 function fz11Tac(x, on, tm) {
   const C = fz11P(), b = fz8Buyu(), kb = fz8M.kb, yw = on ? (fzQ.a_yaw || 0) : 0, ac = fz11Acik();
@@ -3887,6 +3991,7 @@ function fz11Tac(x, on, tm) {
   x.strokeStyle = C.tC; x.lineWidth = 0.95; x.beginPath();
   if (on) x.ellipse(0.5 * yw, -1.6, 9.5, 14.0, 0, Math.PI * 1.07, Math.PI * 1.93); else { x.moveTo(-2.9, -2.0); x.quadraticCurveTo(-4.6, -12.9, 2.4, -15.1); }
   x.stroke(); x.strokeStyle = C.t; x.lineWidth = 0.42; x.stroke();
+  x.strokeStyle = 'rgba(255,255,255,0.75)'; x.lineWidth = 0.18; x.stroke();   // taç bandında parlak çizgi (metal)
   const fl = Math.sin(tm * (3.2 + 10 * ac)) * (0.08 + 0.22 * ac) + kb * 0.45;   // kanatçıklar pırpır
   x.translate(on ? 0.5 * yw : 0.9, on ? -15.5 : -15.4); x.rotate(on ? 0.05 * yw : -0.16);
   for (let s = -1; s <= 1; s += 2) { x.save(); x.scale(s * (on || s > 0 ? 1 : 0.72), 1); x.rotate(-0.12 - fl * s); fz11Kanatcik(x, C); x.restore(); }
@@ -4033,7 +4138,9 @@ function fz11PelerinArka(c, a, tm) {   // arkadan: dış yüz ve işleme, kenarl
   c.save(); c.clip();
   c.strokeStyle = C.a; c.lineWidth = 2.2; c.lineJoin = 'round'; c.beginPath();
   c.moveTo(-7.2, sy + 0.6); c.lineTo(A[4], A[5]); c.lineTo(A[6], A[7]); c.moveTo(7.2, sy + 0.6); c.lineTo(A[12], A[13]); c.lineTo(A[14], A[15]); c.stroke();
-  c.fillStyle = 'rgba(255,255,255,0.14)'; c.beginPath(); c.ellipse(-3.5, -6, 3.2, 7.5, 0.2, 0, 6.2832); c.fill();
+  { const w = Math.max(10, (A[14] - A[6]) * 0.5 + 3), sw = Math.sin(tm * 2.9) * 0.05; c.save(); c.translate(0, sy - 1.4); c.transform(1, 0, sw, 1, 0, 0); c.drawImage(fz11Doku(C, 0), -w, 0, w * 2, hem - sy + 4); c.restore(); }   // kumaş kıvrımları (hacim)
+  if (ac > 0.15) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.2 * ac; c.drawImage(fz11Leke(2), A[6] - 2, A[7] - 4, 12, 12); c.drawImage(fz11Leke(2), A[14] - 10, A[15] - 4, 12, 12); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1; }   // açık kanatta ışık geçişi
+  c.globalAlpha = 0.7; c.drawImage(fz11Leke(1), -7.5, -11, 7, 12); c.globalAlpha = 1;
   c.strokeStyle = C.kat; c.lineWidth = 0.45; c.lineCap = 'round'; c.beginPath();
   for (let s = -1; s <= 1; s += 2) { const ex = s < 0 ? A[4] : A[12], ey = s < 0 ? A[5] : A[13]; c.moveTo(ex, ey); c.quadraticCurveTo(s * (6 + ac), lerp(ey, hem, 0.5), s * (7.5 + 2 * ac), hem - 0.8); }
   c.stroke();
@@ -4042,6 +4149,7 @@ function fz11PelerinArka(c, a, tm) {   // arkadan: dış yüz ve işleme, kenarl
     if (C.tur === 3) { c.fillStyle = i % 3 ? '#ffffff' : '#dfe8ff'; c.globalAlpha = 0.7 + 0.3 * Math.sin(tm * 3.1 + i * 1.7); if (i % 2) { c.beginPath(); c.arc(px, py, 0.4 * q[2], 0, 6.2832); c.fill(); } else fz11Motif(c, px, py, 1.15 * q[2], 3, 0); c.globalAlpha = 1; }
     else { c.fillStyle = C.m; fz11Motif(c, px, py, q[2] * C.mr, C.tur, i * 0.9); }
   }
+  fz11Rim(c, () => fz11OnYol(c, A), 0.55, 0.8, '#dcecff');
   c.restore();
   fz11OnYol(c, A); c.strokeStyle = C.dC; c.lineWidth = 0.5; c.lineJoin = 'round'; c.stroke();
   // dik yaka arkadan: boynu saran yüksek, iki yana kıvrık yaka (dış yüz)
@@ -4070,6 +4178,9 @@ function fezaPelerinIkon(c, ad, x, y, s, tm) {
   c.beginPath(); fz11IkonYol(c, ac, -1); c.lineTo(0, -7.6); c.closePath(); fz11IkonYol(c, ac, 1); c.lineTo(0, -7.6); c.closePath();
   c.fillStyle = C.d; c.fill();
   c.save(); c.clip();
+  c.drawImage(fz11Doku(C, 0), -19, -9.5, 38, 23);   // kumaş kıvrımları (hacim)
+  c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.18 + 0.12 * ac; c.drawImage(fz11Leke(2), -19, -12, 13, 14); c.drawImage(fz11Leke(2), 6, -12, 13, 14); c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;   // kanatlarda ışık geçişi
+  c.globalAlpha = 0.55; c.drawImage(fz11Leke(0), -5, -9, 10, 7); c.globalAlpha = 1;   // yakanın altında gölge
   c.fillStyle = 'rgba(255,255,255,0.15)'; c.beginPath(); c.ellipse(-5, -3, 6, 3.2, -0.25, 0, 6.2832); c.fill();
   c.strokeStyle = C.kat; c.lineWidth = 0.4; c.beginPath();
   for (let sd = -1; sd <= 1; sd += 2) { c.moveTo(0, 0); fz11IkonYol(c, ac, sd); c.moveTo(0, 0); for (let i = 1; i < 4; i++) { c.moveTo(sd * 1.5, -6.5); c.quadraticCurveTo(lerp(sd * 1.5, K[i * 2], 0.5) - sd * 0.8, lerp(-6.5, K[i * 2 + 1], 0.5), K[i * 2], K[i * 2 + 1] - 0.6); } }
@@ -4077,6 +4188,8 @@ function fezaPelerinIkon(c, ad, x, y, s, tm) {
   if (C.tur === 3) { c.fillStyle = '#ffffff'; for (let i = 0; i < 14; i++) { const a = i * 2.4, r = 3 + (i * 5) % 10; const px = Math.cos(a) * r * 1.2, py = 1 + Math.sin(a) * r * 0.6; if (i % 2) { c.beginPath(); c.arc(px, py, 0.45, 0, 6.2832); c.fill(); } else fz11Motif(c, px, py, 1.2, 3, 0); } }
   else { c.fillStyle = C.m; const M6 = [[-8, -3.5], [8, -3.5], [-3.5, 0.5], [3.5, 0.5], [-9.5, 2.5], [9.5, 2.5], [0, 5.5], [-5, 6.5], [5, 6.5], [0, -3]]; for (let i = 0; i < M6.length; i++) fz11Motif(c, M6[i][0] * (0.85 + 0.15 * ac), M6[i][1], 1.25 * C.mr, C.tur, i * 0.8); }
   c.restore();
+  c.beginPath(); fz11IkonYol(c, ac, -1); c.lineTo(0, -7.6); c.closePath(); fz11IkonYol(c, ac, 1); c.lineTo(0, -7.6); c.closePath();
+  c.save(); c.clip(); fz11Rim(c, () => { c.beginPath(); fz11IkonYol(c, ac, -1); c.lineTo(0, -7.6); c.closePath(); fz11IkonYol(c, ac, 1); c.lineTo(0, -7.6); c.closePath(); }, 0.6, 0.9, '#dcecff'); c.restore();
   c.strokeStyle = C.a; c.lineWidth = 0.9; c.beginPath();   // kanat üst kenarında kıvrılan astar
   for (let sd = -1; sd <= 1; sd += 2) { c.moveTo(sd * 3.2, -7.2); c.quadraticCurveTo(sd * lerp(8, 9.5, ac), lerp(-6.3, -9.6, ac), sd * lerp(13.2, 16.4, ac), lerp(-4.3, -10.2, ac)); }
   c.stroke();

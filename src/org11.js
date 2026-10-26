@@ -97,16 +97,33 @@ function or11BoruSpr(i, sonuk) {
     q.fillStyle = gr; or11Yuv(q, -hw, -H, W, H + ay + 2, 6); q.fill();
     // parlak dikey çizgi
     if (!sonuk) { q.fillStyle = 'rgba(255,255,255,0.55)'; or11Yuv(q, -hw + 6, -H + 18, 4.5, H + ay - 30, 2.2); q.fill(); q.fillStyle = 'rgba(255,255,255,0.25)'; or11Yuv(q, -hw + 13, -H + 26, 2.2, H + ay - 46, 1.1); q.fill(); }
+    // hacim (cila): sağ kenarda ay ışığı kenar çizgisi, solda keskin emaye parlaması, gövde altında yumuşak gölge
+    if (!sonuk) {
+      const gs = q.createLinearGradient(-hw, 0, hw, 0);
+      gs.addColorStop(0, 'rgba(255,255,255,0)'); gs.addColorStop(0.2, 'rgba(255,255,255,0)'); gs.addColorStop(0.27, 'rgba(255,255,255,0.75)'); gs.addColorStop(0.33, 'rgba(255,255,255,0)');
+      gs.addColorStop(0.84, 'rgba(255,255,255,0)'); gs.addColorStop(0.92, 'rgba(207,230,255,0.5)'); gs.addColorStop(0.97, 'rgba(207,230,255,0)');
+      q.fillStyle = gs; or11Yuv(q, -hw, -H + 10, W, H + ay - 8, 6); q.fill();
+      const gd = q.createLinearGradient(0, ay - 70, 0, ay); gd.addColorStop(0, 'rgba(42,33,88,0)'); gd.addColorStop(1, 'rgba(42,33,88,0.32)');
+      q.fillStyle = gd; or11Yuv(q, -hw, ay - 70, W, 72, 4); q.fill();
+      const gt = q.createLinearGradient(0, -H, 0, -H + 40); gt.addColorStop(0, 'rgba(255,255,255,0.3)'); gt.addColorStop(1, 'rgba(255,255,255,0)');
+      q.fillStyle = gt; or11Yuv(q, -hw, -H, W, 40, 6); q.fill();
+    }
     // tepe ağzı (açık uç)
     q.fillStyle = P(or11Hex(col, '#ffffff', 0.45)); q.beginPath(); q.ellipse(0, -H, hw, 6, 0, 0, 6.2832); q.fill();
     q.strokeStyle = OR11_KONTUR; q.lineWidth = 2; q.stroke();
     q.fillStyle = sonuk ? '#1d1840' : '#2a2158'; q.beginPath(); q.ellipse(0, -H + 0.5, hw - 5, 3.6, 0, 0, 6.2832); q.fill();
+    if (!sonuk) { q.strokeStyle = 'rgba(255,255,255,0.8)'; q.lineWidth = 1.4; q.beginPath(); q.ellipse(0, -H, hw - 1.5, 4.8, 0, Math.PI * 0.05, Math.PI * 0.95); q.stroke(); }   // ön dudakta parlak kenar
     // altın bilezikler
     const altin = P(OR11_ALTIN), altin2 = P(OR11_ALTIN2);
     for (const by of [-H + 14, ay - 4]) {
       q.fillStyle = OR11_KONTUR; or11Yuv(q, -hw - 2.5, by - 4.5, W + 5, 9, 3.5); q.fill();
       q.fillStyle = altin; or11Yuv(q, -hw - 1.5, by - 3.5, W + 3, 7, 3); q.fill();
       q.fillStyle = altin2; or11Yuv(q, -hw + 2, by - 3, W - 10, 2.2, 1.1); q.fill();
+      if (!sonuk) {
+        const gb = q.createLinearGradient(-hw, 0, hw, 0); gb.addColorStop(0, 'rgba(255,255,255,0)'); gb.addColorStop(0.25, 'rgba(255,255,255,0.9)'); gb.addColorStop(0.4, 'rgba(255,255,255,0)'); gb.addColorStop(1, 'rgba(90,50,20,0.3)');
+        q.fillStyle = gb; or11Yuv(q, -hw - 1.5, by - 3.5, W + 3, 7, 3); q.fill();
+        q.fillStyle = 'rgba(42,33,88,0.28)'; or11Yuv(q, -hw + 1, by + 4.5, W - 2, 3.5, 1.5); q.fill();   // bileziğin gövdeye düşen gölgesi
+      }
     }
     // ayak: koni (gövdeden aşağı daralır), açık altın-pastel
     q.fillStyle = OR11_KONTUR; q.beginPath(); q.moveTo(-hw * 0.92 - 1.5, ay - 1); q.lineTo(hw * 0.92 + 1.5, ay - 1); q.lineTo(hw * 0.3 + 1.5, 1); q.lineTo(-hw * 0.3 - 1.5, 1); q.closePath(); q.fill();
@@ -309,6 +326,11 @@ function or11Hazirla() { while (!OR11_S.hazir) or11HazirlaAdim(); }
 const OR11_NT = []; for (let i = 0; i < 30; i++) OR11_NT.push({ a: false, x: 0, y: 0, vx: 0, t: 0, max: 1, col: '#ffffff', sp: null, s: 1, ph: 0 });
 const OR11_HL = []; for (let i = 0; i < 16; i++) OR11_HL.push({ a: false, x: 0, y: 0, t: 0, max: 1, col: '#ffffff', r: 1 });
 const OR11_TZ = []; for (let i = 0; i < 110; i++) OR11_TZ.push({ a: false, tip: 0, x: 0, y: 0, vx: 0, vy: 0, t: 0, max: 1, col: '#ffffff', s: 1 });
+const OR11_SUT = []; for (let i = 0; i < 14; i++) OR11_SUT.push({ a: false, x: 0, y0: 0, y1: 0, t: 0, max: 1, col: '#ffffff', gec: 0 });
+const OR11_EK = { t: 0, col: '#ffffff' };   // kısa ekran parıltısı
+function or11Sutun(x, y0, y1, col) {   // borunun ağzından tavana: biri hemen, ikisi peş peşe
+  let n = 0; for (const p of OR11_SUT) if (!p.a) { p.a = true; p.x = x; p.y0 = y0; p.y1 = y1; p.t = -n * 0.16; p.max = 1.3; p.col = col; if (++n >= 3) break; }
+}
 function or11NotaUcur(x, y, col, s) {
   for (const p of OR11_NT) if (!p.a) { p.a = true; p.x = x; p.y = y; p.vx = (Math.random() - 0.5) * 50; p.t = 0; p.max = 1.7 + Math.random() * 0.5; p.col = col; p.sp = or11NotaSpr(col); p.s = s || 1; p.ph = Math.random() * 6.28; return p; }
   return null;
@@ -324,6 +346,8 @@ function or11Kivilcim(x, y, n, col, hiz) {
 function or11ParcaAdim(dt) {
   for (const p of OR11_NT) { if (!p.a) continue; p.t += dt; if (p.t >= p.max) { p.a = false; continue; } p.y -= (52 + 26 * (1 - p.t / p.max)) * dt; p.x += (p.vx + Math.sin(p.t * 3.2 + p.ph) * 22) * dt; p.vx *= Math.exp(-dt * 2); }
   for (const p of OR11_HL) { if (!p.a) continue; p.t += dt; if (p.t >= p.max) p.a = false; }
+  for (const p of OR11_SUT) { if (!p.a) continue; p.t += dt; if (p.t >= p.max) p.a = false; }
+  OR11_EK.t = Math.max(0, OR11_EK.t - dt * 2.6);
   for (const p of OR11_TZ) { if (!p.a) continue; p.t += dt; if (p.t >= p.max) { p.a = false; continue; } p.vx *= Math.exp(-dt * 2.2); p.vy = p.vy * Math.exp(-dt * 2.2) + (p.tip === 2 ? 40 : -10) * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
 }
 function or11ParcaCiz() {
@@ -340,6 +364,17 @@ function or11ParcaCiz() {
     g.globalAlpha = e * 0.85; g.strokeStyle = p.col; g.lineWidth = 5 * e + 1; g.beginPath(); g.ellipse(p.x, y, r, r * 0.34, 0, 0, 6.2832); g.stroke();
     g.globalAlpha = e * 0.6; g.strokeStyle = '#ffffff'; g.lineWidth = 1.6 * e + 0.4; g.beginPath(); g.ellipse(p.x, y, r * 0.92, r * 0.3, 0, 0, 6.2832); g.stroke();
   }
+  // ışık sütunu: borudan tavana yükselen nota renginde halkalar + incecik ışık şeridi
+  for (const p of OR11_SUT) {
+    if (!p.a || p.t < 0) continue; g.globalAlpha = 1; const u = p.t / p.max, e = 1 - u, uy = smooth(Math.min(1, u * 1.1)), y = p.y0 + (p.y1 - p.y0) * uy, r = 22 + 20 * uy;
+    or11Glow(g, p.col, p.x, (p.y0 + y) / 2, 24 + 10 * e, Math.abs(y - p.y0) / 2 + 30, e * 0.55);
+    or11Glow(g, '#ffffff', p.x, (p.y0 + y) / 2, 8, Math.abs(y - p.y0) / 2 + 10, e * 0.35);
+    or11Glow(g, p.col, p.x, y, r * 1.7, r * 0.9, e * 0.85);
+    g.globalAlpha = e * 0.95; g.strokeStyle = p.col; g.lineWidth = 6 * e + 1.5; g.beginPath(); g.ellipse(p.x, y, r, r * 0.32, 0, 0, 6.2832); g.stroke();
+    g.globalAlpha = e * 0.7; g.strokeStyle = '#ffffff'; g.lineWidth = 1.4; g.beginPath(); g.ellipse(p.x, y - 1, r * 0.86, r * 0.26, 0, Math.PI, 6.2832); g.stroke();
+  }
+  g.globalAlpha = 1;
+  if (OR11_EK.t > 0.01 && typeof cam !== 'undefined') { const z = cam.zoom || 1, w = VW / z, h = VH / z; or11Glow(g, OR11_EK.col, cam.x + w / 2, cam.y + h * 0.42, w * 0.75, h * 0.7, OR11_EK.t * 0.16); }
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   for (const p of OR11_NT) {
     if (!p.a) continue; const u = p.t / p.max, al = Math.min(1, u * 6) * (1 - u * u), sc = p.s * (0.7 + 0.3 * Math.min(1, u * 4)), r = Math.sin(p.t * 2.5 + p.ph) * 0.25;
@@ -368,6 +403,8 @@ function or11Cal(o, i, figur, sessiz) {
   or11Halka(x, ust + 2, OR11_REN[i], 1); or11NotaUcur(x + (Math.random() - 0.5) * 10, ust - 8, OR11_REN[i], 1.1);
   if (Math.random() < 0.6) or11NotaUcur(x + (Math.random() - 0.5) * 24, ust - 22, OR11_ALTIN2, 0.85);
   or11Kivilcim(x, ust, 6, OR11_REN[i], 90);
+  or11Sutun(x, ust - 4, o.y - 620, OR11_REN[i]);
+  OR11_EK.t = Math.max(OR11_EK.t, 0.6); OR11_EK.col = OR11_REN[i];
   k.flas = 1; k.yarasaHop = 1;
   if (figur) { const d = k.dede; d.har = OR11_FIG[d.fig++ % OR11_FIG.length]; d.hu = 0; d.harS = OR11_FIG_S; }
   k.pitir = Math.max(k.pitir, 0.9);
@@ -380,6 +417,7 @@ function or11Dokun(o, i, yardim) {
     const h = OR11_EZGI[k.cumle][k.adim];
     if (i === h) {
       or11Cal(o, i, true); k.adim++; k.say++;
+      { const b = k.boru[i]; or11Kivilcim(b.x, b.top, 8, '#ffe7a8', 130); OR11_EK.t = 1; if (k.adim >= 4) { or11Halka(b.x, b.top - 30, '#ffffff', 1.8); for (const bb of k.boru) or11Sutun(bb.x, bb.top - 4, o.y - 620, OR11_REN[bb.i]); } }
       OLAY.emit('orgNota', { o, n: k.say, i, cumle: k.cumle + 1, yardim: !!yardim });
       if (k.adim >= 4) { k.faz = 'ara'; k.fT = 0; k.b0 = Math.ceil((k.saat / OR11_VUR + 0.75) / 3) * 3; k.fzSev = 1; }   // bir sonraki ölçü başında dans
       return;
@@ -618,7 +656,7 @@ function or11Borular(o, tm) {
   for (const b of k.boru) {
     // boru: çalınca uzayıp kısalır (yay gibi), hevesliyken hoplar
     const zip = b.heves * Math.abs(Math.sin(tm * 6.4 + b.i)) * 5 + Math.sin(b.cal * Math.PI) * 4 + (b.i === hk ? Math.abs(Math.sin(tm * 4.4)) * 6 * k.spA : 0);   // sıradaki ayrıca hoplar
-    const sy = 1 + Math.sin(b.cal * Math.PI) * 0.05 + (k.faz === 'dans' || k.faz === 'final' ? Math.sin(tm * Math.PI * OR11_BPM / 60 + b.i * 0.9) * 0.015 : 0), sx = 1 - (sy - 1) * 0.7;
+    const sy = 1 + (b.cal > 0 ? Math.sin((1 - b.cal) * Math.PI * 2.6 - 0.9) * 0.11 * b.cal * b.cal : 0) + (k.faz === 'dans' || k.faz === 'final' ? Math.sin(tm * Math.PI * OR11_BPM / 60 + b.i * 0.9) * 0.015 : 0), sx = 1 - (sy - 1) * 0.7;
     const isik = clamp(Math.max(ap * (b.uyan ? 1 : 0.55), 0), 0, 1) * (hk >= 0 ? 1 - 0.3 * k.spA * (1 - b.parla) : 1);   // sıradaki varken ötekiler biraz sönük: o çok net seçilsin
     g.save(); g.translate(b.x, tb - zip); g.scale(sx, sy);
     or11Katman(g, OR11_S.boru[b.i], OR11_S.boruS[b.i], 0, 0, isik);

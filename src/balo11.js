@@ -95,7 +95,7 @@ function bl11BIsiltiSpr() { return bl11BTuval('isilti', -10, -10, 20, 20, q => {
 function bl11BHazirla(o) {   // kareye yayarak (her karede bir parça)
   const L = [bl11BAySpr, () => bl11BBulutSpr(0), () => bl11BBulutSpr(1), () => bl11BBulutSpr(2), () => bl11BBulutSpr(3), bl11BSutunSpr, bl11BTasSpr, bl11BSehpaSpr, bl11BHilalSpr, () => { for (let i = 0; i < 6; i++) bl11BYildizSpr(i); }, bl11BIsiltiSpr,
     () => { if (typeof vp11Parcalar === 'function') { vp11Parcalar('dede'); vp11Parcalar('nine'); } }, () => { if (typeof vp11Parcalar === 'function') { vp11Parcalar('kiz'); vp11Parcalar('bebek'); } },
-    () => { if (typeof hayalet11Ciz === 'function') for (let i = 0; i < 4; i++) vp11HayaletSpr(i); }, () => { if (typeof vp11YarasaGovde === 'function') { vp11YarasaGovde(); vp11YarasaKanat(); } }];
+    () => { if (typeof hayalet11Ciz === 'function') for (let i = 0; i < 4; i++) { vp11HayaletSpr(i); if (typeof vp11HayaletKol === 'function') vp11HayaletKol(i); } }, () => { if (typeof vp11YarasaGovde === 'function') { vp11YarasaGovde(); vp11YarasaKanat(); if (typeof vp11YarasaKulak === 'function') vp11YarasaKulak(); } }];
   if (o.isP < L.length) { try { L[o.isP](); } catch (e) {} o.isP++; return false; }
   return true;
 }

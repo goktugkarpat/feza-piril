@@ -88,6 +88,12 @@ for(const c of [334,360,392]) nesne('hayaletDekor',c,yuzey(c)-120,{});
 for(const [c,dy,uyku] of [[100,-300,0],[170,-360,0],[350,0,1],[384,0,1],[480,-330,0]])
  nesne('yarasaDekor',c,uyku?BL11_TAV[c]+34:yuzey(c)+dy,{uyku});   // uyuyanlar mağara tavanına asılı (gövde tavanın 34 altında)
 
+// ── Yol boyu oyuncaklar (ayna11.js 'ay11Oyun'; isteğe bağlı küçük sevinçler, zorunlu değil): ay çanları (her biri başka nota),
+// yarasa minderi (üstüne basınca yükseğe hoplatır; tepede gizli yıldız), kıkırdayan hayaletli sandık, ışık saçan kristaller,
+// şarkı söyleyen dönen portreler, ay tokmaklı minik kapı (içinden lila yarasa el sallar). Ayna/parça sütunlarından uzak. ──
+for(const [c,tur,nota] of [[72,'can',0],[112,'minder',0],[136,'can',2],[263,'can',4],[329,'sandik',0],[348,'kristal',1],[386,'kristal',5],
+ [470,'kapi',0],[494,'portre',0],[513,'portre',1]])
+ nesne('ay11Oyun',c,yuzey(c),{tur,nota});
 // ── Köprünün altındaki sis yastığı: çanağa düşen Feza yumuşakça yukarı sıçrar ve köprüye geri konar (düşmek acıtmaz, takılmaz) ──
 TUR.kaydet('bl11SisYastik',{kur(o){o.cisim={w:(301-269)*T,h:10,tip:'ziplat',guc:1080,aktif:true};},ciz(){}});
 nesne('bl11SisYastik',285,yuzey(285),{x:(269*T+301*T)/2});
@@ -102,6 +108,15 @@ TUR.kaydet('bl11Kamera',{guncelle(){const K=BL11_KAMDIK,a=(typeof now!=='undefin
  const w=a<0||a>6.5?0:smooth(clamp(a/.9,0,1))*(1-smooth(clamp((a-5)/1.5,0,1)));K.w=w;
  K.zoom=lerp(.86,K.tur==='kule'?.57:.74,w);K.yOfs=lerp(-110,K.tur==='kule'?-470:-230,w);K.yUst=lerp(-40,-420,w);if(w<=0){K.x0=K.x1=-1e6;}}});
 nesne('bl11Kamera',0,0,{});
+// ── Ayna dönüşü / şato canlanması: kamera kısa, yumuşak bir "nefes" alır (≈%3,5 yakınlaşıp geri; abartısız) ──
+const BL11_NABIZ={x0:-1e6,x1:-1e6,zoom:.86,yOfs:-80,t:-99,z0:.86,y0:-80};
+BOLUM.kamera.splice(1,0,BL11_NABIZ);
+function bl11NabizBasla(x){const now0=typeof now!=='undefined'?now:0;if(now0-BL11_NABIZ.t<1.2)return;let k=null;for(let i=2;i<BOLUM.kamera.length;i++){const q=BOLUM.kamera[i];if(P.x>=q.x0&&P.x<=q.x1){k=q;break;}}
+ if(!k)return;BL11_NABIZ.z0=k.zoom;BL11_NABIZ.y0=k.yOfs||0;BL11_NABIZ.x0=k.x0;BL11_NABIZ.x1=k.x1;BL11_NABIZ.t=now0;}
+OLAY.on('aynaDondu',()=>bl11NabizBasla());OLAY.on('satoCanlan',e=>{if(e&&e.tur!=='kule'&&e.tur!=='bayrak')bl11NabizBasla();});
+TUR.kaydet('bl11Nabiz',{guncelle(){const a=(typeof now!=='undefined'?now:0)-BL11_NABIZ.t;if(a<0||a>1.1){BL11_NABIZ.x0=BL11_NABIZ.x1=-1e6;return;}
+ const w=Math.sin(Math.PI*clamp(a/1.1,0,1));BL11_NABIZ.zoom=BL11_NABIZ.z0*(1+.035*w);BL11_NABIZ.yOfs=BL11_NABIZ.y0+12*w;}});
+nesne('bl11Nabiz',0,0,{});
 // ── Mini oyun 1: ayna salonu (aynasalon11.js) ──
 const bl11Salon=nesne('aynaSalonMini',232,yuzey(232),{x0:nx(215),x1:nx(250)});
 nesne('miniKapi',253,yuzey(253),{bagId:bl11Salon.id,stil:'sato'});

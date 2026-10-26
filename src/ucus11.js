@@ -89,6 +89,11 @@ function uc11DamlaArt() {   // ay ışığı damlası: 40×52 birim (merkez 20,3
   gr = q.createRadialGradient(20, 32, 0, 20, 32, 7.5); gr.addColorStop(0, 'rgba(255,255,255,0.95)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); q.fillStyle = gr; q.beginPath(); q.arc(20, 32, 7.5, 0, 6.283); q.fill();   // iç ışık
   q.fillStyle = 'rgba(255,255,255,0.92)'; q.beginPath(); q.ellipse(16.2, 27, 2.1, 3.6, -0.4, 0, 6.283); q.fill();   // parlak benek
   q.fillStyle = 'rgba(255,255,255,0.8)'; q.beginPath(); q.arc(23.6, 35.6, 1.1, 0, 6.283); q.fill();
+  q.save(); yol(0); q.clip();   // cam gibi derinlik: alt kenarda yansıyan lila ışık, sağ kenarda koyu kırılma
+  gr = q.createRadialGradient(22, 42, 0, 22, 42, 9); gr.addColorStop(0, 'rgba(217,200,255,0.7)'); gr.addColorStop(1, 'rgba(217,200,255,0)'); q.fillStyle = gr; q.fillRect(0, 0, 40, 52);
+  q.strokeStyle = 'rgba(70,90,190,0.35)'; q.lineWidth = 2; q.beginPath(); q.arc(20, 31, 8.2, -0.4, 1.3); q.stroke();
+  q.restore();
+  q.fillStyle = '#ffffff'; q.beginPath(); q.ellipse(17.3, 22.5, 0.9, 1.8, -0.4, 0, 6.283); q.fill();
   return (uc11Art.d = c);
 }
 function uc11YildizArt() {   // altın yıldız: 40×40 birim (merkez 20,20), yuvarlak köşeli, hâleli
@@ -133,6 +138,19 @@ function uc11BulutArt(k) {   // yumuşak lila bulut tutamı: 300×150 birim, tab
   for (const [x, y, rr] of T0) { q.moveTo(x + Math.cos(Math.PI * 1.18) * (rr - 2), y + Math.sin(Math.PI * 1.18) * (rr - 2)); q.arc(x, y, rr - 2, Math.PI * 1.18, Math.PI * 1.72); }
   q.stroke();
   gr = q.createLinearGradient(0, 96, 0, 126); gr.addColorStop(0, 'rgba(110,88,190,0)'); gr.addColorStop(1, 'rgba(90,70,170,0.35)'); q.fillStyle = gr; q.fillRect(20, 96, 260, 30);
+  // hacim: her tutamın altında yumuşak öz gölge (komşusunun üstüne düşer), üst-solunda ay ışığı kubbesi → pamuk gibi dolgun
+  q.save(); yol(0); q.clip();
+  for (let i = 0; i < T0.length; i++) {
+    const [x, y, rr] = T0[i];
+    gr = q.createRadialGradient(x, y + rr * 0.9, rr * 0.2, x, y + rr * 0.4, rr * 1.25); gr.addColorStop(0, 'rgba(88,66,168,0.3)'); gr.addColorStop(1, 'rgba(88,66,168,0)');
+    q.fillStyle = gr; q.beginPath(); q.arc(x, y + rr * 0.4, rr * 1.25, 0, 6.283); q.fill();
+  }
+  for (let i = 0; i < T0.length; i++) {
+    const [x, y, rr] = T0[i];
+    gr = q.createRadialGradient(x - rr * 0.3, y - rr * 0.38, 0, x - rr * 0.2, y - rr * 0.25, rr * 0.85); gr.addColorStop(0, 'rgba(255,255,255,0.7)'); gr.addColorStop(0.5, 'rgba(246,240,255,0.28)'); gr.addColorStop(1, 'rgba(246,240,255,0)');
+    q.fillStyle = gr; q.beginPath(); q.arc(x - rr * 0.2, y - rr * 0.25, rr * 0.85, 0, 6.283); q.fill();
+  }
+  q.restore();
   return (uc11Art[ad] = { c, w: 300, h: 150, ax: 150, ay: 124 });
 }
 // ── yakın şato parçaları (ışıkları yanmış, eğri büğrü, pastel taş): anchor = gövdenin üst ortası; çatılar yukarı, gövde aşağı ──
@@ -329,7 +347,30 @@ let uc11TozI = 0;
 function uc11DX() { const o = UCUS11.o; return o && P.ucus === o ? o.dx || 0 : 0; }   // uçuşta sanal, yoksa dünya
 function uc11TozAt(wx, wy, vx, vy, life, ci, s, gr) { const p = uc11Toz[uc11TozI]; uc11TozI = (uc11TozI + 1) % UC11_TOZN; p.x = wx - uc11DX(); p.y = wy; p.vx = vx; p.vy = vy; p.l = p.m = life; p.c = ci; p.s = s; p.g = gr === undefined ? 20 : gr; }
 function uc11TozPatla(x, y, n, hiz, ci0) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.2832, v = hiz * (0.35 + Math.random() * 0.75); uc11TozAt(x, y, Math.cos(a) * v, Math.sin(a) * v * 0.85 - 18, 0.7 + Math.random() * 0.8, ci0 === undefined ? i % UC11_TOZ.length : ci0, 2 + Math.random() * 3); } }
-function uc11TozAdim(dt) { const k = Math.exp(-dt * 1.6); for (let i = 0; i < UC11_TOZN; i++) { const p = uc11Toz[i]; if (p.l <= 0) continue; p.l -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= k; p.vy = p.vy * k + p.g * dt; } }
+// pelerinden dökülen yıldız izi (topladıkça sıklaşır, büyür) ve 10'da bir kombo kutlaması (sabit havuz)
+const UC11_YIZ = []; for (let i = 0; i < 40; i++) UC11_YIZ.push({ x: 0, y: 0, vx: 0, vy: 0, l: 0, m: 1, s: 1, r: 0 });
+let uc11YizI = 0;
+const UC11_KOMBO = { t: 0, x: 0, y: 0 };
+function uc11YizAt(wx, wy, s) { const p = UC11_YIZ[uc11YizI]; uc11YizI = (uc11YizI + 1) % UC11_YIZ.length; p.x = wx - uc11DX(); p.y = wy; p.vx = -40 - Math.random() * 40; p.vy = 10 + Math.random() * 16; p.l = p.m = 0.9 + Math.random() * 0.5; p.s = s; p.r = Math.random() * 6.28; }
+function uc11YizCiz(ddx) {
+  const yA = uc11YildizArt();
+  for (const p of UC11_YIZ) { if (p.l <= 0) continue; const u = p.l / p.m, r = p.s * (0.5 + 0.5 * u), x = p.x + ddx; if (x < cam.x - 40 || x > cam.x + VW + 40) continue;
+    g.globalAlpha = Math.min(1, u * 1.5); const M = g.getTransform(); g.translate(x, p.y); g.rotate(p.r + (1 - u) * 2); g.drawImage(yA, -r, -r, r * 2, r * 2); g.setTransform(M); }
+  g.globalAlpha = 1;
+  const K = UC11_KOMBO; if (K.t <= 0) return;
+  const u = 1 - K.t, R = 30 + 150 * (1 - Math.pow(1 - u, 2.4)), f = K.t, x = P.x + 6, y = P.y - UC11_GOGUS;
+  g.globalCompositeOperation = 'lighter';
+  dglow('#ffe7a8', x, y, 120 + 80 * u, f * 0.55);
+  const z = cam.zoom || 1; dglow('#eaf4ff', cam.x + VW / z / 2, cam.y + VH / z * 0.45, VW / z * 0.7, f * 0.16);   // kısa ekran parıltısı
+  g.globalAlpha = f * 0.9; g.strokeStyle = '#ffe7a8'; g.lineWidth = 5 * f + 1; g.beginPath(); g.arc(x, y, R, 0, 6.283); g.stroke();
+  g.globalAlpha = f * 0.6; g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, R * 0.8, 0, 6.283); g.stroke();
+  g.globalCompositeOperation = 'source-over';
+  for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283 + u * 1.5, rr = 14 * (1 - u * 0.5) * (i % 2 ? 0.7 : 1); g.globalAlpha = Math.min(1, f * 1.6); g.drawImage(yA, x + Math.cos(a) * R - rr, y + Math.sin(a) * R - rr, rr * 2, rr * 2); }
+  g.globalAlpha = 1;
+}
+function uc11TozAdim(dt) {
+  for (const p of UC11_YIZ) { if (p.l <= 0) continue; p.l -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= Math.exp(-dt * 1.2); }
+  UC11_KOMBO.t = Math.max(0, UC11_KOMBO.t - dt / 1.1); const k = Math.exp(-dt * 1.6); for (let i = 0; i < UC11_TOZN; i++) { const p = uc11Toz[i]; if (p.l <= 0) continue; p.l -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= k; p.vy = p.vy * k + p.g * dt; } }
 
 // ── kurulum ──
 function uc11Kur(o) {
@@ -465,6 +506,7 @@ function uc11Adim(o, dt, G) {
     o.kamY = lerp(o.kamY, lane + 0.5 * (o.by - lane) + kOfs, 1 - Math.exp(-dt * 2.2));
     // pelerinden dökülen ay ışığı izi (toplanan ışıkla parlar)
     o.izT -= dt; if (o.izT <= 0) { o.izT = lerp(0.07, 0.035, clamp(o.n / 30, 0, 1)); uc11TozAt(o.bx - 16 + Math.random() * 10, o.by + o.bob - 30 + Math.random() * 22, -30 - Math.random() * 30, 6 + Math.random() * 14, 0.9 + Math.random() * 0.7, Math.random() < 0.6 ? (Math.random() * 3) | 0 : 3 + ((Math.random() * 3) | 0), 1.6 + Math.random() * 2.2, 8); }
+    if (o.n > 0) { o.yizT = (o.yizT || 0) - dt; if (o.yizT <= 0) { const nn = clamp(o.n / 30, 0, 1); o.yizT = lerp(0.32, 0.07, nn); uc11YizAt(o.bx - 20 + Math.random() * 8, o.by + o.bob - 26 + Math.random() * 20, 4 + nn * 7 + Math.random() * 2); } }
     if (o.v >= UC11_LV) { o.faz = 'inis'; o.t = 0; o.indi = false; o.ix0 = o.bx; o.iy0 = o.by + o.bob; o.ivx = o.spd * K.r; o.ivy = vy; uc11Olay(o, 'pelerinUcusInis'); }
     P.x = o.bx; P.y = o.by + o.bob;
   } else if (o.faz === 'inis') {   // kule terasına yumuşak süzülüş; pelerin yavaşça kapanır
@@ -520,6 +562,7 @@ function uc11Topla(o, r, rx, ry) {
   r.d = 'alindi'; r.t = 0; r.rx = rx; r.ry = ry; o.n++; o.parla = 1; o.sevT = 0.7;
   uc11Sfx('ucusIsik', o.n);
   uc11TozPatla(o.bx + 6 + rx, o.by + o.bob - UC11_GOGUS + ry, 10, 110, r.tip === 'y' ? 3 : 1);
+  if (o.n % 10 === 0) { UC11_KOMBO.t = 1; o.vela.kik = Math.max(o.vela.kik, 1.4); o.sevT = 1.4; uc11TozPatla(o.bx + 6, o.by + o.bob - UC11_GOGUS, 18, 200, 3); uc11Sfx('parilti', 1); }
   if (o.n % 6 === 0 && !(o.pr.tk > 0)) { o.pr.tk = 0.001; o.pr.tkYon = Math.random() < 0.5 ? -1 : 1; }   // Pırıl sevinçle takla atar
   OLAY.emit('pelerinUcusIsik', { o, n: o.n, top: o.top, tip: r.tip === 'y' ? 'yildiz' : 'damla', x: o.bx + 6 + rx, y: o.by - UC11_GOGUS + ry });
 }
@@ -885,6 +928,7 @@ TUR.kaydet('pelerinUcus', {
       try { sil = uc11SiluetCiz(o, tm, o.silA); } catch (e) { sil = false; }
     }
     uc11HizCiz(o, tm);
+    uc11YizCiz(o.ddx);
     if (!sil) uc11BinicilerCiz(g, o, tm);
     uc11KurdeleCiz(o, tm);
     uc11UcanCiz(o, tm);

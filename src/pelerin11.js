@@ -29,15 +29,39 @@ function pl11Kabugu(ad, s) {   // baloncuk kabuğu (ölçekli önbellek): içi h
   const R = PL11_R, p = Math.ceil((R + 6) * 2 * st), c = k.c; c.width = c.height = p; k.s = st;
   const x = c.getContext('2d'), m = p / 2, col = PL11_RENK[ad];
   x.setTransform(st, 0, 0, st, m, m);
+  // cam küre (hepsi bu önbellek çizilirken bir kez): hafif renkli iç, kenara doğru koyulaşan cam kalınlığı (Fresnel), ince film
+  // gökkuşağı yansımaları (konik geçiş, kenarda kuşak + içte yumuşak girdap), sol üstte pencere yansıması, sağ altta parlak kostik hilal
   const ig = x.createRadialGradient(-R * 0.25, -R * 0.3, R * 0.1, 0, 0, R);
-  ig.addColorStop(0, 'rgba(255,255,255,0.10)'); ig.addColorStop(0.62, 'rgba(255,255,255,0.05)'); ig.addColorStop(0.9, col[0] + '55'); ig.addColorStop(1, col[0] + 'aa');
+  ig.addColorStop(0, 'rgba(255,255,255,0.10)'); ig.addColorStop(0.62, 'rgba(255,255,255,0.04)'); ig.addColorStop(0.9, col[0] + '50'); ig.addColorStop(1, col[0] + 'b0');
   x.fillStyle = ig; x.beginPath(); x.arc(0, 0, R, 0, 6.2832); x.fill();
-  const rg = x.createLinearGradient(-R, -R, R, R);
-  rg.addColorStop(0, 'rgba(255,170,220,0.95)'); rg.addColorStop(0.35, 'rgba(207,230,255,0.9)'); rg.addColorStop(0.7, 'rgba(200,180,255,0.95)'); rg.addColorStop(1, 'rgba(255,230,170,0.9)');
-  x.strokeStyle = rg; x.lineWidth = 2.2; x.beginPath(); x.arc(0, 0, R - 1.1, 0, 6.2832); x.stroke();
-  x.strokeStyle = 'rgba(255,255,255,0.75)'; x.lineWidth = 2.6; x.lineCap = 'round'; x.beginPath(); x.arc(0, 0, R - 5.5, 3.55, 4.45); x.stroke();
-  x.strokeStyle = 'rgba(255,255,255,0.35)'; x.lineWidth = 1.4; x.beginPath(); x.arc(0, 0, R - 4.5, 0.45, 1.05); x.stroke();
-  x.fillStyle = 'rgba(255,255,255,0.85)'; x.beginPath(); x.arc(-R * 0.34, -R * 0.56, 2.1, 0, 6.2832); x.fill();
+  const fr = x.createRadialGradient(0, 0, R * 0.7, 0, 0, R);
+  fr.addColorStop(0, 'rgba(255,255,255,0)'); fr.addColorStop(0.75, 'rgba(225,235,255,0.12)'); fr.addColorStop(1, 'rgba(245,250,255,0.42)');
+  x.fillStyle = fr; x.beginPath(); x.arc(0, 0, R, 0, 6.2832); x.fill();
+  const kon = (a0) => {
+    if (typeof x.createConicGradient === 'function') {
+      const cg = x.createConicGradient(a0, 0, 0), H = ['#ff9ad5', '#ffd59a', '#fff3a0', '#9affd0', '#9ad8ff', '#b59aff', '#ff9ad5'];
+      for (let i = 0; i < H.length; i++) cg.addColorStop(i / (H.length - 1), H[i]); return cg;
+    }
+    const lg = x.createLinearGradient(-R, -R, R, R); lg.addColorStop(0, '#ff9ad5'); lg.addColorStop(0.35, '#9ad8ff'); lg.addColorStop(0.7, '#b59aff'); lg.addColorStop(1, '#ffd59a'); return lg;
+  };
+  x.save(); x.beginPath(); x.arc(0, 0, R, 0, 6.2832); x.clip();
+  x.globalAlpha = 0.16; x.fillStyle = kon(0.6); x.beginPath(); x.ellipse(R * 0.18, R * 0.12, R * 0.95, R * 0.62, 0.7, 0, 6.2832); x.fill();   // içte yumuşak gökkuşağı girdabı
+  x.globalAlpha = 0.5; x.strokeStyle = kon(2.2); x.lineWidth = 4.2; x.beginPath(); x.arc(0, 0, R - 1.6, 0, 6.2832); x.stroke();   // kenarda gökkuşağı kuşağı
+  x.globalAlpha = 1; x.restore();
+  x.strokeStyle = kon(1.2); x.lineWidth = 1.6; x.globalAlpha = 0.95; x.beginPath(); x.arc(0, 0, R - 0.8, 0, 6.2832); x.stroke(); x.globalAlpha = 1;
+  const hg = x.createRadialGradient(-R * 0.38, -R * 0.45, 0, -R * 0.38, -R * 0.45, R * 0.42);   // sol üst yumuşak parlaklık
+  hg.addColorStop(0, 'rgba(255,255,255,0.5)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = hg; x.beginPath(); x.arc(-R * 0.38, -R * 0.45, R * 0.42, 0, 6.2832); x.fill();
+  x.save(); x.rotate(-0.72); x.fillStyle = 'rgba(255,255,255,0.72)';   // pencere yansıması (eğik, iki bölmeli)
+  x.beginPath(); x.ellipse(0, -R * 0.7, R * 0.3, R * 0.11, 0, 0, 6.2832); x.fill();
+  x.fillStyle = 'rgba(255,255,255,0.4)'; x.beginPath(); x.ellipse(R * 0.42, -R * 0.62, R * 0.1, R * 0.07, 0.3, 0, 6.2832); x.fill(); x.restore();
+  x.strokeStyle = 'rgba(255,255,255,0.75)'; x.lineWidth = 2.4; x.lineCap = 'round'; x.beginPath(); x.arc(0, 0, R - 5.5, 3.6, 4.35); x.stroke();
+  const kg = x.createLinearGradient(R * 0.2, R * 0.2, R * 0.8, R * 0.8);   // sağ altta kostik hilal (ışık kürenin içinden geçip toplanır)
+  kg.addColorStop(0, 'rgba(255,250,235,0)'); kg.addColorStop(1, 'rgba(255,250,235,0.7)');
+  x.strokeStyle = kg; x.lineWidth = 2.8; x.beginPath(); x.arc(0, 0, R - 4.2, 0.25, 1.35); x.stroke();
+  x.strokeStyle = 'rgba(255,255,255,0.3)'; x.lineWidth = 1.2; x.beginPath(); x.arc(0, 0, R - 3.4, 1.7, 2.3); x.stroke();
+  x.fillStyle = 'rgba(255,255,255,0.95)'; x.beginPath(); x.arc(-R * 0.34, -R * 0.56, 2.1, 0, 6.2832); x.fill();
+  x.fillStyle = 'rgba(255,255,255,0.7)'; x.beginPath(); x.arc(R * 0.52, R * 0.5, 1.1, 0, 6.2832); x.fill();
   return k;
 }
 // içindeki pelerin: PL11_KARE kanat karesi (açık ↔ yarı açık); ölçek değişince en çok bir kare / çağrı yeniden çizilir (ısıtma kareye yayılır)

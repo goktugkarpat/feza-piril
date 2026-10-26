@@ -111,6 +111,11 @@ function pa11CilekCiz(q, x, y, r, yuz) {   // çilek: gövde ortası (x, y), ucu
     q.fillStyle = 'rgba(160,20,60,0.35)'; q.beginPath(); q.ellipse(px + r * 0.02, py + r * 0.04, r * 0.08, r * 0.12, sx * 0.4, 0, 6.2832); q.fill();
     q.fillStyle = '#fff0b0'; q.beginPath(); q.ellipse(px, py, r * 0.065, r * 0.1, sx * 0.4, 0, 6.2832); q.fill(); }
   q.fillStyle = 'rgba(255,255,255,0.6)'; q.beginPath(); q.ellipse(x - 0.45 * r, y - 0.3 * r, 0.15 * r, 0.32 * r, 0.45, 0, 6.2832); q.fill();
+  q.fillStyle = '#ffffff'; q.beginPath(); q.ellipse(x - 0.5 * r, y - 0.48 * r, 0.07 * r, 0.11 * r, 0.45, 0, 6.2832); q.fill();   // keskin ışık noktası
+  q.save(); yol(); q.clip();   // sağ altta yansıyan pembe ışık kenarı + gövde altında gölge (yuvarlak, dolgun)
+  q.fillStyle = pa11Rad(q, x + 0.55 * r, y + 0.55 * r, 0, x + 0.55 * r, y + 0.55 * r, 0.7 * r, [0, 'rgba(255,200,220,0.55)', 1, 'rgba(255,200,220,0)']); q.fillRect(x - 1.3 * r, y - 1.2 * r, 2.6 * r, 2.5 * r);
+  q.fillStyle = pa11Rad(q, x - 0.2 * r, y - 0.6 * r, 0.9 * r, x, y + 0.2 * r, 1.5 * r, [0, 'rgba(120,0,40,0)', 1, 'rgba(120,0,40,0.3)']); q.fillRect(x - 1.3 * r, y - 1.2 * r, 2.6 * r, 2.5 * r);
+  q.restore();
   if (yuz) {   // gülen yüz: mutlu kapalı gözler, pembe yanaklar, minik gülümseme
     q.strokeStyle = '#5a1430'; q.lineWidth = r * 0.09;
     for (const sx of [-1, 1]) { q.beginPath(); q.arc(x + sx * 0.34 * r, y - 0.02 * r, 0.14 * r, Math.PI * 1.1, Math.PI * 1.9); q.stroke(); }
@@ -250,6 +255,11 @@ function pa11KatCiz(q, i) {   // tek pasta katı (sade pembe krema, tepeden daml
   q.strokeStyle = 'rgba(255,255,255,0.2)'; q.lineWidth = 1.6;   // kremanın yumuşak spatula izleri
   for (let k = 1; k < 4; k++) { const yy = lerp(y1, y0, k / 4) + 2; q.beginPath(); q.ellipse(0, yy, w * 0.99, ry, 0, Math.PI * 0.12, Math.PI * 0.88); q.stroke(); }
   q.fillStyle = 'rgba(180,60,110,0.16)'; q.beginPath(); q.ellipse(0, y0 + ry * 0.2, w + 4, ry + 3, 0, 0, 6.2832); q.fill();   // tabanda yumuşak gölge
+  // hacim (cila): sol önde parlak krema şeridi, sağda yuvarlanan gölge, üst kenar altında damla gölgesi (silindir gibi dolgun)
+  q.fillStyle = pa11Lin(q, -w, 0, w, 0, [0, 'rgba(255,255,255,0)', 0.17, 'rgba(255,255,255,0)', 0.26, 'rgba(255,255,255,0.42)', 0.34, 'rgba(255,255,255,0)', 0.7, 'rgba(150,40,90,0)', 0.93, 'rgba(150,40,90,0.22)', 1, 'rgba(255,220,235,0.35)']);
+  q.fillRect(-w, y1 - ry, 2 * w, y0 - y1 + 2 * ry);
+  q.fillStyle = pa11Lin(q, 0, y1, 0, y1 + ry + 22, [0, 'rgba(160,40,90,0)', 0.55, 'rgba(160,40,90,0.2)', 1, 'rgba(160,40,90,0)']);
+  q.beginPath(); q.ellipse(0, y1 + 12, w, ry + 10, 0, 0, Math.PI); q.fill();
   q.restore();
   yol(); q.strokeStyle = 'rgba(170,60,110,0.5)'; q.lineWidth = 1.4; q.stroke();
   // üst yüzey: açık pembe sos
@@ -266,6 +276,11 @@ function pa11KatCiz(q, i) {   // tek pasta katı (sade pembe krema, tepeden daml
   q.fillStyle = 'rgba(255,255,255,0.85)';
   for (const d of dr) { const x = w * Math.cos(d.a), yb = y1 + ry * Math.sin(d.a) + L(d.a) - 2.6; if (d.L > 5) { q.beginPath(); q.ellipse(x - 0.6, yb, 0.9, 1.4, 0, 0, 6.2832); q.fill(); } }
   q.strokeStyle = 'rgba(255,255,255,0.75)'; q.lineWidth = 1.5; q.beginPath(); q.ellipse(0, y1, w * 0.92, ry * 0.8, 0, Math.PI * 1.1, Math.PI * 1.45); q.stroke();
+  q.fillStyle = pa11Rad(q, -w * 0.35, y1 - ry * 0.25, 0, -w * 0.35, y1 - ry * 0.25, w * 0.4, [0, 'rgba(255,255,255,0.7)', 1, 'rgba(255,255,255,0)']);
+  q.beginPath(); q.ellipse(-w * 0.3, y1 - ry * 0.2, w * 0.4, ry * 0.5, 0, 0, 6.2832); q.fill();
+  // damlaların uçlarında parlak boncuk
+  q.fillStyle = 'rgba(255,255,255,0.95)';
+  for (const d of dr) { if (d.L <= 6) continue; const x = w * Math.cos(d.a), yb = y1 + ry * Math.sin(d.a) + L(d.a) - 1.2; q.beginPath(); q.arc(x - 0.7, yb - 0.6, 0.75, 0, 6.2832); q.fill(); }
 }
 function pa11PastaSpr() {   // altın altlık + dantel + üç kat sade pasta; taban (0, 0)
   return pa11Tuval('pasta', -114, -172, 228, 182, q => {
@@ -519,6 +534,8 @@ function pa11Yerles(o, m) {   // süs pastaya oturdu: bir avuç parça sırayla 
   OLAY.emit('pastaSus', { o, n, ad: d.ad, kat: d.kat + 1 });
   if (d.kat < 3) { k.katN[d.kat]++; if (k.katN[d.kat] === 2) k.katBek[d.kat] = 0.55; }
   if (n === 6) k.buyukBek = 1.1;
+  k.ekran = 1;
+  if (d.ad === 'buyukCilek') { k.tadaa = 1; pa11IsikSac(bx, by - 110, 24, 220, ['#ffe7a8', '#ffb3d1', '#ffffff', '#c39bff']); pa11Serp(bx, by - 230, 26, o.y + PA11_MASA); }
   if (d.ad === 'buyukCilek') { k.faz = 'son'; k.sT = 0; k.helpOn = false; k.tasinan = null; pa11GirdiBirak(); }
 }
 function pa11KatParla(o, i) {   // bir katın iki süsü de kondu: kat ışıl ışıl parlar, Nine sevinçle şaşırır, Pıtır alkışlar
@@ -694,6 +711,7 @@ function pa11Guncelle(o, dt) {
   k.t += dt;
   pa11EfektAdim(dt); pa11NineAdim(o, dt); pa11GrupAdim(o, dt);
   k.wob = Math.max(0, k.wob - dt * 1.4); k.flas = Math.max(0, k.flas - dt * 2);
+  k.ekran = Math.max(0, (k.ekran || 0) - dt * 2.4); k.tadaa = Math.max(0, (k.tadaa || 0) - dt / 1.25);
   for (let i = 0; i < 3; i++) k.katParla[i] = Math.max(0, k.katParla[i] - dt * 0.7);
   k.isin += (k.isinH - k.isin) * (1 - Math.exp(-dt * 2)); k.isinA += dt * 0.22;
   k.fzSev = Math.max(0, k.fzSev - dt);
@@ -725,6 +743,12 @@ function pa11Ciz(o, tm) {   // Feza'nın arkası: mutfak ışığı, huzmeler, m
   // pasta (süs konunca jöle gibi yaylanır)
   const M = g.getTransform(), w = k.wob, sq = Math.sin(k.t * 19) * 0.035 * w;
   if (w > 0.001) { g.translate(bx, by); g.scale(1 + sq, 1 - sq); g.translate(-bx, -by); }
+  if (k.tadaa > 0.001) {   // "tadaa": pasta çömelir, zıplar, havada bir tur döner, yaylanarak oturur
+    const u = 1 - k.tadaa, ac = u < 0.12 ? u / 0.12 : 1, z = u < 0.12 ? 0 : Math.sin(clamp((u - 0.12) / 0.62, 0, 1) * Math.PI) * 46;
+    const don = clamp((u - 0.16) / 0.55, 0, 1), sd = smooth(don), sx = (0.86 + 0.14 * Math.cos(sd * 6.2832)) * (1 + 0.1 * Math.sin(sd * Math.PI)), egim = Math.sin(sd * 6.2832) * 0.09, cs = u < 0.12 ? 0.1 * Math.sin(ac * Math.PI) : u > 0.74 ? 0.09 * Math.sin((u - 0.74) / 0.26 * Math.PI * 2) * (1 - u) * 3 : 0;
+    pa11IsikE(g, '#3b2a6e', bx, by + 2, 110 * (1 - z / 90), 14, 0.18);   // yerdeki yumuşak gölge
+    g.translate(bx, by - z); g.rotate(egim); g.scale(sx * (1 + cs), (1 - cs) * (1 + 0.1 * Math.sin(sd * Math.PI))); g.translate(-bx, -by);
+  }
   if (k.kalkY > 0.5) pa11IsikE(g, '#cfe6ff', bx, by + 4, 130, 18, 0.5 * Math.min(1, k.kalkY / 10));
   if (o.done) pa11Koy(g, pa11PastaTamSpr(), bx, by);
   else {
@@ -738,6 +762,7 @@ function pa11Ciz(o, tm) {   // Feza'nın arkası: mutfak ışığı, huzmeler, m
   }
   for (let i = 0; i < 3; i++) if (k.katParla[i] > 0.01) { const K = PA11_KAT[i], a = k.katParla[i]; pa11IsikE(g, '#fff0f6', bx, by + (K.y0 + K.y1) / 2, K.w * 1.7, (K.y0 - K.y1) * 1.4, a * 0.85); pa11IsikE(g, '#ffd27a', bx, by + K.y1, K.w * 1.3, 26, a * 0.5); }
   if (k.flas > 0.01) pa11Isik(g, '#ffffff', bx, by - 95, 140, k.flas * 0.3);
+  if (k.tadaa > 0.01) { const ea = g.globalCompositeOperation; g.globalCompositeOperation = 'lighter'; pa11Isik(g, '#ffe7a8', bx, by - 110, 260, Math.sin(k.tadaa * Math.PI) * 0.45); g.globalCompositeOperation = ea; }
   if (k.yakin > 0.02) pa11Isik(g, '#fff3c4', bx, by - 100, 160, k.yakin * 0.45 * (0.85 + 0.15 * Math.sin(tm * 8)));
   g.setTransform(M);
   // Vampir Nine (önlüklü; pastaya bakar)
@@ -773,6 +798,10 @@ function pa11CizOn(o, tm) {   // Feza'nın önü: cam fanus, Feza, Pırıl, hava
     if (typeof pirilCizPoz === 'function') { const pr = k.pr; try { g.save(); g.translate(pr.x, pr.y); if (pr.f < 0) g.scale(-1, 1); pirilCizPoz(g, 0, 0, PA11_FS, pr.kirp > 0 ? 'goz_kirp' : 'ucus', tm); g.restore(); } catch (e) { g.restore(); } }
   }
   if (k.aktif || k.faz === 'oyun') pa11SusCiz(o, tm);
+  if (k.ekran > 0.01) {   // kısa, yumuşak ekran parıltısı (süs oturunca)
+    const z = cam.zoom || 1, W = VW / z, H = VH / z, ea = g.globalCompositeOperation; g.globalCompositeOperation = 'lighter';
+    pa11IsikE(g, '#ffb3d1', cam.x + W / 2, cam.y + H * 0.45, W * 0.8, H * 0.75, k.ekran * 0.14); g.globalCompositeOperation = ea;
+  }
   pa11TozCiz(g);
 }
 function pa11SusCiz(o, tm) {   // havadaki süsler (ışık baloncuklarının içinde)

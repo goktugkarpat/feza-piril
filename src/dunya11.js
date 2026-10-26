@@ -571,6 +571,15 @@ function dn11Chunk(i){
  // 5) küçük süsler ve 6) tek yönlü platformlar
  for(const s of Y.kucuk)if(s.x>L-80&&s.x<Rr+80)dn11KucukCiz(c,s,kayit(s));
  for(const pl of Y.plat)if(pl.x1>L-20&&pl.x0<Rr+20)dn11PlatCiz(c,pl,kayit(pl));
+ // 7) pişmiş ışık-gölge (yalnız var olan piksellere, source-atop): zemine değen duvar/çalı/ağaç diplerinde temas gölgesi (AO),
+ //    üst kısımlarda soğuk ay ışığı, yüzey kenarında ince gümüş ay çizgisi (rim)
+ c.save();c.globalCompositeOperation='source-atop';
+ {const gt=c.createLinearGradient(0,ust,0,ust+520);gt.addColorStop(0,'rgba(200,214,255,.16)');gt.addColorStop(1,'rgba(200,214,255,0)');c.fillStyle=gt;c.fillRect(L,ust,Rr-L,520);}
+ let sy0=-1,gA=null;
+ for(let x=Math.floor(L);x<=Rr;x+=8){const y=dn11Surface(x);if(y>=1200)continue;if(y!==sy0){sy0=y;gA=c.createLinearGradient(0,y-140,0,y+2);gA.addColorStop(0,'rgba(14,8,40,0)');gA.addColorStop(.65,'rgba(14,8,40,.18)');gA.addColorStop(1,'rgba(14,8,40,.42)');}
+  c.fillStyle=gA;c.fillRect(x,y-140,8,140);}
+ c.restore();
+ c.save();c.strokeStyle='rgba(214,230,255,.22)';c.lineWidth=2;c.beginPath();{let on=false;for(let x=Math.floor(L);x<=Rr;x+=4){const y=dn11Surface(x);if(y>=1200||dn11Oda(x)){on=false;continue;}on?c.lineTo(x,y+1):c.moveTo(x,y+1);on=true;}}c.stroke();c.restore();
  if(yeni)dn11KayitSirala();
  DN11.chunks.set(i,cv);while(DN11.chunks.size>DN11_CACHE)DN11.chunks.delete(DN11.chunks.keys().next().value);return cv;
 }
@@ -1014,6 +1023,7 @@ function dn11Background(tm){
  if(!dn11Ready())return;dn11Sky();dn11FxArt();dn11AyArt();dn11Durum();DN11.kare++;
  g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';
  dn11Backdrop(tm);
+ dn11AtmArka(tm);
 }
 
 // ════════ Dünya: zemin parçaları + soluk örtü + yerel ışıltılar ════════
@@ -1024,7 +1034,7 @@ function dn11Ortu(){
  // dilim alfaları 64×1'lik minik tuvale yazılır, ekrana yumuşatılarak gerilir: dilimler arası basamak görünmez
  if(!dn11OrtuCv){dn11OrtuCv=dn11Cv(DN11_DILIM,1);dn11OrtuVeri=dn11OrtuCv.getContext('2d').createImageData(DN11_DILIM,1);}
  const d=dn11OrtuVeri.data,dw=VW/DN11_DILIM;let top=0;
- for(let i=0;i<DN11_DILIM;i++){const a=.44*(1-dn11Isik(cam.x+(i+.5)*dw))*gece,o=i*4;d[o]=58;d[o+1]=52;d[o+2]=84;d[o+3]=Math.round(a*255);top+=d[o+3];}
+ for(let i=0;i<DN11_DILIM;i++){const a=.44*(1-dn11Isik(cam.x+(i+.5)*dw))*gece,o=i*4;d[o]=44;d[o+1]=50;d[o+2]=96;d[o+3]=Math.round(a*255);top+=d[o+3];}
  if(top<2)return;dn11OrtuCv.getContext('2d').putImageData(dn11OrtuVeri,0,0);
  g.setTransform(1,0,0,1,0,0);g.imageSmoothingEnabled=true;g.drawImage(dn11OrtuCv,0,0,DN11_DILIM,1,-W/DN11_DILIM*.5,0,W+W/DN11_DILIM,H);
 }
@@ -1114,7 +1124,7 @@ function dn11World(tm){
  dn11Ortu();
  if(DN11.sabah>.004){g.setTransform(1,0,0,1,0,0);g.globalAlpha=DN11.sabah*.3;g.drawImage(DN11.fx.sabahOrtu,0,0,8,128,0,H*.2,W,H*.8+1);g.globalAlpha=1;}
  g.setTransform(S,0,0,S,-cam.x*S,-cam.y*S);
- dn11Sis(tm,false);dn11Isiltilar(tm);dn11Ipler(tm);dn11Kopru(tm);dn11KendiIz();dn11Izler();
+ dn11AtmDunya(tm);dn11Sis(tm,false);dn11Isiltilar(tm);dn11Ipler(tm);dn11Kopru(tm);dn11KendiIz();dn11Izler();
  // ışık dalgaları: yeni dönen ayna / canlanan parça → yere yayılan gümüş halka + göğe yükselen ışık tozu; kalıcı yumuşak ışık havuzu
  g.globalCompositeOperation='lighter';const gece=1-DN11.sabah*.7;
  for(const Lt of DN11.lit){if(Lt.x<cam.x-500||Lt.x>cam.x+VW+500)continue;const on=smooth(clamp((now-Lt.t)/1.5,0,1)),nb=.85+.15*Math.sin(tm*1.7+Lt.x),sy=dn11Surface(Lt.x);if(sy>=1200)continue;
@@ -1201,6 +1211,7 @@ function dn11Foreground(tm){
  // ekran geneli: ışık arttıkça gümüş-altın, finalde pembe-altın, sabahta sıcak
  g.setTransform(S,0,0,S,0,0);g.globalCompositeOperation='lighter';
  const R11=DN11.renk,gece=1-DN11.sabah;if(R11>.02)dn11Glow('#a9c8ff',vw*.5,vh*.95,vw*.8,vh*.35,(.02+R11*.04)*gece);
+ {const Lc=dn11Isik(cam.x+VW*.5);if(Lc>.05&&!(typeof P!=='undefined'&&P.ucus)){dn11Glow('#ffc070',vw*.5,vh*.78,vw*.7,vh*.45,Lc*.075*gece);dn11Glow('#ffb3d1',vw*.15,vh*.3,vw*.4,vh*.4,Lc*.025*gece);}}
  if(DN11.fin>.01){dn11Glow('#ffe7a8',vw*.5,vh*.9,vw*.8,vh*.4,DN11.fin*.05*gece);dn11Glow('#ffb3d1',vw*.75,vh*.12,vw*.5,vh*.4,DN11.fin*.04*gece);}
  if(DN11.sabah>.01)dn11Glow('#ffc8a0',vw*.6,vh*.8,vw*.9,vh*.6,DN11.sabah*.22);
  g.globalCompositeOperation='source-over';
@@ -1209,6 +1220,72 @@ const DN11_VIG=[[0,0,200,16],[0,132,200,28],[0,16,42,116],[158,16,42,116]];
 function dn11Vignette(){if(!dn11Ready())return;const F=dn11FxArt(),kx=W/200,ky=H/160;g.setTransform(1,0,0,1,0,0);g.globalAlpha=1-DN11.sabah*.6;
  for(const [x,y,w,h] of DN11_VIG){const dx=Math.round(x*kx),dy=Math.round(y*ky);g.drawImage(F.vig,x,y,w,h,dx,dy,Math.round((x+w)*kx)-dx,Math.round((y+h)*ky)-dy);}g.globalAlpha=1;}
 
+
+// ════════ ATMOSFER (derinlik): ay ışığı huzmeleri, yerde ay benekleri, pencere ışık lekesi, uzak soğuk pus, içeride eğik ay ışığı şeritleri ════════
+// Hepsi önbellek tuvalleri (gradyan/shadowBlur yalnız pişirilirken; ısıtmada kare başına bir tuval). Karede yalnız drawImage + alfa.
+const DN11_ATM={spr:{},sira:['isinA','benek','pencereLeke','pusMavi'],ic:0,icT:-1};
+function dn11AtmYap(ad){
+ const A=DN11_ATM.spr;if(A[ad])return A[ad];let cv;
+ if(ad==='isinA'){   // ay huzmesi: tepede dar, aşağı genişleyip sönen yumuşak koni (yanları yumuşak)
+  cv=dn11Cv(128,512);const c=cv.getContext('2d');for(let k=0;k<3;k++){const w0=6+k*10,w1=26+k*20,a=[.42,.2,.1][k];
+   const gr=c.createLinearGradient(0,0,0,512);gr.addColorStop(0,'rgba(220,234,255,'+a+')');gr.addColorStop(.45,'rgba(190,212,255,'+(a*.55)+')');gr.addColorStop(1,'rgba(170,190,255,0)');
+   c.fillStyle=gr;c.beginPath();c.moveTo(64-w0,0);c.lineTo(64+w0,0);c.lineTo(64+w1,512);c.lineTo(64-w1,512);c.closePath();c.fill();}
+ }else if(ad==='benek'){   // yerde ay ışığı benekleri: birkaç yassı yumuşak leke (yaprak arasından süzülmüş gibi)
+  cv=dn11Cv(256,64);const c=cv.getContext('2d'),R=rng(4411);
+  for(let k=0;k<7;k++){const x=30+R()*196,y=32+(R()-.5)*14,rx=12+R()*26,ry=rx*.28,gr=c.createRadialGradient(x,y,0,x,y,rx);
+   gr.addColorStop(0,'rgba(220,236,255,.85)');gr.addColorStop(.5,'rgba(190,214,255,.38)');gr.addColorStop(1,'rgba(170,200,255,0)');c.fillStyle=gr;c.save();c.translate(x,y);c.scale(1,ry/rx);c.translate(-x,-y);c.beginPath();c.arc(x,y,rx,0,6.283);c.fill();c.restore();}
+ }else if(ad==='pencereLeke'){   // yere düşen pencere ışığı: eğik dörtgen, ortasında kayıt (haç) gölgesi, kenarları yumuşak
+  cv=dn11Cv(192,64);const c=cv.getContext('2d');c.shadowColor='rgba(214,230,255,.9)';c.shadowBlur=10;
+  c.fillStyle='rgba(214,230,255,.75)';c.beginPath();c.moveTo(40,10);c.lineTo(150,10);c.lineTo(184,54);c.lineTo(10,54);c.closePath();c.fill();c.shadowBlur=0;
+  c.globalCompositeOperation='destination-out';c.fillStyle='rgba(0,0,0,.6)';c.beginPath();c.moveTo(92,10);c.lineTo(100,10);c.lineTo(102,54);c.lineTo(92,54);c.closePath();c.fill();c.fillRect(20,30,160,5);
+ }else if(ad==='pusMavi'){   // hava perspektifi: ufukta soğuk mavi pus (uzak katmanları maviye çeker)
+  cv=dn11Cv(8,256);const c=cv.getContext('2d'),gr=c.createLinearGradient(0,0,0,256);
+  gr.addColorStop(0,'rgba(120,140,220,0)');gr.addColorStop(.55,'rgba(130,155,232,.26)');gr.addColorStop(.85,'rgba(150,170,240,.34)');gr.addColorStop(1,'rgba(140,150,226,.12)');c.fillStyle=gr;c.fillRect(0,0,8,256);
+
+ }
+ return A[ad]=cv;
+}
+function dn11AtmIsit(){for(const ad of DN11_ATM.sira)if(!DN11_ATM.spr[ad]){dn11AtmYap(ad);return false;}return true;}
+function dn11AtmHazir(){for(const ad of DN11_ATM.sira)if(!DN11_ATM.spr[ad])return false;return true;}
+// ekranın ne kadarı dışarıda (0 içeride .. 1 açık hava); yumuşak geçiş
+function dn11AtmDis(){
+ if(DN11_ATM.icT===now)return 1-DN11_ATM.ic;DN11_ATM.icT=now;let ic=0;for(let k=0;k<5;k++){const x=cam.x+VW*(.1+k*.2);if(dn11Oda(x)||(x>=321*T&&x<421*T))ic+=.2;}
+ DN11_ATM.ic+=(ic-DN11_ATM.ic)*.06;return 1-DN11_ATM.ic;
+}
+// arka plan üstüne (dünyanın arkası): uzak soğuk pus
+function dn11AtmArka(tm){
+ if(!dn11AtmHazir())return;const vw=W/S,vh=H/S,dis=dn11AtmDis(),gece=1-DN11.sabah;if(dis<.02)return;
+ g.setTransform(S,0,0,S,0,0);g.globalAlpha=dis*gece*(1-DN11.renk*.35);g.drawImage(DN11_ATM.spr.pusMavi,0,0,8,256,0,vh*.18-cam.y*.02,vw,vh*.9);g.globalAlpha=1;
+}
+// dünya katmanında (dünya dönüşümü kurulu): yerde ay benekleri, pencere ışık lekeleri; ekran uzayında ay huzmeleri
+function dn11AtmDunya(tm){
+ if(!dn11AtmHazir())return;const A=DN11_ATM.spr,gece=1-DN11.sabah*.8,dis=dn11AtmDis(),L0=cam.x-200,R0=cam.x+VW+200;
+ g.globalCompositeOperation='lighter';
+ // yerde ay benekleri (açık havada ve mağarada): ışık geldikçe belirginleşir, hafifçe nefes alır
+ const ad=150,k0=Math.floor(L0/ad),k1=Math.ceil(R0/ad);
+ for(let k=k0;k<=k1;k++){const h=dn11Hash(k*1.37),x=k*ad+h*90;if(x>=DN11_GAP0-60&&x<DN11_GAP1)continue;if(dn11Oda(x))continue;const y=dn11Surface(x);if(y>=1200)continue;
+  const L=dn11Isik(x),a=(.07+L*.3)*(.75+.25*Math.sin(tm*.6+h*9))*gece;if(a<.01)continue;const w=150+h*120;g.globalAlpha=a;g.drawImage(A.benek,x-w/2,y-6,w,w*.22);}
+ // odalarda pencereden yere düşen ışık lekesi (pencere kayıtlı huzmesinin ucunda)
+ const Y=DN11.yap,ay=DN11.ay11?DN11.ay11.ac:0;
+ if(Y&&Y.isin)for(let i=dn11Bas(Y.isin,L0-200);i<Y.isin.length;i++){const p=Y.isin[i];if(p.x>R0+200)break;const hh=p.yF-p.y,sk=hh*.35,L=dn11Isik(p.x),a=(.12+L*.28+ay*.12)*gece;
+  const w=p.w*2.6;g.globalAlpha=a;g.drawImage(A.pencereLeke,p.x-sk-w*.55,p.yF-16,w,30);}
+ // içeride (odalar, mağara): yukarıdan eğik inen ay ışığı şeritleri; ışık geldikçe güçlenir, yavaş nefes alır
+ {const ad2=420,q0=Math.floor(L0/ad2),q1=Math.ceil(R0/ad2);
+  for(let q=q0;q<=q1;q++){const h=dn11Hash(q*2.71+5),x=q*ad2+h*200;const oda=dn11Oda(x),mag=x>=321*T&&x<421*T;if(!oda&&!mag)continue;if(oda&&oda.ad==='balo'&&DN11.fin<.01)continue;
+   const y=dn11Surface(x);if(y>=1200)continue;const tv=dn11Tavan(x),ust=Number.isFinite(tv)?tv:y-520,Lx=dn11Isik(x),a=(.05+Lx*.2)*(.7+.3*Math.sin(tm*.25+h*7))*gece;if(a<.01)continue;
+   const len=y-ust+20,wd=90+h*90;g.save();g.translate(x,ust);g.rotate(.32);g.globalAlpha=a;g.drawImage(A.isinA,-wd/2,0,wd,len*1.06);g.restore();
+   g.globalAlpha=a*1.3;g.drawImage(A.benek,x-len*.33-wd*.8,y-8,wd*1.6,wd*.36);}}
+ g.globalAlpha=1;
+ // ay huzmeleri (god rays): ay yönünden eğik, yavaş salınan geniş ışık şeritleri — açık havada, ay açıldıkça güçlü
+ const Ay=DN11.ay11;if(dis>.02&&Ay&&Number.isFinite(Ay.sx)){
+  const vw=W/S,vh=H/S,guc=dis*gece*(1-(Ay.giz||0))*(.22+Ay.ac*.5+DN11.renk*.25);
+  g.setTransform(S,0,0,S,0,0);
+  for(let j=0;j<5;j++){const ph=j*1.7,sw=Math.sin(tm*.13+ph)*.04,ang=.1+j*.17-.3+sw,len=vh*.9,wd=[90,150,70,180,110][j],a=guc*(.55+.45*Math.sin(tm*.21+ph*2))*(j%2?.75:1);if(a<.01)continue;
+   g.save();g.translate(Ay.sx+(j-2)*34,Ay.sy+Ay.sr*.3);g.rotate(ang);g.globalAlpha=Math.min(.75,a*.75);g.drawImage(A.isinA,-wd/2,0,wd,len);g.restore();}
+  g.setTransform(S,0,0,S,-cam.x*S,-cam.y*S);
+ }
+ g.globalAlpha=1;g.globalCompositeOperation='source-over';
+}
 // ════════ Isıtma: önbellekleri kareye yayarak hazırla (yüklemede / uyku girişi altında) ════════
 function dn11Isit(){
  if(!dn11Ready())return false;const p=DN11.prep;
@@ -1218,6 +1295,7 @@ function dn11Isit(){
  if(p===7){dn11SatoArt();dn11OnArt();for(const k of ['tas','tasK','kaya','salon','org','galeri','mutfak','balo'])dn11Karo(k);DN11.prep++;return false;}
  if(p===8){dn11Yapilar();DN11.prep++;return false;}
  if(p<12){const i=Math.max(0,Math.floor(((typeof cam!=='undefined'?cam.x:0))/DN11_CW))+(p-9);dn11Chunk(i);DN11.prep++;return false;}
+ if(!dn11AtmIsit())return false;
  for(const c of ['#a9c8ff','#eaf4ff','#cfe6ff','#ffd2e8','#ffd27a','#ffc070','#ffe7a8','#ffb3d1','#c39bff','#d9c8ff','#9ff0d0','#ffffff','#fff4d8','#ffd8a8','#ffc8a0','#ffe0a0','#f0c070'])glow(c);
  DN11.warm=true;return true;
 }
