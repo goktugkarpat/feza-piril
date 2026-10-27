@@ -1722,7 +1722,7 @@ function shGirisAcilis(tm, t, P) {
 function shFk(k) {
   try {
     const b = sh.fBolum || (typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1);
-    if (b >= 2 && typeof SES !== 'undefined' && SES.LINES) { const k2 = (b === 11 ? 'a_s_' : b === 10 ? 'a_z_' : b === 9 ? 'a_e_' : b === 8 ? sh8Harf('a_') : b === 7 ? sh7Harf('a_') : b === 6 ? 'a_f_' : b === 5 ? 'a_v_' : b === 4 ? 'a_i_' : b === 3 ? 'a_b_' : 'a_y_') + k.slice(2); if (SES.LINES[k2] || (window.VOICE_DUR && VOICE_DUR[k2])) return k2; }
+    if (b >= 2 && typeof SES !== 'undefined' && SES.LINES) { const k2 = (b === 12 ? 'a_q_' : b === 11 ? 'a_s_' : b === 10 ? 'a_z_' : b === 9 ? 'a_e_' : b === 8 ? sh8Harf('a_') : b === 7 ? sh7Harf('a_') : b === 6 ? 'a_f_' : b === 5 ? 'a_v_' : b === 4 ? 'a_i_' : b === 3 ? 'a_b_' : 'a_y_') + k.slice(2); if (SES.LINES[k2] || (window.VOICE_DUR && VOICE_DUR[k2])) return k2; }
   } catch (e) {}
   return k;
 }
@@ -1805,6 +1805,7 @@ function shSabahCiz(tm, t, P, sonKirp) {
   const fb = sh.fBolum || 1, b2 = fb === 2, b3 = fb === 3;
   if (fb === 4) shDenizSabah(tm);
   if (fb === 4) shSabahPencere(tm, true);
+  else if (fb === 12) { if(typeof sh12Sabah==='function') sh12Sabah(tm,1); }
   else if (fb === 11) { if (typeof sh11Sabah === 'function') sh11Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1); }
   else if (fb === 10) sh10Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1);
   else if (fb === 9) sh9Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1);
@@ -1819,6 +1820,7 @@ function shSabahCiz(tm, t, P, sonKirp) {
   shLamba(p, 0, tm, false, 0);
   if (fb === 7) { sh7Oda(p, tm, 1, 0); sh7Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // kâğıt kar taneleri gün ışığında; komodinde kar küresi ve buz kristali
   if (fb === 8) { sh8Oda(p, tm, 1, 0, 0); sh8Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.6) : 1); }
+  if (fb === 12 && typeof sh12Hediye === 'function') sh12Hediye(tm,1);
   if (fb === 11 && typeof sh11Hediye === 'function') { sh11Oda(tm, 1, false); sh11Hediye(tm, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // komodinde lila yarasa peluşu + çilek (sahne11.js)
   if (fb === 10) { sh10Oda(tm, 1, false); sh10Hediye(tm, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }
   if (fb === 9) { sh9Oda(p, tm, 1, 0, 0); sh9Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // süsler gün ışığında; komodinde rüyadan kalan ejderha pulu ve yumurta kabuğu   // gece süsleri gün ışığında; komodinde rüyadan kalan kabak ve şeker
@@ -2401,6 +2403,7 @@ function shIkonCiz(x, ad, d) {   // DURAĞAN iç resim, d×d kare; çağıran da
   if (ad === 'kar') { sh7Fon(x, d, d); return; }
   if (ad === 'cadi') { sh8Fon(x, d, d); return; }
   if (ad === 'zaman') { sh10Fon(x, d, d); return; }
+  if (ad === 'kampus') { if(typeof sh12Fon==='function') sh12Fon(x,d,d); return; }
   if (ad === 'sato') { if (typeof sh11Fon === 'function') sh11Fon(x, d, d); return; }
   if (ad === 'ejderha') { sh9Fon(x, d, d); return; }
   if (ad === 'deniz') { shDenizResim(x, d); return; }
@@ -2506,6 +2509,7 @@ function shIkonCanli(ad, ox, oy, q, tm, a, i0, hov) {
   if (ad === 'kar') { sh7Canli(ox, oy, q, q, tm, a, hov); return; }
   if (ad === 'cadi') { sh8Canli(ox, oy, q, q, tm, a, hov); return; }
   if (ad === 'zaman') { sh10Canli(ox, oy, q, q, tm, a, hov); return; }
+  if (ad === 'kampus') { if(typeof sh12Canli==='function') sh12Canli(ox,oy,q,q,tm,a,hov); return; }
   if (ad === 'sato') { if (typeof sh11Canli === 'function') sh11Canli(ox, oy, q, q, tm, a, hov); return; }
   if (ad === 'ejderha') { sh9Canli(ox, oy, q, q, tm, a, hov); return; }
   const hovAmp = 1 + 0.35 * hov;
@@ -2814,6 +2818,7 @@ function shKavIkon(x, ad, cx, cy, r, col) {
   else if (ad === 'kar') { x.strokeStyle = '#7ab8f0'; x.lineWidth = r * 0.13; for (let k = 0; k < 3; k++) { x.save(); x.rotate(k * Math.PI / 3); x.beginPath(); x.moveTo(0, -0.85 * r); x.lineTo(0, 0.85 * r); for (const sd of [-1, 1]) { x.moveTo(0, sd * 0.5 * r); x.lineTo(0.24 * r, sd * 0.72 * r); x.moveTo(0, sd * 0.5 * r); x.lineTo(-0.24 * r, sd * 0.72 * r); } x.stroke(); x.restore(); } daire(0, 0, 0.14, '#cfe6ff'); }
   else if (ad === 'cadi') { x.fillStyle = '#c4581f'; for (const [px, rr] of [[-0.38, 0.5], [0.38, 0.5], [0, 0.58]]) { x.beginPath(); x.ellipse(px * r, 0.15 * r, rr * r, 0.62 * r, 0, 0, 6.283); x.fill(); } x.fillStyle = '#ff9a3c'; for (const [px, rr] of [[-0.38, 0.42], [0.38, 0.42], [0, 0.5]]) { x.beginPath(); x.ellipse(px * r, 0.15 * r, rr * r, 0.55 * r, 0, 0, 6.283); x.fill(); } x.strokeStyle = '#4f7a34'; x.lineWidth = r * 0.16; x.beginPath(); x.moveTo(0, -0.38 * r); x.quadraticCurveTo(0.04 * r, -0.62 * r, 0.24 * r, -0.7 * r); x.stroke(); x.fillStyle = '#7a3414'; x.beginPath(); x.arc(-0.24 * r, 0.02 * r, 0.1 * r, 0, 6.283); x.arc(0.24 * r, 0.02 * r, 0.1 * r, 0, 6.283); x.fill(); x.beginPath(); x.moveTo(-0.3 * r, 0.3 * r); x.quadraticCurveTo(0, 0.58 * r, 0.3 * r, 0.3 * r); x.quadraticCurveTo(0, 0.42 * r, -0.3 * r, 0.3 * r); x.fill(); }
   else if (ad === 'zaman') sh10Ikon(x, r);
+  else if (ad === 'kampus' && typeof sh12Ikon === 'function') sh12Ikon(x,r);
   else if (ad === 'sato' && typeof sh11Ikon === 'function') sh11Ikon(x, r);
   else if (ad === 'ejderha') sh9Ikon(x, r);
   else { x.fillStyle = mixc(col, '#ffffff', 0.15); shYildiz5(x, 0, 0, 0.8 * r); x.fill(); x.strokeStyle = mixc(col, '#2a1f4e', 0.4); x.lineWidth = r * 0.08; x.stroke(); }
@@ -3315,8 +3320,8 @@ const SAHNE = {
     opt = opt || {};
     const bolum = opt.bolum || 1, kisa = opt.kisa === true || (bolum >= 2 && opt.kisa !== false);
     shBalonBirak();
-    sh.dan = sh.mod === 'secim' || kisa; sh.kisa = kisa; sh.fon = bolum === 11 ? 'sato' : bolum === 10 ? 'zaman' : bolum === 9 ? 'ejderha' : bolum === 8 ? 'cadi' : bolum === 7 ? 'kar' : bolum === 6 ? 'senlik' : bolum === 5 ? 'volkan' : bolum === 4 ? 'deniz' : bolum === 1 ? 'orman' : bolum === 3 ? 'bulut' : 'gol'; sh.secBitti = null;
-    sh.tema = bolum === 11 ? 'sato' : bolum === 10 ? 'zaman' : bolum === 9 ? 'ejderha' : bolum === 8 ? 'cadi' : bolum === 7 ? 'kar' : bolum === 6 ? 'senlik' : bolum === 5 ? 'volkan' : bolum === 4 ? 'deniz' : bolum === 3 ? 'bulut' : bolum === 2 ? 'gol' : null; sh.uykuK = bolum === 11 ? 'p_s_uyku' : bolum === 10 ? 'p_z_uyku' : bolum === 9 ? 'p_e_uyku' : bolum === 8 ? sh8Harf('p_') + 'uyku' : bolum === 7 ? sh7Harf('p_') + 'uyku' : bolum === 6 ? 'p_f_uyku' : bolum === 5 ? 'p_v_uyku' : bolum === 4 ? 'p_i_uyku' : bolum === 3 ? 'p_b_uyku' : 'p_y_uyku';
+    sh.dan = sh.mod === 'secim' || kisa; sh.kisa = kisa; sh.fon = bolum === 12 ? 'kampus' : bolum === 11 ? 'sato' : bolum === 10 ? 'zaman' : bolum === 9 ? 'ejderha' : bolum === 8 ? 'cadi' : bolum === 7 ? 'kar' : bolum === 6 ? 'senlik' : bolum === 5 ? 'volkan' : bolum === 4 ? 'deniz' : bolum === 1 ? 'orman' : bolum === 3 ? 'bulut' : 'gol'; sh.secBitti = null;
+    sh.tema = bolum === 12 ? 'kampus' : bolum === 11 ? 'sato' : bolum === 10 ? 'zaman' : bolum === 9 ? 'ejderha' : bolum === 8 ? 'cadi' : bolum === 7 ? 'kar' : bolum === 6 ? 'senlik' : bolum === 5 ? 'volkan' : bolum === 4 ? 'deniz' : bolum === 3 ? 'bulut' : bolum === 2 ? 'gol' : null; sh.uykuK = bolum === 12 ? 'p_q_uyku' : bolum === 11 ? 'p_s_uyku' : bolum === 10 ? 'p_z_uyku' : bolum === 9 ? 'p_e_uyku' : bolum === 8 ? sh8Harf('p_') + 'uyku' : bolum === 7 ? sh7Harf('p_') + 'uyku' : bolum === 6 ? 'p_f_uyku' : bolum === 5 ? 'p_v_uyku' : bolum === 4 ? 'p_i_uyku' : bolum === 3 ? 'p_b_uyku' : 'p_y_uyku';
     shOlc(); sh.mod = 'giris'; sh.t = 0; sh.nefesFaz = 0;  sh.kirpK = 0; sh.kalkis = null; sh.bitti = bitince; sh.atla = -1; sh.sesler = {}; sh.nefesN = -1; sh.zz.length = 0; sh.tam = false;
     sh.anlar = {}; sh.parca.length = 0; sh.camOturdu = 0; sh.izlendi = 0;
     sh.gBolum = bolum; sh.atlanabilir = shDahaOnce(bolum);   // atla düğmesi: bu rüya daha önce oynandıysa (her bölümde)

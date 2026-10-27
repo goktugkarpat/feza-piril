@@ -1,9 +1,12 @@
 // İnternetsiz çalışma: ilk açılıştan sonra oyun (kod, gömülü sesler, simgeler) cihazda saklanır.
 // Dosya eklenirse SRC listesine ekle; önemli değişiklikte CACHE sürümünü artır.
-const CACHE = 'feza-piril-v109';
-const SRC = ['ortak', 'kapi', 'bolum', 'dunya', 'feza', 'piril', 'pofuduk', 'sahne', 'arayuz', 'sarki', 'bolum2', 'dunya2', 'yildiz', 'takim', 'dunya3', 'bulut', 'kuzu', 'sekil', 'ucus', 'bolum3', 'bolum4', 'dunya4', 'deniz', 'inci', 'bolum5', 'anka', 'dunya5', 'volkan', 'atesoyun', 'kristal', 'lavsal', 'bolum6', 'dunya6', 'midilli', 'senlik', 'halka', 'bolum7', 'dunya7', 'geyik', 'kar', 'kardan', 'kizak', 'bolum8', 'dunya8', 'kostum', 'kabak', 'seker', 'kabakyuz', 'iskelet', 'kazan', 'supurge', 'muzik', 'ses', 'oyun', 'bolum9', 'dunya9', 'yavru', 'meyve', 'kanat', 'kolye', 'buyukanne', 'yuva', 'bolum10', 'dunya10', 'zaman10', 'zamanyol10', 'sahne11', 'bolum11', 'dunya11', 'vampir11', 'ayna11', 'pelerin11', 'aynasalon11', 'org11', 'pasta11', 'ucus11', 'balo11'];
+const CACHE = 'feza-piril-v148';
+const SRC = ['ortak', 'kapi', 'bolum', 'dunya', 'feza', 'piril', 'pofuduk', 'sahne', 'arayuz', 'sarki', 'bolum2', 'dunya2', 'yildiz', 'takim', 'dunya3', 'bulut', 'kuzu', 'sekil', 'ucus', 'bolum3', 'bolum4', 'dunya4', 'deniz', 'inci', 'bolum5', 'anka', 'dunya5', 'volkan', 'atesoyun', 'kristal', 'lavsal', 'bolum6', 'dunya6', 'midilli', 'senlik', 'halka', 'bolum7', 'dunya7', 'geyik', 'kar', 'kardan', 'kizak', 'bolum8', 'dunya8', 'kostum', 'kabak', 'seker', 'kabakyuz', 'iskelet', 'kazan', 'supurge', 'muzik', 'ses', 'oyun', 'bolum9', 'dunya9', 'yavru', 'meyve', 'kanat', 'kolye', 'buyukanne', 'yuva', 'bolum10', 'dunya10', 'zaman10', 'zamanyol10', 'sahne11', 'bolum11', 'dunya11', 'vampir11', 'ayna11', 'pelerin11', 'aynasalon11', 'org11', 'pasta11', 'ucus11', 'balo11', 'sahne12', 'bolum12', 'dunya12', 'anne12', 'durak12', 'etkinlik12', 'kayik12', 'final12', 'muzik12'];
+SRC.push('kampusmacera12', 'yolculuk12', 'kampuskesif12', 'kampustiyatro12', 'kampusbahce12', 'kampuskule12', 'kampusgolet12', 'kampuskelebek12');
 const ART = ['./assets/zaman/enchanted-tree-v1.png', './assets/zaman/seasonal-trees-v1.png'];
-const CORE = ['./', './index.html', './sesler.js', './manifest.webmanifest', ...SRC.map(n => './src/' + n + '.js'), ...ART];
+// Kampüs çizimleri yüklenmezse bölüm kendi vektör yedeğini kullanır.
+const KAMPUS_ART = ['./assets/kampus/orta-cim-v2.png', './assets/kampus/fass-cim-v1.png', './assets/kampus/universite-merkezi.png', './assets/kampus/lojman.png', './assets/kampus/fens.png', './assets/kampus/bilgi-merkezi.png', './assets/kampus/golet.png', './assets/kampus/kule-cevre.png'];
+const CORE = ['./', './index.html', './sesler.js', './sesler12.js', './manifest.webmanifest', ...SRC.map(n => './src/' + n + '.js'), ...ART];
 const ICONS = ['./icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];   // eksik simge kurulumu durdurmasın
 const FRESH = /(\/|index\.html)$/;   // sayfa önce ağ, diğer dosyalar önce önbellek
 // Yeni oyun önbelleği eski HTTP/CDN dosyalarıyla dolmasın. Çalışırken
@@ -13,6 +16,7 @@ const kurulumIstegi = u => { const url = new URL(u, self.location.href); url.sea
 self.addEventListener('install', e => e.waitUntil((async () => {
   const c = await caches.open(CACHE);
   await c.addAll(CORE.map(kurulumIstegi));
+  await Promise.all(KAMPUS_ART.map(async u => { try { await c.add(kurulumIstegi(u)); } catch (err) {} }));
   for (const u of ICONS) { try { await c.add(kurulumIstegi(u)); } catch (err) {} }
   self.skipWaiting();
 })()));
@@ -29,7 +33,12 @@ self.addEventListener('fetch', e => {
     const c = await caches.open(CACHE);
     const key = req.mode === 'navigate' ? './index.html' : req;
     if (fresh) {
-      try { const r = await fetch(req, { cache: 'no-cache' }); if (r.ok) c.put(key, r.clone()); return r; }
+      try {
+        const r = await fetch(req, { cache: 'no-cache' });
+        if (r.ok) { c.put(key, r.clone()); return r; }
+        // Sunucu geçici hata döndürdüğünde de kayıtlı oyun açılabilsin.
+        return (await c.match(key, { ignoreSearch: true })) || r;
+      }
       catch (err) { return (await c.match(key, { ignoreSearch: true })) || (await c.match('./index.html')) || Response.error(); }
     }
     const hit = await c.match(req, { ignoreSearch: true }); if (hit) return hit;

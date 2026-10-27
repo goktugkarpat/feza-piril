@@ -7061,7 +7061,8 @@ const AU = (() => {
     if (bolum8()) c8BolgeIzle(t, d.alan8);
     if (bolum9()) e9BolgeIzle(t, d.alan9);
     if (bolum11()) s11BolgeIzle(t, d.alan11);
-    while (sonrakiCubuk < t + ILERI) { cubukPlanla(sonrakiCubuk); sonrakiCubuk += cubukUz; }
+    if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 12 && (d.durum === 'oyun' || d.durum === 'final')) sonrakiCubuk = t + .25;
+    else while (sonrakiCubuk < t + ILERI) { cubukPlanla(sonrakiCubuk); sonrakiCubuk += cubukUz; }
     if (bolum7() && mod === 'orman' && d.kay7 > 0.15) k7KayIzle(t, d.kay7, false);   // buzlu gölde süzülme
     if (!test && (++tickN % 4 === 0)) karisimGuncelle(t, d);
     if (test && (++tickN % 4 === 0)) karisimGuncelle(t, d);
@@ -7255,6 +7256,7 @@ const AU = (() => {
     muzik(m) { zorlaMod = m || null; if (m) { if (m === 'final') finaleGir(); else mod = m; } },
     baglam: () => (ac && !test ? ac : null),
     sesCikis: () => sesG,
+    muzikCikis: () => muzikG,
     kis,
     akor: () => (ac ? akorAt(zaman()).pad.slice() : [50, 54, 57, 61, 64]),
     get bolge() { return bolge; }, get mod() { return mod; },

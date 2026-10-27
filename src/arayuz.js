@@ -236,6 +236,23 @@ const ARAYUZ = (() => {
     return C[key] = { c, m };
   }
   let basV = 0, basHiz = 0, dugmeA = 0, zipT = 0, uiKilitT = 0;
+  let dugmePortreA = 1;
+  // Kampüs portresinde düğme Feza'nın üzerinden geçerse çizimi hafiflet;
+  // konumu ve cömert dokunma alanı değişmez. Ölçüm CSS pikselindedir.
+  function dugmePortreAyar(dt) {
+    if (BOLUM_NO !== 12 || !(W < H) || typeof P === 'undefined' || typeof cam === 'undefined' ||
+        !(S > 0) || !(DPR > 0) || !GIRDI.dugme || !Number.isFinite(dt)) { dugmePortreA = 1; return 1; }
+    const px = Number.isFinite(P.rx) ? P.rx : P.x, py = Number.isFinite(P.ry) ? P.ry : P.y;
+    const d = GIRDI.dugme, scale = S / DPR;
+    if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(cam.x) || !Number.isFinite(cam.y) ||
+        !Number.isFinite(d.x) || !Number.isFinite(d.y) || !Number.isFinite(d.r)) { dugmePortreA = 1; return 1; }
+    const x = (px - cam.x) * scale, y = (py - cam.y) * scale;
+    const nx = clamp(d.x, x - 18 * scale, x + 18 * scale), ny = clamp(d.y, y - 70 * scale, y + 5 * scale);
+    const distance = Math.hypot(d.x - nx, d.y - ny);
+    const overlap = clamp((d.r + 18 - distance) / 36, 0, 1), target = 1 - overlap * .62;
+    dugmePortreA += (target - dugmePortreA) * (1 - Math.exp(-Math.min(.1, Math.max(0, dt)) * 8));
+    return dugmePortreA;
+  }
   function dugmeCiz(tm, dt, a) {
     const d = GIRDI.dugme, R = d.r * DPR, cx = d.x * DPR, cy = d.y * DPR;
     if (R <= 1) return;
@@ -936,7 +953,7 @@ const ARAYUZ = (() => {
     const fs = Math.round(Math.min(H * 0.06, W * 0.055)), h = Math.ceil(fs * 2);
     const c = tuval(Math.ceil(fs * 9), h), x = c.getContext('2d');
     const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1;
-    const bas = bn === 11 ? 'Ay Balosu başladı!' : bn === 10 ? 'Vadi yeniden uyandı!' : bn === 9 ? 'Ejderha Kalbi parladı!' : bn === 8 ? 'Balkabağı Şenliği!' : bn === 7 ? 'Kuzey ışıkları yandı!' : bn === 6 ? 'Şenlik başladı!' : bn === 5 ? 'Dağın kalbi uyandı!' : bn === 4 ? 'İnci Denizi ışıl ışıl!' : bn === 3 ? 'Gökkuşağı geldi!' : bn === 2 ? 'Gökyüzü ışıl ışıl!' : 'Orman ışıl ışıl!';
+    const bas = bn === 12 ? 'Annemle güzel bir gün!' : bn === 11 ? 'Ay Balosu başladı!' : bn === 10 ? 'Vadi yeniden uyandı!' : bn === 9 ? 'Ejderha Kalbi parladı!' : bn === 8 ? 'Balkabağı Şenliği!' : bn === 7 ? 'Kuzey ışıkları yandı!' : bn === 6 ? 'Şenlik başladı!' : bn === 5 ? 'Dağın kalbi uyandı!' : bn === 4 ? 'İnci Denizi ışıl ışıl!' : bn === 3 ? 'Gökkuşağı geldi!' : bn === 2 ? 'Gökyüzü ışıl ışıl!' : 'Orman ışıl ışıl!';
     x.font = `400 ${fs}px ${FONT_SERIF}`;
     const w = Math.max(c.width, Math.ceil(x.measureText(bas).width + fs * 0.8)); c.width = w;
     x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = `400 ${fs}px ${FONT_SERIF}`;
@@ -1303,7 +1320,7 @@ const ARAYUZ = (() => {
     zipT = Math.max(0, zipT - dt * 2.5);
     uiKilitT = P.kilit > 0 ? uiKilitT + dt : 0;   // kontrol yarım saniyeden uzun kilitliyse (sahne anı: ağaç, gökkuşağından kayış...) düğme işe yaramaz → gizle
     dugmeA = clamp(dugmeA + (DURUM === 'oyun' && !P.ucus && !(typeof KR5 !== 'undefined' && KR5.aktif) && !(BOLUM_NO === 5 && typeof V5 !== 'undefined' && V5.final) && !(BOLUM_NO === 6 && typeof V6 !== 'undefined' && V6.final) && !(BOLUM_NO === 7 && (typeof V7 !== 'undefined' && V7.final || typeof KARDAN !== 'undefined' && KARDAN && KARDAN.aktif)) && !(BOLUM_NO === 8 && (typeof V8 !== 'undefined' && V8.final || typeof om8MiniAktif === 'function' && om8MiniAktif() || typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif)) && !(BOLUM_NO === 9 && (typeof V9 !== 'undefined' && V9.final || typeof om9MiniAktif === 'function' && om9MiniAktif())) && !(BOLUM_NO === 10 && (V10.final || typeof ZAMAN10 !== 'undefined' && ZAMAN10.aktif)) && !(BOLUM_NO === 11 && (V11.final || typeof om11MiniAktif === 'function' && om11MiniAktif())) && uiKilitT < 0.5 ? dt * 1.5 : -dt * 3), 0, 1);   // yolculuk, çiçek uçuşu ve Kor Çiçeği kutlamasında zıplama düğmesi yok
-    if (dugmeA > 0.005) { dene('parmak', () => parmakCiz(tm, dt)); dene('dugme', () => dugmeCiz(tm, dt, dugmeA)); }
+    if (dugmeA > 0.005) { dene('parmak', () => parmakCiz(tm, dt)); dene('dugme', () => dugmeCiz(tm, dt, dugmeA * dugmePortreAyar(dt))); }
     dene('ipucuCiz', () => ipucuCiz(tm));
     dene('bildirim', () => bildirimCiz(tm));
     dene('denizDostlari', () => denizDostlariCiz(tm));

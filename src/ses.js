@@ -423,7 +423,26 @@ const SES = (() => {
     "p_s_ayna_ay": "Bak, Ay gülüyor!",
     "p_s_ayna_feza": "Feza, upuzun oldun!",
     "vk_gidik": "Gıdıklandım!",
-    "vb_alkis": "Bir daha!"
+    "vb_alkis": "Bir daha!",
+    "p_q_uyku": "Hadi Feza, annenle birlikte Sabancı’da güzel bir rüya görelim.",
+    "p_q_giris": "Bak Feza! Sabancı Üniversitesindeyiz. Annen de burada!",
+    "an_q_merhaba": "Hoş geldin canım Feza. Gel, birlikte gezelim!",
+    "p_q_ucurtma": "Kurdelelere dokun, uçurtmamızı birlikte süsleyelim!",
+    "p_q_kayik": "Annenle kayığa bin! Gölette ışıkların arasından geçelim.",
+    "p_q_kitap": "Resimli kitabı açalım. Resimlere dokun, hikâyemiz canlansın!",
+    "p_q_piknik": "Piknik zamanı! Yiyeceklere dokunup sepeti hazırlayalım.",
+    "p_q_muzik": "Haydi birlikte müzik yapalım! Müzik aletlerine dokun.",
+    "a_q_final1": "Feza annesine sımsıkı sarıldı. Birlikte geçirdikleri bu güzel günü hep hatırlayacaktı.",
+    "p_q_sabah": "Günaydın Feza! Annenle ne güzel gezdik.",
+    "p_q_bisiklet": "Haydi annenle birlikte bisiklete binelim!",
+    "p_q_scooter": "Mavi skuterine bin, Feza! Birlikte gezelim.",
+    "p_q_fass": "Bak, kampüsün çimenliğindeyiz! Annenle uçurtma uçuralım.",
+    "p_q_sanat": "Hadi annenle rengârenk bir kampüs resmi yapalım!",
+    "p_q_tiyatro": "Kuklayı parmağınla gezdir, hikâyemiz canlansın!",
+    "p_q_top": "Topa dokun, annenle paslaşalım!",
+    "p_q_bahce": "Haydi annenle çiçekler ekelim, sonra birlikte sulayalım!",
+    "p_q_kule": "Kampüsü birlikte keşfedelim. Parlayan yerlere dokun!",
+    "p_q_golet": "Ördeklerle ve göletteki dostlarımızla oynayalım!"
 }
   /*SESLER-SON*/;
 
@@ -434,7 +453,7 @@ const SES = (() => {
   const ses8Komsu = k => /^(kd|in|ck|kk|ht|k2|cn|kb)_/.test(k);   // Bölüm 8 komşu sesleri (Pırıl değil: onun ağzı oynamaz)
   const ses9Aile = k => /^(bn|ea|eb|fs)_/.test(k);   // Bölüm 9: Pırıl'ın ailesi ve Fıstık (Pırıl değil)
   const ses11Aile = k => /^(vk|vd|vn|vb)_/.test(k);   // Bölüm 11: vampir ailesi (Vela, Dede, Nine, Pıtır; Pırıl değil)
-  const sesKim = k => k.startsWith('a_') ? 'a' : ses8Komsu(k) || ses9Aile(k) || ses11Aile(k) ? 'k' : 'p';
+  const sesKim = k => k.startsWith('a_') ? 'a' : k.startsWith('an_q_') || ses8Komsu(k) || ses9Aile(k) || ses11Aile(k) ? 'k' : 'p';
   // ── cümle bilgisi: oncelik (3 sahne · 2 oyun · 1 yönlendirme · 0 övgü), acil (2 araya girer · 1 olay tepkisi), ömür (sn), konu ──
   const KONU_SIRA = { p_buyuk: 1, p_buyuk_goz: 2, p_buyuk_esne: 3, p_buyuk_kalk: 4, p_agac: 5, p_karanlik: 1, p_nilufer: 2, p_karanlik2: 1, p_nilufer2: 2 };
   const sesTaban = k => (k === 'p_karanlik2' || k === 'p_nilufer2') ? k.slice(0, -1) : k;   // ikinci göl cümlesi → asıl anahtar (kurallar için)
@@ -646,7 +665,8 @@ const SES = (() => {
     p_yol: () => !(sesB8() && ((typeof SEKER8 !== 'undefined' && SEKER8 && SEKER8.aktif) || (typeof om8MiniAktif === 'function' && om8MiniAktif())))
       && !(sesB9() && typeof om9MiniAktif === 'function' && om9MiniAktif())
       && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 10 && typeof ZAMAN10 !== 'undefined' && ZAMAN10.aktif)
-      && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 11 && typeof om11MiniAktif === 'function' && om11MiniAktif()),   // kapı sahnesinde / mini oyunda "bu tarafa gel" yok
+      && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 11 && typeof om11MiniAktif === 'function' && om11MiniAktif())
+      && !(typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 12 && gP() && gP().ucus),   // etkinlik sırasında yol tarifi yok
     p_i_denizati: () => typeof DNZ === 'undefined' || DNZ.ati.some(o => !o.done),
     p_i_ahtapot: () => typeof DNZ === 'undefined' || !DNZ.oct || !DNZ.oct.done,
     p_i_vatoz: () => typeof DNZ === 'undefined' || !DNZ.ride || (!DNZ.ride.done && DNZ.ride.faz !== 'inis'),
@@ -694,11 +714,12 @@ const SES = (() => {
     if (sesEskidi[sesTaban(s.k)]) return 'olay eskitti';
     const durum = typeof DURUM !== 'undefined' ? DURUM : 'oyun';
     if (s.k === 'p_secim' && durum !== 'baslik') return 'seçim bitti';
-    if (/^(a_giris\d|p_[ybivfkcez]_uyku)$/.test(s.k) && durum !== 'giris') return 'uyku sahnesi bitti';
+    if (/^(a_giris\d|p_[ybivfkcezsq]_uyku)$/.test(s.k) && durum !== 'giris') return 'uyku sahnesi bitti';
     if (anlatici(s.k)) return '';
     if (!sesSert(s)) return 'oyun bitti';
     if (agacYandi() && !ovguMu(s.k)) return 'ağaç yandı';
     const o = s.o, p = gP();
+    if (/^p_q_(ucurtma|kayik|kitap|piknik|muzik|bisiklet|scooter|fass|sanat|tiyatro|top|bahce|kule|golet)$/.test(s.k) && o && (o.done || (o.tk && o.tk.bitti))) return 'etkinlik bitti';
     if (o && p && typeof o.gec === 'number' && p.x > o.gec) return 'yeri geçti (gec)';
     if (o && o.konu && sesKonuBitti(o.konu)) return 'konusu bitti';
     const f = KOSUL[sesTaban(s.k)] || (ses8Komsu(s.k) || /^p_c_sekermi/.test(s.k) ? ses8KapiYakin : null);   // komşu sözü: Feza kapıdan uzaklaştıysa atılır
@@ -766,8 +787,8 @@ const SES = (() => {
   }
   function sesOnceden() {     // cümleleri boşta önceden çöz (ilk konuşmada gecikme olmasın); bu bölümün cümleleri önce
     if (!window.VOICE_MP3) return;
-    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c', 9: 'e', 10: 'z', 11: 's' }[bn] || '';
-    const baska = k => { if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; if (ses9Aile(k)) return harf === 'e' ? 0 : 1; if (ses11Aile(k)) return harf === 's' ? 0 : 1; const m = /^[pa]_([ybivfkcezs])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
+    const bn = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO : 1, harf = { 2: 'y', 3: 'b', 4: 'i', 5: 'v', 6: 'f', 7: 'k', 8: 'c', 9: 'e', 10: 'z', 11: 's', 12:'q' }[bn] || '';
+    const baska = k => { if (k.startsWith('an_q_')) return harf === 'q' ? 0 : 1; if (ses8Komsu(k)) return harf === 'c' ? 0 : 1; if (ses9Aile(k)) return harf === 'e' ? 0 : 1; if (ses11Aile(k)) return harf === 's' ? 0 : 1; const m = /^[pa]_([ybivfkcezsq])_/.exec(k); return m && m[1] !== harf ? 1 : 0; };
     // Diğer rüyalar sayfa yenilenerek açılır: onların PCM kayıtlarını bu oturumda
     // çözmek gereksiz iş ve bellektir. Beklenmeyen bir söz yine istenince çözülür.
     const ks = Object.keys(LINES).filter(k => VOICE_MP3[k] && !baska(k));
@@ -836,6 +857,13 @@ const SES = (() => {
   function soyle(k, ops) {
     if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 4 && k === 'p_i_ahtapot') {
       setTimeout(() => { if (typeof DNZ !== 'undefined' && DNZ.oct && !DNZ.oct.done && DURUM === 'oyun') soyle('p_i_ahtapot_yardim', { oncelik: 3 }); }, 4500);
+    }
+    if(typeof BOLUM_NO!=='undefined' && BOLUM_NO===12) {
+      if (/^a_(y_|b_|i_|v_|f_|k_|c_|e_|z_|s_)?final1$/.test(k)) k='a_q_final1';
+      else if (/^a_(y_|b_|i_|v_|f_|k_|c_|e_|z_|s_)?final[23]$/.test(k)) return;
+      else if(k==='p_y_uyku') k='p_q_uyku';
+      else if(k==='p_y_giris' || k==='p_uyan') k='p_q_giris';
+      else if(k==='p_dost_orman') return;
     }
     const ko = k;   // çağıranın verdiği ad (konuşma tetikleyicisi anahtarı)
     if (/^[ybivfkcezs]_/.test(k) && LINES['p_' + k]) k = 'p_' + k;                   // Bölüm tetikleyicileri: 'y_gol' → 'p_y_gol', 'v_mini' → 'p_v_mini', 'f_fener' → 'p_f_fener'
@@ -1440,6 +1468,21 @@ const SES = (() => {
   // Pırıl yol gösterir (ilk ayna, takılınca ipucu, bölge girişleri), mini oyunların tek talimatı + ipucu/yardım; vampir ailesi kendi sesiyle
   // (vk_ Vela · vd_ Dede · vn_ Nine · vb_ Pıtır) kendi anında konuşur; finalde aile sözleri Ay Balosu'nun anlarına zamanlanır (sahne cümlesi gibi sırada
   // bekler). Tek seferlik cümleler oyun başına bir kez; övgü ara sıra ve çeşitli (aynalarda ~üçte bir, mini oyunlarda yer yer).
+  // Kampüs: kısa, önceden kaydedilmiş yönlendirmeler yalnız ilgili etkinlikte.
+  const sesB12=()=>typeof BOLUM_NO!=='undefined' && BOLUM_NO===12;
+  Object.assign(SES_TEK,{p_q_uyku:1,p_q_giris:1,an_q_merhaba:1,p_q_ucurtma:1,p_q_kayik:1,p_q_kitap:1,p_q_piknik:1,p_q_muzik:1,p_q_bisiklet:1,p_q_scooter:1,p_q_fass:1,p_q_sanat:1,p_q_tiyatro:1,p_q_top:1,p_q_bahce:1,p_q_kule:1,p_q_golet:1,a_q_final1:1,p_q_sabah:1});
+  Object.assign(SES_SAHNE,{p_q_uyku:1,p_q_giris:1,a_q_final1:1,p_q_sabah:1});
+  OLAY.on('konusma',e=>{if(sesB12()&&e&&e.anahtar==='p_q_giris')soyle('an_q_merhaba');});
+  OLAY.on('sahneAn',e=>{if(sesB12()&&e&&e.mod==='final'&&e.ad==='feza_uyandi')soyle('p_q_sabah',{oncelik:3});});
+  OLAY.on('kampusEtkinlikBasla',e=>{if(sesB12()&&e&&['ucurtma','kitap','piknik','muzik'].includes(e.ad))soyle('p_q_'+e.ad,{o:e.o});});
+  OLAY.on('kampusKayikBasla',e=>{if(sesB12())soyle('p_q_kayik',{o:e&&e.o});});
+  OLAY.on('kampusYolculukBasla',e=>{if(sesB12()&&e&&['bisiklet','scooter'].includes(e.ad))soyle('p_q_'+e.ad,{o:e.o});});
+  OLAY.on('kampusMaceraBasla',e=>{if(sesB12()&&e&&e.o)soyle(e.o.tip==='kampusSakuraAtolye'?'p_q_fass':'p_q_sanat',{o:e.o});});
+  OLAY.on('kampusTiyatroBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_tiyatro',{o:e.o});});
+  OLAY.on('kampusTopBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_top',{o:e.o});});
+  OLAY.on('kampusBahceBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_bahce',{o:e.o});});
+  OLAY.on('kampusKuleBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_kule',{o:e.o});});
+  OLAY.on('kampusGoletBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_golet',{o:e.o});});
   const sesB11 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 11;
   const sesV11 = ad => typeof V11 !== 'undefined' && !!V11 && !!V11[ad];
   const ses11Ovgu = (sans, ms) => { if (Math.random() < sans) setTimeout(() => { if (!sesCalan && !sesSira.length) soyle('p_aferin'); }, ms || 700); };

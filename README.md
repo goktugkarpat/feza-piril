@@ -44,15 +44,19 @@ Korkutucu hiçbir şey yoktur, kaybetmek yoktur. Feza okuma bilmediği için her
     Büyük dokunma hedefleri ve sürükleme alternatifleriyle okuma gerektirmez. Ana patikada zıplamak zorunlu değildir;
     yanlış cevap, süre baskısı ve kaybetme yoktur. Pırıl uzun bekleyişlerde yardım eder.
 
+11. **Ay Işığı Şatosu** — Feza ile Pırıl, Vela ve ailesiyle şatonun ay ışığını aynalarla geri getirir. Ayna salonu, org ve pasta etkinliklerinden sonra pelerinle uçar ve Ay Balosu'na katılırlar.
+
+12. **Annemle Sabancı’da Bir Gün** — Feza, annesi ve Pırıl kampüste bir gün geçirir. Bahçeyle ilgilenir, Feza annesiyle bisiklete biner; sonra Feza scooter sürer. Uçurtma uçurur, kitaplara bakar ve kukla tiyatrosu oynarlar. Kuleden çevreyi keşfeder, gölette kayıkla gezer, ördeklerle, nilüferlerle ve kuşlarla oynarlar. Piknik, resim ve müzik şenliğiyle günlerini tamamlarlar. Dokunma ve sürüklemeyle oynanır; okuma gerekmez ve Pırıl bekleyen çocuğa yardımcı olur.
+
 **Pofuduklar** ormanın ışığını karınlarında taşıyan tüylü orman dostlarıdır. Üstlerine zıplamak onları gıdıklayıp ışıklarını uyandırır:
 hapşırırlar, karınları parlar, çevrelerindeki mantarlar ve bitkiler renklenir, Feza'nın peşine takılırlar. Bazıları çok derin uyur;
 onları yalnızca ışık şarkısı uyandırır.
 
 ## Nasıl açılır
 
-- **Bilgisayarda:** `index.html` dosyasına çift tıkla.
-- **İnternette:** https://goktugkarpat.github.io/feza-piril/
-- **iPad'de:** Safari ile oyun adresini açıp Paylaş › **Ana Ekrana Ekle** de. İlk açılıştan sonra internet olmadan da oynanır.
+- **Bilgisayarda yerel kullanım:** Python kuruluysa, oyun klasöründe bir terminal aç ve `python -m http.server 8000` komutunu çalıştır. Ardından tarayıcıda http://localhost:8000/ adresini aç; sunucuyu oyun açıkken çalışır durumda tut. `index.html` dosyasına çift tıklama davranışı tarayıcıya göre değişebilir; `file://` ile çevrimdışı önbellek kurulmaz.
+- **İnternette:** https://goktugkarpat.github.io/feza-piril/ adresi GitHub Pages'e yayımlanmış sürümü gösterir. Yereldeki değişiklikler yayımlanana kadar bu adreste görünmeyebilir.
+- **iPad'de:** Yayımlanmış HTTPS adresini Safari'de açıp Paylaş › **Ana Ekrana Ekle** seçeneğini kullanabilirsin. İlk kullanımda internet bağlantısı ve kaynakların indirilmesi gerekir. Sonraki çevrimdışı kullanım tarayıcının önbelleği korumasına bağlıdır; önbellek temizlenirse yeniden bağlantı gerekir. Bu sürümün gerçek iPad/Safari çevrimdışı kullanımı henüz doğrulanmadı.
 - **GitHub'a göndermek:** `yayinla.command` dosyasına çift tıkla.
 
 ## Nasıl oynanır
@@ -76,7 +80,7 @@ onları yalnızca ışık şarkısı uyandırır.
 
 - **Sessiz açmak:** adrese `?sessiz` ekle. Açılışı atlamak için `?atla`, altyazı için `?altyazi`.
 - **Sesli açılış:** tarayıcı sesi ilk dokunuşa kadar kilitlerse müzik ve geçerli açılış konuşması o dokunuşta devam eder; konuşma ses bağlamı hazır olmadan söylenmiş sayılmaz. Sekmeye geri dönüldüğünde aynı ses bağlamı sürdürülür.
-- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=10`. Seçim ekranında Zamanın Uyuduğu Vadi dördüncü sıradadır; raf Pırıl’ın Ejderha Vadisi, Balkabağı Gecesi ve Kuzey Işıkları ile başlar.
+- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=12`. Seçim ekranında Zamanın Uyuduğu Vadi dördüncü sıradadır; raf Pırıl’ın Ejderha Vadisi, Balkabağı Gecesi ve Kuzey Işıkları ile başlar.
   Hepsinde yatak animasyonu tamamlanınca oyun doğrudan başlar; ayrıca oda dönüşümü, ikinci uyanış, ışıkla belirme veya kontrol beklemesi yoktur.
   Ormanın yatak girişi yaklaşık 13,4 saniye, diğer rüyalarınki 7,85 saniyedir. Yatağı da atlayan sessiz deneme: `?sessiz&atla&bolum=5`.
 - **Kayıtları sıfırlamak:** seçim ekranında sol üst köşeye 3 saniye basılı tut. Bitirilen rüyalar cihazda saklanır, kilit yoktur.
