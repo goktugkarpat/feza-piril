@@ -25,8 +25,14 @@
                 çömelip oturma geçişi (1 = oturmuş). bak -1..1 bakış, sallan 0..1 müzikle hafif salınma.
      'saril'    { u, hedef }  anneye sarılma: u 0–.35 kollar açık "gel!", .35–.6 uzanıp sarar, .6–1 sımsıkı sarılı (sıkar, sallanır, gözler ^ ^).
                 hedef: [x,y] ellerin buluşacağı yer (P'ye göre dünya birimi, yon'a göre ileri +x; vars. [25,-40] = annenin beli/göğsü; daha yukarısı Feza'nın kısa kollarıyla yüzünü örter).
-                otur: true → örtüde bağdaş otururken yanındaki anneye dönüp sarılır (vars. hedef [20,-17]). Yön değişince (yon) kısa çapraz geçiş.
+                otur: true → örtüde bağdaş otururken yanındaki anneye dönüp sarılır (vars. hedef [23,-18]). Yön değişince (yon) kısa çapraz geçiş.
                 u < .35 iken Feza yürüyor/koşuyorsa (|P.vx| > 25) normal koşu bacakları sürer, yalnız kollar açılır ("kollar açık koşar").
+   Tur 2: sürüşte pedal ritmiyle gövde iniş-çıkışı ve salınımı, başın gecikmeli sallanışı, hızlanınca daha çok öne eğilme, süzülürken
+   (pedal durunca / it=0) rahatlayıp dikleşme ve etrafa bakma. Scooter/bisiklet ek opt: bakGeri 0..1 (arkadaki anneye bakar; salla ile
+   birlikte ona geriye el sallar), nese 0..1 (yokuşta çok mutlu yüz, eller gidonda), anne 0..1 (bakış+el sallama zorla). Verilmezse arada
+   (~9–16 sn) kendiliğinden kısa bir bakış + el sallama. FEZA12.anneBak 0..1 (anne de karşılık verebilsin), FEZA12.bas (başın dünya yeri).
+   'kayik' ek: saril 0..1 + hedef (anneye sarılır; GOLET yon'u anneye çevirir). 'otur' ek: yasla 0..1, yaslaYon ±1 (başını annesine yaslar).
+   'saril' (otur:true) ek: yasla 0..1 (sarılıyken başını annesine yaslar, gözler ^ ^).
    Üst pozlar (normal yürüyüş/koşu/zıplama sürer; yalnız kollar):
      'ucurtma'  { yonX, yonY, cek }  yakın kol yukarı-geri kalkar (uçurtma arkada), yumrukla ipi tutar. yonX/yonY: elden uçurtmaya birim vektör
                 (dünya), cek 0..1 ip gerginliği. Elin dünya konumu: P.a_ipX, P.a_ipY (her fezaUpdate'te) ve FEZA12.ip.
@@ -43,7 +49,7 @@
 
 const FEZA12_ARAC = {
   scooter: { ayak: [-3, -4],      // tablada duran (uzak) ayağın tabanı = tabla üstü (alçak tabla: itme ayağı yere yetişsin)
-             gidon: [19, -37],    // T-gidon tutma yeri (göbek hizası; Feza başı büyük, omzu ~-44)
+             gidon: [21, -36],    // T-gidon tutma yeri (göbek hizası; kollar %85–90 uzanır, dirsek hafif bükük)
              itYer: [5, -10] },   // itme ayağının yerdeki yolu: x +5 → -10 (y = 0)
   bisiklet: { sele: [-8, -24],    // sele üstü (popo buraya oturur; kalça 4.5 birim yukarıda)
               gidon: [15, -38],   // tutma yeri (göğsün altı)
@@ -54,7 +60,7 @@ const FEZA12_ARAC = {
            binisIn: true },       // binis_in {arac:'kayik'} var (GOLET)
   kask: true                      // kaskı Feza'nın başına bu dosya çizer (YOLCULUK park hâlinde gidona asar)
 };
-const FEZA12 = { poz: null, el: { x: 0, y: 0 }, el2: { x: 0, y: 0 }, ip: { x: 0, y: 0 }, kask: 0 };
+const FEZA12 = { poz: null, el: { x: 0, y: 0 }, el2: { x: 0, y: 0 }, ip: { x: 0, y: 0 }, bas: { x: 0, y: 0 }, kask: 0, anneBak: 0 };
 
 const FZ12_TAM = { scooter: 1, bisiklet: 1, binis_in: 1, kayik: 1, otur: 1, saril: 1 };   // fezaCizPoz ile tüm beden
 const FZ12_UST = { ucurtma: 1, el_salla: 1 };                                           // normal pozun üstüne yalnız kol
@@ -68,7 +74,11 @@ const FZ12 = {
   cizPoz: null, kar: 1,          // son çizilen tüm beden pozu, karışımın ilerleyişi (0 eski … 1 yeni)
   ustPoz: null, ustW: 0,         // üst kol pozu ve ağırlığı
   ipA: -1.9, ipAs: -1.9,         // uçurtma kolunun açısı (sarılmış, yumuşatılmış)
-  kaskRenk: FZ12_KASK, gAn: 1
+  kaskRenk: FZ12_KASK, gAn: 1,
+  sonTm: -1, dt: 0,              // çizim saati (tur 2: pedal ritmi, süzülme, anneye bakış saatleri)
+  kSon: 0, ped: 1, kAcc: 0, kDt: 0,   // son krank açısı, pedal çevirme ağırlığı (0 = süzülüyor, gövde rahatlar), ölçüm penceresi
+  itW: 0,                        // scooter itiş ağırlığı (0 = süzülüyor)
+  anneT: 9, anneSonra: 6         // anneye dönüp el sallama: geçen süre, bir sonrakine kalan süre
 };
 const FZ12_OPT = { isik: 0 };    // drawFeza'dan fezaCizPoz'a: ışığı drawFeza verir; seçenekler FZ12.src'den okunur
 const FZ12_DON = { front: false, rotA: 0 };
@@ -272,6 +282,34 @@ function fz12Salla(R, Q, s, tm) {   // sürerken yakın el gidonu bırakıp el s
   if (s > 0.5) { Q.a_kenar = true; if ((tm % 2.6) < 1.1) R.happy = 1; }
 }
 
+function fz12AnneBak(R, s, w, tm) {   // sürerken arkadaki anneye bakar (s) ve yakın eliyle ona el sallar (w): "anneciğim!"
+  if (s > 0.001) {
+    R.gx = lerp(R.gx, -1, s); R.gy = lerp(R.gy, -0.15, s); R.head -= 0.1 * s; R.lean -= 0.06 * s;
+    R.mSmile = 1; R.mOpen = Math.max(R.mOpen, 0.6 * s); R.brow = lerp(R.brow, 0.5, s); if (s > 0.3) R.happy = 0;
+  }
+  if (w > 0.001) {   // kol geriye, omuz hizasında (daha yukarıda saçın arkasına girer), el bilekten sallanır
+    R.la1 = lerp(R.la1, -1.72 - R.lean + 0.08 * Math.sin(tm * 3), w); R.la2 = lerp(R.la2, 0.3 + 0.38 * Math.sin(tm * 11), w);
+    R.hOpen = Math.max(R.hOpen, w); R.arm = lerp(R.arm, 1.04, w);
+  }
+}
+function fz12Nese(R, n, tm) {   // yokuş aşağı süzülürken çok mutlu yüz: gözler kıvrık, kocaman gülüş (eller gidonda kalır)
+  if (!(n > 0.001)) return;
+  R.mSmile = 1; R.mOpen = Math.max(R.mOpen, 0.85 * n); R.brow = lerp(R.brow, 0.6, n); R.mRound = 0;
+  if (n > 0.4 && ((tm + 0.3) % 2.6) > 0.35) R.happy = 1;   // arada bir gözlerini açıp bakar
+}
+function fz12SarilKol(R, H, s, tx, ty, tm) {   // otururken iki kolla sarılma (kayıkta anneye): eller hedefte buluşur, sıkar
+  if (!(s > 0.001)) return;
+  const sq = Math.max(0, Math.sin(tm * 3.3)) * s, lean = R.lean + 0.18 * s + 0.03 * sq;
+  let al = 1;
+  for (let k = 0; k < 6; k++) {
+    fz12KolIK(R, R.hx, H.hy, lean, tx, ty, true, al, FZ12_KA); fz12KolIK(R, R.hx, H.hy, lean, tx - 1.5, ty + 1.6, false, al, FZ12_KB);
+    if (Math.max(FZ12_KA[2], FZ12_KB[2]) <= 0.97 || al >= 1.24) break;
+    al += 0.05;
+  }
+  R.la1 = lerp(R.la1, FZ12_KA[0], s); R.la2 = lerp(R.la2, FZ12_KA[1], s); R.ba1 = lerp(R.ba1, FZ12_KB[0], s); R.ba2 = lerp(R.ba2, FZ12_KB[1], s);
+  R.arm = lerp(R.arm, al, s); R.lean = lean; R.head += 0.14 * s; R.shr += 0.12 * sq;
+  R.mOpen = lerp(R.mOpen, 0.25, s); R.mSmile = 1; R.gy = lerp(R.gy, 0.15, s); if (s > 0.5) R.happy = 1;
+}
 function fz12Sevinc(R, s, tm) {   // balık zıplayınca / sevinçle iki kol hafif kalkar (s 0..1)
   if (!(s > 0.001)) return;
   const wv = Math.sin(tm * 9) * 0.08;
@@ -318,12 +356,14 @@ function fz12Scooter(H, o, tm, R) {
   let hy = dY - FZ_FT - 0.955 * (FZ_TH + FZ_SH) + 0.12 * Math.sin(tm * 2.2);
   hy = Math.max(hy, fz12Uzan(H.hx + 0.8, nx, ny, nr, nu) + 0.15) + 0.5 * gay;
   H.hy = hy;
-  H.lean = 0.22 + 0.12 * hz + eg + 0.06 * gay + 0.015 * Math.sin(tm * 2.1);
-  H.head = -(H.lean - 0.08) * 0.8 + 0.03 * Math.sin(tm * 3.1);
+  const sz = 1 - (isFinite(o.itW) ? clamp(+o.itW, 0, 1) : FZ12.itW);   // süzülme: gövde rahatlar, dikleşir, etrafa bakar
+  H.lean = 0.2 + 0.16 * hz + eg + 0.07 * gay - 0.05 * sz + 0.015 * Math.sin(tm * 2.1);   // hızlanınca öne eğilir
+  H.head = -(H.lean - 0.08) * 0.82 + 0.07 * gay + 0.035 * Math.sin(tm * 0.9) * sz + 0.02 * Math.sin(tm * 3.1);   // itişte baş öne sallanır
   H.elW = 1; H.nTx = A.gidon[0] * k; H.nTy = A.gidon[1] * k; H.fTx = H.nTx - 0.7; H.fTy = H.nTy + 0.4;
   H.kn1 = 0.12; H.kn2 = 0.35; H.kf1 = -0.1; H.kf2 = 0.3;
   // yüz: keyifli, hızlanınca ağız açılır ("yihuu"), arada ^ ^
-  R.mSmile = 1; R.mOpen = 0.22 + 0.45 * hz + 0.15 * gay; R.brow = 0.25 + 0.25 * hz; R.gx = 0.9; R.gy = -0.05; R.lid = 1.04;
+  R.mSmile = 1; R.mOpen = 0.22 + 0.45 * hz + 0.15 * gay; R.brow = 0.25 + 0.25 * hz; R.lid = 1.04;
+  R.gx = lerp(0.9, 0.55 + 0.45 * Math.sin(tm * 0.7), sz * 0.8); R.gy = -0.05 - 0.1 * sz;
   R.happy = hz > 0.55 && ((tm + 0.4) % 3.2) < 1.0 ? 1 : 0;
   return hz;
 }
@@ -331,19 +371,22 @@ function fz12Bisiklet(H, o, tm, R) {
   const A = FEZA12_ARAC.bisiklet, k = 1 / FZ_SC, kr = isFinite(o.krank) ? +o.krank : 0;
   const hz = clamp(+o.hiz || 0, 0, 1), eg = clamp(+o.egim || 0, -0.3, 0.4);
   const cx = A.pedal[0] * k, cy = A.pedal[1] * k, r = A.krank * k;
-  const efor = Math.abs(Math.sin(kr));   // pedala basarken (önde/arkada) gövde hafifçe oynar
+  // pedal ritmi (devirde iki vuruş): her basışta kalça hafif kalkar, gövde öne-arkaya salınır, baş biraz gecikmeyle sallanır.
+  // ped (0..1): pedal dönüyor mu (krank hızından); süzülürken (serbest dişli) gövde rahatlar, dikleşir, etrafa bakar.
+  const ped = isFinite(o.pedal) ? clamp(+o.pedal, 0, 1) : FZ12.ped, ri = Math.sin(kr * 2), ri2 = 0.5 - 0.5 * Math.cos(kr * 2);
   H.bA = false;
-  H.hx = A.sele[0] * k + 0.25; H.hy = A.sele[1] * k - 3.2 - 0.1 * efor;
+  H.hx = A.sele[0] * k + 0.25 + 0.22 * ped * ri; H.hy = A.sele[1] * k - 3.2 - 0.2 * ped * ri2 + 0.08 * Math.sin(tm * 2.2) * (1 - ped);
   // pedallar: tabanın topu pedalın üstünde; bilek arkada parmak ucu aşağı, önde düz
   const nk = kr, fk = kr + Math.PI;
   H.nX = cx + r * Math.cos(nk); H.nY = cy + r * Math.sin(nk) - 0.45; H.nR = 0.22 + 0.2 * Math.sin(nk - 0.785); H.nU = 0;
   H.fX = cx + r * Math.cos(fk); H.fY = cy + r * Math.sin(fk) - 0.45; H.fR = 0.22 + 0.2 * Math.sin(fk - 0.785); H.fU = 0;
-  H.lean = 0.3 + 0.06 * hz + eg + 0.018 * Math.sin(kr * 2) + 0.01 * Math.sin(tm * 2.1);
-  H.head = -(H.lean - 0.12) * 0.8 + 0.025 * Math.sin(tm * 3.1);
+  H.lean = 0.24 + 0.17 * hz + eg + 0.035 * ped * ri - 0.06 * (1 - ped) + 0.01 * Math.sin(tm * 2.1);   // hızlanınca öne eğilir
+  H.head = -(H.lean - 0.1) * 0.82 + 0.05 * ped * Math.sin(kr * 2 - 0.9) + 0.04 * Math.sin(tm * 0.9) * (1 - ped);
   H.elW = 1; H.nTx = A.gidon[0] * k; H.nTy = A.gidon[1] * k; H.fTx = H.nTx - 0.7; H.fTy = H.nTy + 0.3;
   H.kn1 = 0.12; H.kn2 = 0.35; H.kf1 = -0.1; H.kf2 = 0.3;
-  R.mSmile = 1; R.mOpen = 0.25 + 0.4 * hz; R.brow = 0.25 + 0.25 * hz; R.gx = 0.9; R.gy = 0; R.lid = 1.04;
-  R.happy = hz > 0.55 && ((tm + 1.3) % 3.4) < 1.0 ? 1 : 0;
+  R.mSmile = 1; R.mOpen = 0.25 + 0.4 * hz; R.brow = 0.25 + 0.25 * hz; R.lid = 1.04;
+  R.gx = lerp(0.9, 0.55 + 0.45 * Math.sin(tm * 0.7), 1 - ped); R.gy = -0.12 * (1 - ped);
+  R.happy = (hz > 0.55 && ((tm + 1.3) % 3.4) < 1.0) || (ped < 0.3 && ((tm + 0.5) % 4.2) < 1.3) ? 1 : 0;
   return hz;
 }
 function fz12Binis(H, o, tm, R) {   // biniş/iniş: normal duruştan sürüş pozuna adım adım (iniş = u geri)
@@ -430,6 +473,13 @@ function fz12Otur(H, o, tm, R) {   // piknik örtüsünde bağdaş (yandan): diz
   R.mSmile = 1; R.mOpen = 0.22 + 0.1 * sl; R.brow = 0.25; R.lid = 1.02; R.gx = 0.8;
   R.gy = clamp(+o.bak || 0, -1, 1) * 0.6 - 0.15;
   R.happy = ((tm + 1) % 4.6) < 1.1 || sl > 0.6 && ((tm * 1.5) % 2) < 0.8 ? 1 : 0;
+  // yasla 0..1: başını annenin omzuna/koluna yaslar (yaslaYon +1 baktığı yöne doğru eğilir, -1 geriye yaslanır); gözler mutlulukla kapanır
+  const ys = clamp(+o.yasla || 0, 0, 1), yd = o.yaslaYon === -1 ? -1 : 1;
+  if (ys > 0.001) {
+    const nf = Math.sin(tm * 1.3) * 0.015;   // yavaş, huzurlu nefes
+    H.lean += yd * (yd > 0 ? 0.18 : 0.22) * ys + nf; H.head += (yd > 0 ? 0.18 : -0.3) * ys; H.hx += 0.5 * yd * ys;
+    R.mOpen = lerp(R.mOpen, 0.1, ys); R.brow = lerp(R.brow, 0.15, ys); R.gy = lerp(R.gy, 0.2, ys); if (ys > 0.5) R.happy = 1;
+  }
   return 0;
 }
 function fz12Saril(H, o, tm, R, Q) {   // anneye sarılma (yandan, anneye dönük)
@@ -437,11 +487,12 @@ function fz12Saril(H, o, tm, R, Q) {   // anneye sarılma (yandan, anneye dönü
   const ac = fz12E(u, 0, 0.12) * (1 - fz12E(u, 0.35, 0.55)), sar = fz12E(u, 0.35, 0.6), sq = Math.max(0, Math.sin((u - 0.6) * 22)) * fz12E(u, 0.6, 0.7), sw = Math.sin(tm * 2.2) * sar;
   const otur = !!o.otur;   // örtüde otururken yanındaki anneye dönüp sarılır
   if (otur) fz12Otur(H, FZ_BOS, tm, R); else fz12Dur(H, tm);
-  const hx0 = isFinite(o.hedef && o.hedef[0]) ? o.hedef[0] * k : (otur ? 20 : 25) * k, hy0 = isFinite(o.hedef && o.hedef[1]) ? o.hedef[1] * k : (otur ? -17 : -40) * k;
+  const hx0 = isFinite(o.hedef && o.hedef[0]) ? o.hedef[0] * k : (otur ? 23 : 25) * k, hy0 = isFinite(o.hedef && o.hedef[1]) ? o.hedef[1] * k : (otur ? -18 : -40) * k;
   const yuk = otur ? 0 : clamp((-hy0 - 32) / 8, 0, 1);   // hedef yüksekse parmak ucuna kalkar
   const hop = Math.abs(Math.sin(tm * 6.5)) * ac;  // "gel!" diye zıp zıp
   H.nR = H.fR = 0.45 * yuk * sar; H.nU = H.fU = yuk * sar;
-  if (otur) { H.lean = 0.06 + 0.2 * sar + 0.03 * sq + 0.025 * sw; H.head = 0.14 * sar + 0.05 * sw - 0.1 * ac; H.hy += 0.15 * sq; }
+  const ys = otur ? clamp(+o.yasla || 0, 0, 1) * sar : 0;   // otururken başını annesine yaslar (yanak omzunda/kolunda)
+  if (otur) { H.lean = 0.06 + 0.13 * sar + 0.05 * ys + 0.03 * sq * (1 - ys) + 0.025 * sw; H.head = 0.08 * sar + 0.2 * ys + 0.05 * sw - 0.1 * ac; H.hy += 0.15 * sq * (1 - ys); }
   else {
     H.hy = H.hy - 1.3 * yuk * sar - 0.9 * hop + 0.25 * sq;
     H.hx = 0.7 * sar; H.lean = 0.03 + 0.12 * sar + 0.03 * sq + 0.025 * sw; H.head = 0.14 * sar + 0.05 * sw - 0.1 * ac;
@@ -451,7 +502,8 @@ function fz12Saril(H, o, tm, R, Q) {   // anneye sarılma (yandan, anneye dönü
   H.kn1 = lerp(0.12, 1.58 + 0.08 * Math.sin(tm * 9), ac); H.kn2 = lerp(0.35, 0.22, ac); H.kf1 = lerp(-0.1, 1.95, ac); H.kf2 = lerp(0.3, 0.3, ac);
   R.hOpen = ac; R.mSmile = 1; R.mOpen = lerp(0.3, 0.75, ac) * (1 - sar) + 0.25 * sar; R.brow = 0.4; R.lid = 1.05; R.gx = 0.9;
   R.gy = -0.35 * (1 - sar); R.happy = sar > 0.5 || ac > 0.6 ? 1 : 0;
-  R.shr = 0.15 * sq; R.sy = 1 - 0.02 * sq; R.sx = 2 - R.sy;
+  R.shr = 0.15 * sq * (1 - ys); R.sy = 1 - 0.02 * sq * (1 - ys); R.sx = 2 - R.sy;
+  if (ys > 0.001) { R.happy = 1; R.mOpen = lerp(R.mOpen, 0.12, ys); R.brow = lerp(R.brow, 0.15, ys); R.breath *= 1 - 0.4 * ys; }
   Q.a_kenar = true;
   return 0;
 }
@@ -471,11 +523,32 @@ function fz12OturGecis(R, Q, u, tm) {
   FZ12_H.hy = hip; R.bob = hip + Math.max(fzFy(R.lt1, R.lt2), fzFy(R.bt1, R.bt2));
 }
 
+// çizim saatleri (yalnız oyunda): pedal dönüyor mu, scooter itiyor mu
+function fz12Saatler(poz, o, tm) {
+  const dt = FZ12.sonTm >= 0 ? clamp(tm - FZ12.sonTm, 0, 0.05) : 0; FZ12.sonTm = tm; FZ12.dt = dt;
+  if (poz === 'bisiklet' || (poz === 'binis_in' && o.arac === 'bisiklet')) {
+    const kr = isFinite(o.krank) ? +o.krank : 0;   // krank fizik adımında değişir: hız ~0.08 sn'lik pencerede ölçülür
+    FZ12.kAcc += Math.abs(fz12Wrap(kr - FZ12.kSon)); FZ12.kDt += dt; FZ12.kSon = kr;
+    if (FZ12.kDt >= 0.08) { const w = FZ12.kAcc / FZ12.kDt; FZ12.ped += (clamp(w / 3, 0, 1) - FZ12.ped) * (1 - Math.exp(-FZ12.kDt * 5)); FZ12.kAcc = FZ12.kDt = 0; }
+  }
+  if (poz === 'scooter') { const it = isFinite(o.it) && +o.it > 0.001; FZ12.itW = fz12Yaklas(FZ12.itW, it ? 1 : 0, dt / (it ? 0.25 : 0.9)); }
+  if (poz === 'scooter' || poz === 'bisiklet') { FZ12.anneT += dt; FZ12.anneSonra -= dt; }
+}
+// anneye dönüp bakma ağırlığı: opt.anne verilirse o; yoksa sürerken ~9–16 sn'de bir, 1.9 sn (scooter'da yalnız süzülürken başlar)
+function fz12AnneBakW(poz, o, oyun) {
+  if (isFinite(o.anne)) return clamp(+o.anne, 0, 1);
+  if (!oyun) return 0;
+  if (FZ12.anneSonra <= 0 && FZ12.anneT > 2 && !(+o.salla > 0) && (poz === 'bisiklet' || FZ12.itW < 0.2)) { FZ12.anneT = 0; FZ12.anneSonra = 9 + Math.random() * 7; }
+  const t = FZ12.anneT;
+  return t < 1.9 ? smooth(clamp(t / 0.35, 0, 1)) * smooth(clamp((1.9 - t) / 0.45, 0, 1)) : 0;
+}
+
 // fezaCizPoz (feza.js) → Bölüm 12 tüm beden pozları. R = fzCS.a_R (FZ_REST ile doldurulmuş), Q = fzCS.
 function fz12Poz(poz, tm, opt, R, Q, olcek, x, y) {
   const oyun = opt === FZ12_OPT, o = oyun ? (FZ12.src || FZ_BOS) : (opt && typeof opt === 'object' ? opt : FZ_BOS);
   const H = FZ12_H; let hz = 0, kask = 0;
   R.breath = Math.sin(tm * 2.2) * 0.55;
+  if (oyun) fz12Saatler(poz, o, tm);
   FZ12_DON.front = false; FZ12_DON.rotA = 0;
   if (poz === 'scooter') { hz = fz12Scooter(H, o, tm, R); kask = o.kask ? 1 : 0; }
   else if (poz === 'bisiklet') { hz = fz12Bisiklet(H, o, tm, R); kask = o.kask ? 1 : 0; }
@@ -485,9 +558,21 @@ function fz12Poz(poz, tm, opt, R, Q, olcek, x, y) {
   else hz = fz12Saril(H, o, tm, R, Q);
   fz12Uygula(H, R, Q);
   if (poz === 'otur' && isFinite(o.u) && +o.u < 1) fz12OturGecis(R, Q, clamp(+o.u, 0, 1), tm);
-  if (poz === 'scooter' || poz === 'bisiklet' || poz === 'kayik' || poz === 'otur') fz12Salla(R, Q, clamp(+o.salla || 0, 0, 1), tm);
+  let sallaIleri = clamp(+o.salla || 0, 0, 1);
+  if (poz === 'scooter' || poz === 'bisiklet') {
+    // anneye bakış: YOLCULUK bakGeri (+ salla = ona el sallama) verir; ayrıca arada kendiliğinden kısa bir bakış + el sallama
+    const bg = clamp(+o.bakGeri || 0, 0, 1), oto = bg > 0.001 || sallaIleri > 0.001 ? 0 : fz12AnneBakW(poz, o, oyun);
+    const bak = Math.max(bg, oto), w = bg > 0.001 ? sallaIleri : oto;
+    if (bg > 0.001) sallaIleri = 0;   // anneye bakarken el geriye, anneye sallanır
+    FEZA12.anneBak = bak; fz12AnneBak(R, bak, w, tm); fz12Nese(R, clamp(+o.nese || 0, 0, 1), tm);
+  }
+  if (poz === 'kayik' && +o.saril > 0) {   // kayıkta anneye sarılma (GOLET yon'u anneye çevirir; hedef [x,y] dünya, P'ye göre)
+    const k = 1 / FZ_SC, h = o.hedef, tx = h && isFinite(h[0]) ? h[0] * k : 17 * k, ty = h && isFinite(h[1]) ? h[1] * k : -26 * k;
+    fz12SarilKol(R, H, clamp(+o.saril, 0, 1), tx, ty, tm);
+  }
+  if (poz === 'scooter' || poz === 'bisiklet' || poz === 'kayik' || poz === 'otur') fz12Salla(R, Q, sallaIleri, tm);
   if (poz === 'kayik' || poz === 'otur') { fz12Sevinc(R, clamp(+o.sevinc || 0, 0, 1), tm); fz12Bak(R, +o.bak || 0); }
-  fz12Ruzgar(Q, hz, tm);
+  fz12Ruzgar(Q, Math.max(hz, (poz === 'scooter' || poz === 'bisiklet') ? 0.7 * clamp(+o.nese || 0, 0, 1) : 0), tm);
   if (poz === 'kayik' || poz === 'otur') Q.a_cl = 0.15 * Math.sin(tm * 1.7);
   Q.a_kask12 = kask; if (kask > 0) Q.a_kaskRenk = typeof o.kask === 'string' && o.kask ? o.kask : FZ12.kaskRenk;
   if (!oyun) return FZ12_DON;
@@ -509,39 +594,42 @@ function fz12Poz(poz, tm, opt, R, Q, olcek, x, y) {
   const hip = T0[FZ_N], sc = olcek * FZ_SC, c = Math.cos(FZ12_DON.rotA), s = Math.sin(FZ12_DON.rotA), bx = (P.rx ?? P.x) + FZ12.ox, by = (P.ry ?? P.y) + FZ12.oy;
   fz12ElYeri(R, hip, true, FZ12_P); { const lx = FZ12_P[0] * sc, ly = FZ12_P[1] * Math.abs(sc); FEZA12.el.x = bx + lx * c - ly * s; FEZA12.el.y = by + lx * s + ly * c; }
   fz12ElYeri(R, hip, false, FZ12_P); { const lx = FZ12_P[0] * sc, ly = FZ12_P[1] * Math.abs(sc); FEZA12.el2.x = bx + lx * c - ly * s; FEZA12.el2.y = by + lx * s + ly * c; }
+  { const by0 = -0.28 * R.breath - R.shr, cl = Math.cos(R.lean), sl = Math.sin(R.lean), qx = 2.9 + 1.4 * R.head, qy = -23.6 + by0;   // başın ortası (yanak hizası)
+    const lx = (R.hx + qx * cl - qy * sl) * sc, ly = (hip + qx * sl + qy * cl) * Math.abs(sc); FEZA12.bas.x = bx + lx * c - ly * s; FEZA12.bas.y = by + lx * s + ly * c; }
   return FZ12_DON;
 }
 
 // ── kask (fzDraw'dan, başın çerçevesinde: kafatası merkezi (-0.3,-1.6) r 8.6, yüz +x'e) ──
+// Tur 2: sade ve okunur (stil örneği gibi): kaşların üstünde biten yuvarlak kubbe (saçın tepesini de örter), koyu kenar bandı, tek beyaz şerit,
+// tepe parıltısı, yanda yıldız; alnı ve kâkülü görünür kalır.
+function fz12KaskYol(x) {
+  x.beginPath();
+  x.moveTo(9.2, -5.4);
+  x.bezierCurveTo(10.0, -11.6, 4.7, -15.4, -1.2, -15.1);
+  x.bezierCurveTo(-7.8, -14.7, -11.6, -9.0, -10.8, -1.6);
+  x.quadraticCurveTo(-10.2, -0.3, -8.6, -0.8);
+  x.quadraticCurveTo(-4.6, -4.0, 1.0, -5.0);
+  x.quadraticCurveTo(5.4, -5.6, 9.2, -5.4);
+  x.closePath();
+}
 function fz12Kask(x, R, tm) {
   const k = fzQ.a_kask12; if (!(k > 0.01)) return;
   const col = fzQ.a_kaskRenk || FZ12_KASK;
   x.save();
-  x.translate(-0.4, -5.5); x.scale(k, k); x.translate(0.4, 5.5);   // "pıt" diye takılır (tepeden büyür)
-  // kask kabuğu: alnın üstünden başın arkasına, kulağın üstünde biter
-  x.beginPath();
-  x.moveTo(8.9, -3.6);
-  x.bezierCurveTo(9.6, -9.6, 4.2, -13.1, -1.2, -12.6);
-  x.bezierCurveTo(-7.4, -12.0, -10.6, -6.6, -9.9, -0.9);
-  x.quadraticCurveTo(-9.2, 0.6, -7.6, 0.2);
-  x.quadraticCurveTo(-4.6, -2.4, -0.6, -3.0);
-  x.quadraticCurveTo(4.6, -3.6, 8.9, -3.6);
-  x.closePath();
-  x.fillStyle = col; x.fill();
+  x.translate(-0.6, -8.0); x.scale(k, k); x.translate(0.6, 8.0);   // "pıt" diye takılır (tepeden büyür)
+  x.fillStyle = 'rgba(30,40,70,0.22)'; x.beginPath(); x.ellipse(-1.2, -0.9, 8.6, 1.4, -0.18, 0, 6.2832); x.fill();   // saçın üstüne düşen yumuşak gölge
+  fz12KaskYol(x); x.fillStyle = col; x.fill();
   x.save(); x.clip();
-  x.fillStyle = 'rgba(20,60,120,0.2)'; x.beginPath(); x.ellipse(-2.5, 1.2, 12, 6.2, -0.15, 0, 6.2832); x.fill();   // alt yarı gölge
-  x.fillStyle = 'rgba(255,255,255,0.32)'; x.beginPath(); x.ellipse(1.6, -10.2, 5.4, 1.9, -0.18, 0, 6.2832); x.fill();   // tepe parıltısı
-  // beyaz şeritler (havalandırma) ve minik yıldız
-  x.strokeStyle = 'rgba(255,255,255,0.92)'; x.lineWidth = 1.05; x.lineCap = 'round';
-  x.beginPath(); x.moveTo(6.6, -8.6); x.quadraticCurveTo(2.0, -12.0, -4.4, -11.0); x.stroke();
-  x.beginPath(); x.moveTo(7.6, -5.6); x.quadraticCurveTo(1.0, -9.6, -7.2, -7.4); x.stroke();
+  x.fillStyle = 'rgba(16,48,104,0.24)'; x.beginPath(); x.ellipse(-2.4, 0.6, 12.5, 5.6, -0.16, 0, 6.2832); x.fill();   // alt yarı gölge
+  x.fillStyle = 'rgba(255,255,255,0.38)'; x.beginPath(); x.ellipse(2.0, -12.6, 5.0, 1.6, -0.2, 0, 6.2832); x.fill();   // tepe parıltısı
+  x.strokeStyle = 'rgba(255,255,255,0.95)'; x.lineWidth = 1.5; x.lineCap = 'round';                                    // tek beyaz şerit
+  x.beginPath(); x.moveTo(8.4, -8.8); x.bezierCurveTo(6.0, -13.8, -1.8, -14.6, -8.0, -10.2); x.stroke();
   x.restore();
-  x.fillStyle = FZ.yel; fz8Yildiz(x, -4.6, -5.0, 1.55, 0.2);
-  x.strokeStyle = 'rgba(16,50,96,0.45)'; x.lineWidth = 0.5;   // alt kenar
-  x.beginPath(); x.moveTo(-9.9, -0.9); x.quadraticCurveTo(-9.2, 0.6, -7.6, 0.2); x.quadraticCurveTo(-4.6, -2.4, -0.6, -3.0); x.quadraticCurveTo(4.6, -3.6, 8.9, -3.6); x.stroke();
-  // çene kayışı (kulağın önünden çeneye) ve tokası
-  x.strokeStyle = 'rgba(120,128,150,0.85)'; x.lineWidth = 0.55;
-  x.beginPath(); x.moveTo(0.4, -2.9); x.quadraticCurveTo(0.6, 3.6, 3.4, 7.7); x.stroke();
-  x.fillStyle = '#dfe4ee'; x.beginPath(); x.roundRect(2.6, 6.9, 1.6, 1.1, 0.4); x.fill();
+  x.strokeStyle = 'rgba(14,40,90,0.55)'; x.lineWidth = 1.0; x.lineCap = 'round';   // kenar bandı
+  x.beginPath(); x.moveTo(-10.8, -1.6); x.quadraticCurveTo(-10.2, -0.3, -8.6, -0.8); x.quadraticCurveTo(-4.6, -4.0, 1.0, -5.0); x.quadraticCurveTo(5.4, -5.6, 9.2, -5.4); x.stroke();
+  x.fillStyle = FZ.yel; fz8Yildiz(x, -4.6, -7.4, 1.55, 0.2);
+  x.strokeStyle = 'rgba(110,118,140,0.85)'; x.lineWidth = 0.5;                       // çene kayışı ve tokası
+  x.beginPath(); x.moveTo(0.4, -5.0); x.quadraticCurveTo(0.5, 2.6, 3.4, 7.7); x.stroke();
+  x.fillStyle = '#e2e6ef'; x.beginPath(); x.roundRect(2.6, 6.9, 1.6, 1.1, 0.4); x.fill();
   x.restore();
 }

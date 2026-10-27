@@ -105,3 +105,44 @@ Her ajan `b12/ilerleme/<AJAN>.json` dosyasını **en az 10 dakikada bir** günce
 `{"yuzde": 0-100, "simdi": "kısa Türkçe ne yapıyorsun", "ss": "b12/ss/... en son güzel ekran görüntüsü (varsa)"}`.
 Yüzde dürüst olsun (100 = test edildi, bitti). Bitince son raporu `b12/ilerleme/<AJAN>_rapor.md` olarak yaz.
 Git commit/push YAPMA (KOORD yapar).
+
+---
+# Tur 2 (27 Ekim 2026, öğleden önce) — ebeveynin yeni istekleri
+Ebeveyn 1. turu gördü ve dedi ki:
+1. **Annenin animasyonu hâlâ çok iyi değil**; biraz daha (Feza'nın gerçek) annesine benzesin, daha çok oynanmalı. Ebeveyn bir stil örneği
+   gönderdi: `b12/ref/ebeveyn_bisiklet_ornegi.png` (bisiklet süren sevimli, sade, temiz şekilli bir karakter — akıcı, yumuşak, okunur).
+   Bu örnekteki temizlik/okunurluk ve hareket kalitesi hedef (kopyalama yok, esinlen).
+2. **Sabancı Üniversitesi'ni iyice araştır**: binaların bir kısmı gerçeğe benziyor, bir kısmı farklı. İnternetteki fotoğraflara iyice bak
+   (kampüs binaları, büyük gölet, botanik bahçesi, kaplumbağalar...) ve ortamı hepsine göre çok güzel kur. Gerçekte olmasa da oyunda güzel
+   duracak şeyler olabilir.
+3. **Kaplumbağalar** (botanik bahçesi), **büyük bir gölet**.
+4. Çok sayıda ajanla her şeyi daha da iyileştir.
+
+## Harita değişikliği (KOORD yaptı: bolum12.js, COLS 900 → 1100)
+Eski sütun → yeni sütun: `c < 560` aynı · `560 ≤ c < 805` → `c + 140` · `c ≥ 805` → `c + 200` (gölet suyu uzadı).
+| bölge | yeni sütun | not |
+|---|---|---|
+| lojman, yol1, fass, bilgi | 0–560 | aynı |
+| **botanik** (YENİ) | 560–700 | botanik bahçesi: sera, bitki tarhları, ahşap yürüyüş yolu, **kaplumbağa göleti** (`k12Botanik`, BOTANIK ajanı, `botanik12.js`) |
+| yol2 | 700–805 | Biniş 2: `k12Binis` 702→800 (bisiklet durağı 700, varış parkı 800) |
+| golet | 805–1030 | kıyı 805–830 · **su 830–1005** (`k12Kayik` 830→1005; eskisinden 60 sütun uzun) · kıyı 1005–1030 (`k12Golet` 805–1030) |
+| tepe | 1030–1100 | final `k12Final` 1070 (piknik ~1060–1084) |
+Her ajan KENDİ dosyasındaki sabit sütunları bu tabloya göre günceller (ör. zemin12.js `ZN12_SU0/SU1`, park rafları 560→700, 660→800, ZN12_BOLGE;
+canli12.js yerleşimleri; golet12.js su aralığı; dunya12.js sahne sütunları; muzik12.js bölge sınırları; final12.js piknik konumu).
+
+## Tur 2 dosya sahipleri (yeni: `botanik12.js` BOTANIK, `bina12.js` BINA)
+| ajan | dosya | tur 2 görevi |
+|---|---|---|
+| ANNE | anne12.js | annenin çizimini ve animasyonunu belirgin biçimde iyileştir (stil örneği), daha akıcı, daha canlı yüz ve vücut dili |
+| FEZA12 | fezapoz12.js (+ feza.js B12 kancaları) | stil örneğindeki gibi akıcı sürüş pozları; anneyle etkileşim pozları |
+| YOLCULUK | yolculuk12.js | yol2'yi yeni sütunlara taşı; bisiklet/scooter animasyonunu stil örneği kalitesine çıkar |
+| ARKA | dunya12.js (+ assets/kampus) | gerçek kampüs fotoğraflarına göre bina katmanlarını düzelt/yeniden kur; botanik ve büyük gölet arka planı; yeni sütunlar |
+| BINA | bina12.js (YENİ) | ARKA'nın çağıracağı, gerçek binalara sadık stilize çizimler (eksik/yanlış binalar: ör. Sabancı Sanat Merkezi/SUNUM, spor merkezi, yurtlar, sera); ARKA ile kararlaştır |
+| BOTANIK | botanik12.js (YENİ) | `k12Botanik`: botanik bahçesi + kaplumbağa göleti, dokununca sevimli tepkiler, durdurmaz |
+| GOLET | golet12.js | büyük gölet (830–1005), daha zengin hayat (kaplumbağa, kuğu, balık, kaz), daha uzun ve güzel kayık yolculuğu |
+| ONPLAN | zemin12.js | yeni sütunlar; botanik bahçesinin zemini (çakıl, ahşap iskele yol), orta/ön plan |
+| CANLI | canli12.js | yeni sütunlar; botanik bölgesine canlılar (kelebek, kuş, sincap — kaplumbağalar BOTANIK'in) |
+| MUZIK | muzik12.js, ses.js B12, sesler12.js | yeni bölgeler (botanik), yeni olaylar ve birkaç yeni cümle |
+| FINAL | final12.js, sahne12.js | yeni konum (1070) + cila |
+| ETKINLIK | etkinlik12.js | çiçek, uçurtma, havuz cilası |
+| KOORD | bolum12.js, oyun.js, index.html, sw.js, arayuz.js | harita, tümleştirme, test |

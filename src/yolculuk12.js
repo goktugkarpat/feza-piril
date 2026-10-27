@@ -45,7 +45,7 @@ const YOL12 = (() => {
     bisiklet: { vMax: 300, pedalIvme: 250, surt: 12, surtK: 0.05 }   // yol2 göletin yokuşu: uzun süzülür
   };
   const BINIS_SURE = 0.7, INIS_SURE = 0.65, ANNE_BIN_SURE = 0.8, ANNE_IN_SURE = 0.7;
-  const ANNE_ARA = 158, ANNE_ARA_MIN = 112, ANNE_VMAX = 400;
+  const ANNE_ARA = 158, ANNE_VMAX = 400;   // en az ara araçların boyundan hesaplanır (anneAdim)
   const FREN = 150;            // varışta yumuşak yavaşlama ivmesi
   const KASK_RENK = '#7cc8ee';
 
@@ -70,66 +70,97 @@ const YOL12 = (() => {
   }
   function lekeCiz(c, renk, x, y, r, a) { if (a <= 0.01) return; c.globalAlpha = a; c.drawImage(parlak(renk), x - r, y - r, r * 2, r * 2); }
 
-  // ── küçük çizim yardımcıları ──
+  // ── küçük çizim yardımcıları (tur 2: sade, temiz, kalın konturlu şekiller) ──
+  const KONTUR = '#2a3149';
   function oval(c, x, y, rx, ry, renk, aci) { c.fillStyle = renk; c.beginPath(); c.ellipse(x, y, rx, ry, aci || 0, 0, TAU); c.fill(); }
-  // Hacimli boru: koyu kenar, ana renk, ortada ince ışık (path çağırandan önce kurulmuş olmalı)
-  function boruBoya(c, w, kenar, ana, isik) {
+  // Konturlu boru: önce koyu kontur, sonra ana renk, ortada ince ışık (path çağırandan önce kurulmuş olmalı)
+  function boruBoya(c, w, ana, isik, kw) {
     c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = kenar; c.lineWidth = w; c.stroke();
-    c.strokeStyle = ana; c.lineWidth = w * 0.68; c.stroke();
-    if (isik) { c.globalAlpha *= 0.8; c.strokeStyle = isik; c.lineWidth = w * 0.22; c.stroke(); c.globalAlpha /= 0.8; }
+    c.strokeStyle = KONTUR; c.lineWidth = w + 2 * (kw === undefined ? 1.3 : kw); c.stroke();
+    c.strokeStyle = ana; c.lineWidth = w; c.stroke();
+    if (isik) { const a = c.globalAlpha; c.globalAlpha = a * 0.55; c.strokeStyle = isik; c.lineWidth = w * 0.3; c.stroke(); c.globalAlpha = a; }
+  }
+  // Konturlu dolgu (path kurulmuş olmalı)
+  function dolguBoya(c, renk, kw) {
+    c.fillStyle = renk; c.fill();
+    c.strokeStyle = KONTUR; c.lineWidth = kw === undefined ? 1.2 : kw; c.lineJoin = 'round'; c.stroke();
   }
   function cizgi(c, x1, y1, x2, y2) { c.moveTo(x1, y1); c.lineTo(x2, y2); }
 
-  // Telli tekerlek: lastik, jant, dönen teller (hızlıyken bulanık disk), göbek
-  function tekerlek(c, cx, cy, r, aci, w, stil) {
-    const hizli = clamp((Math.abs(w) - 9) / 14, 0, 1);   // açısal hız (rad/sn): teller hızlıda saydamlaşır
-    // lastik
-    c.beginPath(); c.arc(cx, cy, r - r * 0.08, 0, TAU);
-    c.strokeStyle = stil.lastik || '#3a3f4a'; c.lineWidth = r * 0.17; c.stroke();
-    if (stil.beyazYan) { c.beginPath(); c.arc(cx, cy, r - r * 0.2, 0, TAU); c.strokeStyle = '#f4f1ea'; c.lineWidth = r * 0.07; c.stroke(); }
-    c.beginPath(); c.arc(cx, cy, r - r * 0.02, -2.4, -0.9); c.strokeStyle = 'rgba(255,255,255,.22)'; c.lineWidth = r * 0.05; c.stroke();
-    // jant
-    const jr = r * 0.76;
-    c.beginPath(); c.arc(cx, cy, jr, 0, TAU); c.strokeStyle = stil.jant || '#cdd6de'; c.lineWidth = Math.max(1.2, r * 0.07); c.stroke();
-    // bulanık disk (hız hissi)
-    if (hizli > 0) { c.globalAlpha = 0.16 * hizli; oval(c, cx, cy, jr, jr, stil.tel || '#e8eef2'); c.globalAlpha = 1; }
-    // teller: teğet örgü, göbekten janta
-    const n = stil.tel_n || 16, gr = r * 0.12;
-    c.globalAlpha = 0.85 * (1 - 0.65 * hizli);
-    c.beginPath();
-    for (let i = 0; i < n; i++) {
-      const a = aci + i * TAU / n, b = a + (i % 2 ? 0.55 : -0.55);
-      c.moveTo(cx + Math.cos(a) * gr, cy + Math.sin(a) * gr);
-      c.lineTo(cx + Math.cos(b) * jr, cy + Math.sin(b) * jr);
+  // Yumuşak yer gölgesi: bir kez hazırlanan bulanık leke, elips gibi gerilir
+  let golgeTuval = null;
+  function golge(c, x, y, rx, a) {
+    if (!golgeTuval) {
+      golgeTuval = document.createElement('canvas'); golgeTuval.width = golgeTuval.height = 64;
+      const x2 = golgeTuval.getContext('2d'), gr = x2.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(28,38,32,1)'); gr.addColorStop(0.55, 'rgba(28,38,32,.55)'); gr.addColorStop(1, 'rgba(28,38,32,0)');
+      x2.fillStyle = gr; x2.fillRect(0, 0, 64, 64);
     }
-    c.strokeStyle = stil.tel || '#e8eef2'; c.lineWidth = Math.max(0.55, r * 0.028); c.stroke();
+    c.globalAlpha = a; c.drawImage(golgeTuval, x - rx * 1.1, y - 6, rx * 2.2, 13); c.globalAlpha = 1;
+  }
+
+  // Sade tekerlek: kalın koyu lastik, açık jant, okunur ama ince teller; hızlıyken teller saydamlaşıp bulanık disk olur
+  function tekerlek(c, cx, cy, r, aci, w, stil) {
+    const bul = clamp((Math.abs(w) - 8) / 14, 0, 1), t = r * 0.2;
+    // bulanık disk (hız hissi)
+    if (bul > 0) { c.globalAlpha = 0.13 * bul; oval(c, cx, cy, r - t, r - t, stil.tel || '#e8eef2'); c.globalAlpha = 1; }
+    // teller (düz, göbekten janta)
+    const n = stil.tel_n || 10, gr = r * 0.13, jr = r - t - r * 0.05;
+    c.globalAlpha = 0.85 * (1 - 0.6 * bul);
+    c.beginPath();
+    for (let i = 0; i < n; i++) { const a = aci + i * TAU / n; c.moveTo(cx + Math.cos(a) * gr, cy + Math.sin(a) * gr); c.lineTo(cx + Math.cos(a) * jr, cy + Math.sin(a) * jr); }
+    c.strokeStyle = stil.tel || '#c8d0d8'; c.lineWidth = Math.max(0.5, r * 0.035); c.lineCap = 'round'; c.stroke();
     c.globalAlpha = 1;
-    // supap ve göbek (dönüşü okunur kılar)
-    oval(c, cx + Math.cos(aci) * jr * 0.94, cy + Math.sin(aci) * jr * 0.94, r * 0.05, r * 0.05, '#f6d77a');
-    oval(c, cx, cy, gr * 1.15, gr * 1.15, stil.gobek || '#8d99a4');
-    oval(c, cx - gr * 0.3, cy - gr * 0.3, gr * 0.45, gr * 0.45, 'rgba(255,255,255,.7)');
+    // jant
+    c.beginPath(); c.arc(cx, cy, jr, 0, TAU); c.strokeStyle = stil.jant || '#dfe5ec'; c.lineWidth = Math.max(1, r * 0.075); c.stroke();
+    // lastik (kontur içinde)
+    c.beginPath(); c.arc(cx, cy, r - t / 2, 0, TAU); c.strokeStyle = KONTUR; c.lineWidth = t + 1.6; c.stroke();
+    c.strokeStyle = stil.lastik || '#3a4154'; c.lineWidth = t; c.stroke();
+    if (stil.beyazYan) { c.beginPath(); c.arc(cx, cy, r - t * 0.78, 0, TAU); c.strokeStyle = '#f4f1ea'; c.lineWidth = t * 0.28; c.stroke(); }
+    c.beginPath(); c.arc(cx, cy, r - t * 0.35, -2.5, -1.3); c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = t * 0.3; c.stroke();
+    // supap (dönüşü okunur kılar) + göbek
+    oval(c, cx + Math.cos(aci) * jr, cy + Math.sin(aci) * jr, r * 0.055, r * 0.055, '#f2c94c');
+    c.beginPath(); c.arc(cx, cy, gr * 1.2, 0, TAU); dolguBoya(c, stil.gobek || '#a9b3bd', 0.9);
+    oval(c, cx - gr * 0.35, cy - gr * 0.35, gr * 0.4, gr * 0.4, 'rgba(255,255,255,.75)');
   }
-  // Çamurluk: teker üstünde yay
-  function camurluk(c, cx, cy, r, a0, a1, renk, kenar) {
+  // Çamurluk: teker üstünde konturlu yay
+  function camurluk(c, cx, cy, r, a0, a1, renk) {
     c.beginPath(); c.arc(cx, cy, r, a0, a1);
-    boruBoya(c, Math.max(2.4, r * 0.13), kenar, renk, 'rgba(255,255,255,.8)');
+    boruBoya(c, Math.max(2.2, r * 0.12), renk, 'rgba(255,255,255,.9)', 1);
   }
-  // Krank kolu + pedal (krank merkezi bx,by; açı a)
+  // Okunur zincir: aynadan arka dişliye kapalı halka; baklalar krankla birlikte akar
+  function zincir(c, B, ar, R, cr, krank) {
+    c.beginPath();
+    c.moveTo(B[0], B[1] - ar); c.lineTo(R[0], R[1] - cr);
+    c.arc(R[0], R[1], cr, -Math.PI / 2, Math.PI / 2, true);
+    c.lineTo(B[0], B[1] + ar);
+    c.arc(B[0], B[1], ar, Math.PI / 2, -Math.PI / 2, true);
+    c.strokeStyle = KONTUR; c.lineWidth = 2.2; c.stroke();
+    c.setLineDash([1.3, 1.1]); c.lineDashOffset = -krank * ar;
+    c.strokeStyle = '#a7b0ba'; c.lineWidth = 1; c.stroke();
+    c.setLineDash([]); c.lineDashOffset = 0;
+  }
+  // Aynalı dişli: krankla döner (beş kollu yıldız)
+  function ayna(c, B, ar, krank, renk) {
+    c.beginPath(); c.arc(B[0], B[1], ar * 0.92, 0, TAU); dolguBoya(c, renk || '#cdd5dc', 1);
+    c.save(); c.translate(B[0], B[1]); c.rotate(krank);
+    c.beginPath(); for (let i = 0; i < 5; i++) { const a = i * TAU / 5; cizgi(c, 0, 0, Math.cos(a) * ar * 0.75, Math.sin(a) * ar * 0.75); }
+    c.strokeStyle = '#8f99a3'; c.lineWidth = Math.max(0.8, ar * 0.16); c.lineCap = 'round'; c.stroke(); c.restore();
+  }
+  // Krank kolu + pedal (krank merkezi bx,by; açı a); uzak taraf koyu
   function pedalKol(c, bx, by, kr, a, uzak) {
     const px = bx + Math.cos(a) * kr, py = by + Math.sin(a) * kr;
     c.beginPath(); cizgi(c, bx, by, px, py);
-    boruBoya(c, Math.max(1.6, kr * 0.2), uzak ? '#6b737c' : '#7c858e', uzak ? '#9aa3ab' : '#c9d1d8', uzak ? null : '#f2f5f7');
-    c.fillStyle = uzak ? '#4b5058' : '#3c4048';
-    c.beginPath(); c.roundRect(px - kr * 0.42, py - kr * 0.12, kr * 0.84, kr * 0.24, kr * 0.1); c.fill();
-    if (!uzak) { c.fillStyle = '#ffb347'; c.fillRect(px + kr * 0.25, py - kr * 0.06, kr * 0.14, kr * 0.12); }   // reflektör
+    boruBoya(c, Math.max(1.5, kr * 0.2), uzak ? '#7a838d' : '#cfd6dd', null, 0.9);
+    c.beginPath(); c.roundRect(px - kr * 0.42, py - kr * 0.13, kr * 0.84, kr * 0.26, kr * 0.12);
+    dolguBoya(c, uzak ? '#454b57' : '#3c4250', 0.8);
+    oval(c, bx, by, kr * 0.2, kr * 0.2, '#e3e8ec');
   }
   // Zil: gidon üstünde küçük kubbe; z 0..1 çalarken titrer
   function zilCiz(c, x, y, s, z, tm) {
     c.save(); c.translate(x, y); c.rotate(Math.sin(tm * 46) * 0.35 * z); c.scale(s, s);
-    c.fillStyle = '#c99b2f'; c.fillRect(-0.6, 0, 1.2, 2.2);
     c.beginPath(); c.moveTo(-3.4, 0.4); c.quadraticCurveTo(-3.4, -3.6, 0, -3.8); c.quadraticCurveTo(3.4, -3.6, 3.4, 0.4); c.closePath();
-    c.fillStyle = '#f5cf4e'; c.fill(); c.strokeStyle = '#b8892a'; c.lineWidth = 0.6; c.stroke();
+    dolguBoya(c, '#f5cf4e', 1);
     oval(c, -1.2, -2.2, 1, 0.7, 'rgba(255,255,255,.85)');
     c.restore();
   }
@@ -225,16 +256,20 @@ const YOL12 = (() => {
       faz: 'park', t: 0, arac: arac(o), zemin,
       parkBas: nx(cBas), parkSon: nx(cSon),
       x: nx(cBas) + 60, v: 0, ivme: 0, teker: 0, w: 0, krank: 0, krankW: 0, pedal: false,
-      it: 0, itAktif: false, itYerde: false, birIt: 0, basOnce: false, egim: 0, yay: yayKur(), zil: 0, zilT: 0, ayak: 0, bekle: 0,
+      it: 0, itAktif: false, itYerde: false, birIt: 0, basOnce: false, binBob: 0, nese: 0, salla: 0, bakGeri: 0,
+      selam: { durum: 0, t: 0, x: 0 }, yokus0: 0, yokus1: 0, yokusta: false, egim: 0, yay: yayKur(), zil: 0, zilT: 0, ayak: 0, bekle: 0,
       renk: o.ad === 'yol2' ? RENK_ANNE.kampus : RENK_ANNE.nane,
       anne: { faz: 'park', x: nx(cBas) - 60, bx: nx(cBas) - 60, ax: 0, v: 0, t: 0, teker: 0, w: 0, krank: 0, krankW: 0, pedal: false,
         egim: 0, yay: yayKur(), zil: 0, zilBekle: -1, yon: 1, ilkZil: false },
       piril: { x: 0, y: 0, vx: 0, vy: 0, sevinc: 0 },
       surpriz: [], halka: [],
-      poz: { u: 0, arac: arac(o), it: 0, krank: 0, hiz: 0, egim: 0, kask: KASK_RENK },
-      anneOpt: { poz: 'bisiklet', u: 0, krank: 0, egim: 0, hiz: 0, bak: 0.2, yon: 1, zil: 0 }
+      poz: { u: 0, arac: arac(o), it: 0, krank: 0, hiz: 0, egim: 0, kask: KASK_RENK, salla: 0, nese: 0, bakGeri: 0 },
+      anneOpt: { poz: 'bisiklet', u: 0, krank: 0, egim: 0, hiz: 0, bak: 0.2, yon: 1, zil: 0, salla: 0, nese: 0, egil: 0, katman: undefined, golge: undefined }
     };
     o.x = k.x;
+    // yol1: yolun ortasında anne yanaşır, el sallaşırlar · yol2: göletin yokuşu (pedal durur, keyifle süzülürler)
+    k.selam.x = o.ad === 'yol1' ? k.parkBas + (k.parkSon - k.parkBas) * 0.5 : Infinity;
+    if (o.ad === 'yol2') { k.yokus0 = k.parkBas + (k.parkSon - k.parkBas) * 0.32; k.yokus1 = k.parkBas + (k.parkSon - k.parkBas) * 0.76; }
     // Yol sürprizleri: rotanın kesirlerine dağıtılır (kısa yol2'de daha az)
     const L = k.parkSon - k.parkBas;
     const plan = o.ad === 'yol2'
@@ -273,8 +308,13 @@ const YOL12 = (() => {
     // anne: kendi bisikletine yürür
     const a = k.anne;
     if (anneVar() && a.faz === 'park') {
+      // anne hâlâ başka bir binişteyse (ör. o binişin inişi bitmeden buraya gelindiyse) onu orada park ettir
+      const once = ANNE12.sahip;
+      if (once && once !== o && once.yk && once.yk.anne.faz !== 'bitti') { const b = once.yk.anne; b.faz = 'bitti'; b.v = 0; b.bx = b.x; }
       try { ANNE12.devral(o); } catch (e) { omHataBildir('ANNE12.devral', e); }
       a.faz = 'yuru'; a.t = 0; a.ax = Number.isFinite(ANNE12.x) ? ANNE12.x : k.x - 120; a.v = 0;
+      // anne çok uzaktaysa (ekran dışında; ör. test ışınlaması) bisikletinin biraz gerisinden yürüyerek gelsin
+      if (Math.abs(a.ax - (a.bx - 22)) > 500) a.ax = a.bx - 22 - 60;
     }
     if (typeof V12 !== 'undefined' && V12) V12.binis = o.ad;
     OLAY.emit('k12BinisBasla', { ad: o.ad, o, arac: k.arac });
@@ -324,11 +364,18 @@ const YOL12 = (() => {
       } else if (bas && kalan > 220) {
         ivme += A.pedalIvme * (1 - k.v / A.vMax) + 15;
       }
-      k.pedal = k.arac === 'bisiklet' && bas && kalan > 220;
+      // göletin yokuşu: yerçekimi gibi hafif ivme, pedal durur (süzülme), yüz çok mutlu
+      const yokusOnce = k.yokusta;
+      k.yokusta = k.x > k.yokus0 && k.x < k.yokus1;
+      if (k.yokusta && !yokusOnce) OLAY.emit('k12Surpriz', { ad: o.ad, o, tur: 'yokus', x: k.x, y: k.zemin });
+      if (k.yokusta && k.v < A.vMax * 1.15) ivme += 85;
+      if (k.yokusta && k.arac === 'scooter') { k.birIt = 0; }
+      k.pedal = k.arac === 'bisiklet' && bas && kalan > 220 && !k.yokusta;
       // sürtünme (süzülme), fren
       if (!(k.arac === 'scooter' && k.itYerde) && !k.pedal) ivme -= A.surt + A.surtK * k.v;
       if (fren) ivme -= 280;
-      k.v = Math.max(0, Math.min(A.vMax, k.v + ivme * dt));
+      k.v = Math.max(0, Math.min(A.vMax * (k.yokusta ? 1.15 : 1), k.v + ivme * dt));
+      if (!k.yokusta && k.v > A.vMax) k.v = Math.max(A.vMax, k.v - 40 * dt);   // yokuştan sonra yavaşça normale
       if (k.v < 6 && !bas && !(k.itAktif)) k.v = 0;
       // varış: hıza göre yumuşak yavaşlama; son 420 birimde parmak olmasa da parka kadar süzülür
       if (kalan < 420) {
@@ -350,12 +397,37 @@ const YOL12 = (() => {
     k.w = k.v / TK.r; k.teker += k.w * dt;
     if (k.arac === 'bisiklet') krankAdim(k, dt, TK.r, 2.2, 4.2);
     yayAdim(k.yay, dt, k.x + TK.on[0], k.x + TK.arka[0], k.v);
-    const egimHedef = clamp(k.ivme / 2600, -0.05, 0.1) + (bas && k.faz === 'surus' ? 0.03 : 0);
+    const egimHedef = clamp(k.ivme / 2600, -0.05, 0.1) + (bas && k.faz === 'surus' ? 0.03 : 0) + (k.yokusta ? 0.04 : 0);
     k.egim = lerp(k.egim, egimHedef, 1 - Math.exp(-dt * 4));
+    // binici sallantısı: bisiklette her pedal basışında hafif iniş, scooter'da itişte hafif çömelme (araç sallanmaz)
+    let bb = 0;
+    if (k.arac === 'bisiklet') bb = 0.45 * (1 - Math.cos(2 * k.krank)) * clamp(k.krankW / 6, 0, 1);
+    else if (k.itYerde) bb = 0.9 * Math.sin(Math.PI * clamp((k.it - 0.25) / 0.4, 0, 1));
+    k.binBob = lerp(k.binBob, bb, 1 - Math.exp(-dt * 16));
+    k.nese = lerp(k.nese, k.yokusta ? 1 : 0, 1 - Math.exp(-dt * 2.5));
+    selamAdim(o, k, dt);
     // Feza
-    P.x = k.x; P.y = k.zemin + yayBob(k.yay, k.v); P.vx = k.v; P.vy = 0; P.ground = true; P.f = 1;
+    P.x = k.x; P.y = k.zemin + yayBob(k.yay, k.v) + k.binBob; P.vx = k.v; P.vy = 0; P.ground = true; P.f = 1;
     o.x = k.x;
     pozYaz(k);
+  }
+  // yol1 selamlaşması (~4 sn): anne yanaşır (yine arkada), zilini çalar; Feza zille cevap verip ona el sallar, anne de sallar;
+  // sonra anne yine arkaya düşer. Feza durmuşsa/yavaşsa bekler; olmazsa da yol devam eder.
+  function selamAdim(o, k, dt) {
+    const s = k.selam;
+    if (s.durum === 0) {
+      if (k.faz === 'surus' && k.x > s.x && k.v > 140 && k.anne.faz === 'sur') { s.durum = 1; s.t = 0; OLAY.emit('k12Surpriz', { ad: o.ad, o, tur: 'selam', x: k.x, y: k.zemin }); }
+      return;
+    }
+    if (s.durum !== 1) { k.salla = 0; k.bakGeri = 0; k.yanas = 0; return; }
+    s.t += dt;
+    const t = s.t, ac = (t0, t1) => smooth(clamp((t - t0) / (t1 - t0), 0, 1));
+    if (t >= 1.0 && t - dt < 1.0) zilCal(o, 'anne', true);
+    if (t >= 1.45 && t - dt < 1.45) zilCal(o, 'feza', true);
+    k.salla = ac(1.6, 2.0) * (1 - ac(3.3, 3.8));
+    k.yanas = ac(0, 1.1) * (1 - ac(3.4, 4.6));
+    k.bakGeri = ac(1.2, 1.7) * (1 - ac(3.4, 3.9));
+    if (t > 4.6 || k.faz !== 'surus') { s.durum = 2; k.salla = 0; k.bakGeri = 0; }
   }
   // Krank: pedal çevrilirken tekerle orantılı (en az bir ritimle); süzülürken yavaşlar, pedallar yatay kalır
   function krankAdim(k, dt, r, oran, enAz) {
@@ -374,7 +446,7 @@ const YOL12 = (() => {
   function pozYaz(k) {
     const q = k.poz, A = AYAR[k.arac];
     q.hiz = clamp(k.v / A.vMax, 0, 1); q.egim = k.egim; q.it = k.it; q.krank = k.krank; q.arac = k.arac;
-    q.kask = KASK_RENK;
+    q.kask = KASK_RENK; q.salla = k.salla; q.bakGeri = k.bakGeri; q.nese = k.nese;
     if (!fezaHazir()) return;
     try {
       if (k.faz === 'binis' || k.faz === 'inis') fezaPoz12('binis_in', q);
@@ -422,7 +494,7 @@ const YOL12 = (() => {
       a.ax += adimX; a.yon = ad > 1 ? Math.sign(d) : 1;
       q.poz = a.v > 140 ? 'kos' : 'yuru'; q.hiz = a.v; q.yon = a.yon; q.u = 0;
       ANNE12.x = a.ax; ANNE12.y = k.zemin;
-      if (ad < 1.5 || a.t > 6) { a.faz = 'bin'; a.t = 0; a.v = 0; a.yon = 1; }
+      if (ad < 1.5 || (a.t > 6 && ad < 60)) { a.faz = 'bin'; a.t = 0; a.v = 0; a.yon = 1; }
       return;
     }
     if (a.faz === 'bin') {
@@ -437,10 +509,20 @@ const YOL12 = (() => {
       // Feza'nın arkasında kal: hedef ara ANNE_ARA; varış parkını geçme; Feza'yı asla geçme
       const parkHedef = k.parkSon - 60;
       const fezaBitti = k.faz === 'inis' || k.faz === 'bitti';
-      const izle = Math.min(k.x - ANNE_ARA, parkHedef);
-      const fv = fezaBitti || k.x - ANNE_ARA >= parkHedef ? 0 : k.v;
+      // selamlaşmada anne yanaşır (yine arkada, ~82 birim), sonra yine geriye düşer
+      const st = k.selam.durum === 1 ? k.selam.t : -1, ac = (t0, t1) => smooth(clamp((st - t0) / (t1 - t0), 0, 1));
+      const yanas = st < 0 ? 0 : ac(0, 1.1) * (1 - ac(3.4, 4.6));
+      // annenin ön tekeri Feza'nın arka tekerinden hep en az ~45 birim geride: selamlaşmada "hemen arkasına" yanaşır,
+      // başını uzatıp (opt.egil) el sallar; asla yan yana gelip üstüne binmez
+      const TKf = k.arac === 'bisiklet' ? KUCUK_TEKER : SCOOTER_TEKER;
+      const temas = AO.onTeker[0] + AO.teker - (TKf.arka[0] - TKf.r - (k.arac === 'bisiklet' ? 7 : 0));   // anne ön ucu ↔ Feza arka ucu
+      const araMin = temas + 45, araNormal = Math.max(ANNE_ARA, temas + 58);
+      const ara = lerp(araNormal, araMin + 3, yanas);
+      q.egil = 0.85 * yanas;
+      const izle = fezaBitti ? parkHedef : Math.min(k.x - ara, parkHedef);   // Feza indiyse anne kendi park yerine süzülür
+      const fv = fezaBitti || k.x - ara >= parkHedef ? 0 : k.v;
       let vHedef = clamp(fv + (izle - a.x) * 1.1, 0, ANNE_VMAX);
-      if (k.x - a.x < ANNE_ARA_MIN) vHedef = Math.min(vHedef, k.v * 0.85);
+      if (!fezaBitti && k.x - a.x < araMin) vHedef = Math.min(vHedef, k.v * 0.85);   // parkta (Feza indi) raf aralığına yanaşabilir
       const kalan = parkHedef - a.x;
       vHedef = Math.min(vHedef, Math.sqrt(2 * 130 * Math.max(0, kalan)));
       const v0 = a.v, maxIv = vHedef > a.v ? 170 : 240;
@@ -448,13 +530,20 @@ const YOL12 = (() => {
       if (a.v < 3 && vHedef < 3) a.v = 0;
       a.v = Math.max(0, a.v);
       a.x = Math.min(a.x + a.v * dt, parkHedef);
-      a.pedal = vHedef > a.v - 4 && a.v > 2 && kalan > 150;
+      if (!fezaBitti && a.x > k.x - araMin + 6) { a.x = k.x - araMin + 6; a.v = Math.min(a.v, k.v); }   // emniyet: Feza'nın üstüne asla binmez
+      const yokusta = a.x > k.yokus0 && a.x < k.yokus1;
+      a.pedal = vHedef > a.v - 4 && a.v > 2 && kalan > 150 && !yokusta;
+      // Feza kendiliğinden anneye el sallarsa (FEZA12.anneBak) anne de gecikmeyle karşılık verir
+      const cevap = typeof FEZA12 !== 'undefined' && FEZA12 && Number.isFinite(FEZA12.anneBak) ? clamp(FEZA12.anneBak, 0, 1) : 0;
+      a.cevap = lerp(a.cevap || 0, cevap, 1 - Math.exp(-dt * 3));
+      q.salla = Math.max(st < 0 ? 0 : ac(1.15, 1.5) * (1 - ac(3.2, 3.7)), smooth(a.cevap)); q.zil = a.zil;
+      q.nese = lerp(q.nese || 0, yokusta ? 1 : 0, 1 - Math.exp(-dt * 2.5));
       a.w = a.v / AO.teker; a.teker += a.w * dt;
       krankAdim(a, dt, AO.teker, 2.4, 2.6);
       yayAdim(a.yay, dt, a.x + AO.onTeker[0], a.x + AO.arkaTeker[0], a.v);
       a.egim = lerp(a.egim, clamp((a.v - v0) / dt / 3000, -0.04, 0.06), 1 - Math.exp(-dt * 4));
       q.poz = 'bisiklet'; q.krank = a.krank; q.hiz = clamp(a.v / 300, 0, 1); q.egim = 0; q.yon = 1; q.u = 1;
-      q.bak = clamp(0.15 + (k.x - a.x - ANNE_ARA) / 400, 0, 0.4);
+      q.bak = Math.max(clamp(0.15 + (k.x - a.x - ANNE_ARA) / 400, 0, 0.4), yanas);
       ANNE12.x = a.x; ANNE12.y = k.zemin;
       if (fezaBitti && kalan < 1 && a.v < 4) { a.x = parkHedef; a.v = 0; a.faz = 'in'; a.t = 0; a.ilkZil = false; }
     } else if (a.faz === 'in') {
@@ -470,14 +559,14 @@ const YOL12 = (() => {
   function anneBirak(o) {
     const k = yol(o), a = k.anne;
     a.faz = 'bitti'; a.v = 0; a.bx = a.x;
-    if (typeof ANNE12 !== 'undefined' && ANNE12) {
+    if (typeof ANNE12 !== 'undefined' && ANNE12 && (!ANNE12.sahip || ANNE12.sahip === o)) {   // anne başka binişe geçtiyse dokunma
       ANNE12.x = a.x; ANNE12.y = k.zemin;
       if (typeof ANNE12.birak === 'function') { try { ANNE12.birak(o); } catch (e) { omHataBildir('ANNE12.birak', e); } }
     }
   }
 
   // ── zil ──
-  function zilCal(o, kim) {
+  function zilCal(o, kim, sahne) {   // sahne: selamlaşmanın kendi zili (anne ayrıca cevap vermez)
     const k = yol(o);
     let x, y;
     if (kim === 'anne') {
@@ -485,7 +574,7 @@ const YOL12 = (() => {
       a.zil = 1; x = bx + AO.gidon[0] + 6; y = k.zemin + AO.gidon[1] - 4;
     } else {
       const F = fezaOlcu(k.arac); k.zil = 1; x = k.x + F.gidon[0] - 3; y = k.zemin + F.gidon[1] - 3;
-      if (k.anne.faz === 'sur' && k.anne.zilBekle < 0) k.anne.zilBekle = 0.45;
+      if (!sahne && k.anne.faz === 'sur' && k.anne.zilBekle < 0) k.anne.zilBekle = 0.45;
       k.piril.sevinc = 1;
     }
     for (let i = 0; i < 2; i++) kivilcim(x + 4 + i * 6, y - 6, 18 + i * 10, -40 - i * 12, 1.3, 3.2, i ? '#ffd36b' : '#ff9fc6', 1);
@@ -575,7 +664,9 @@ const YOL12 = (() => {
   // ── Pırıl binişte Feza'nın yanında uçar (oyun.js P.ucus'ta çizmez) ──
   function pirilAdim(o, dt, tm) {
     const k = yol(o), pr = k.piril;
-    const hx = P.x - 72 + Math.sin(tm * 0.8) * 16, hy = P.y - 128 + Math.sin(tm * 1.6) * 8 - pr.sevinc * 14;
+    // anne yanaşınca Pırıl öne-yukarı süzülür (annenin başının önünde kalmasın)
+    const ys = k.yanas || 0;
+    const hx = P.x - 72 + 120 * ys + Math.sin(tm * 0.8) * 16, hy = P.y - 128 - 22 * ys + Math.sin(tm * 1.6) * 8 - pr.sevinc * 14;
     const kk = 34, dd = 2 * Math.sqrt(kk) * 0.9;
     pr.vx += (kk * (hx - pr.x) - dd * (pr.vx - k.v)) * dt; pr.vy += (kk * (hy - pr.y) - dd * pr.vy) * dt;
     pr.x += pr.vx * dt; pr.y += pr.vy * dt;
@@ -603,7 +694,7 @@ const YOL12 = (() => {
     anneAdim(o, dt);
   }
 
-  // Annenin bisikleti + anne (Feza'nın arkasında; 'ciz' katmanı)
+  // Annenin bisikleti + anne (Feza'nın arkasında; 'ciz' katmanı). Derinlik: annenin uzak kolu/bacağı → bisiklet → annenin gerisi.
   function anneCiz(o, tm) {
     const k = yol(o), a = k.anne, AO = anneOlcu();
     const parkta = a.faz === 'park' || a.faz === 'yuru' || a.faz === 'bitti';
@@ -614,172 +705,148 @@ const YOL12 = (() => {
     }
     const surus = a.faz === 'sur';
     const bob = surus ? yayBob(a.yay, a.v) : 0, egim = surus ? yayEgim(a.yay, AO.onTeker[0] - AO.arkaTeker[0]) : 0;
-    golge(g, bx, by, 82, 0.18);
+    golge(g, bx, by, 64 + bob * 1.5, 0.34);
     g.save(); g.translate(bx, by + bob); g.rotate(egim);
     const durum = AN_DURUM;
     durum.teker = parkta ? 0 : a.teker; durum.w = surus ? a.w : 0; durum.krank = a.krank; durum.zil = a.zil; durum.hiz = surus ? a.v : 0;
     durum.ayak = parkta ? 1 : a.faz === 'bin' ? 1 - smooth(clamp(a.t / 0.3, 0, 1)) : a.faz === 'in' ? smooth(clamp((a.t - ANNE_IN_SURE + 0.3) / 0.3, 0, 1)) : 0;
+    const binik = (a.faz === 'bin' || a.faz === 'sur' || a.faz === 'in') && anneVar();
+    if (binik) anneParca(k, 'uzak', tm);
     anneBisikletCiz(g, AO, k.renk, durum, tm);
-    const binik = a.faz === 'bin' || a.faz === 'sur' || a.faz === 'in';
-    if (binik && anneVar()) {
-      try { anne12Ciz(g, 0, 0, 1, tm, k.anneOpt); } catch (e) { omHataBildir('anne12Ciz', e); }
-    }
-    anneBisikletOnCiz(g, AO, durum, tm);
+    if (binik) anneParca(k, 'yakin', tm);
     g.restore();
     if (a.faz === 'yuru') anneYuruCiz(k, tm);
+  }
+  function anneParca(k, katman, tm) {
+    const q = k.anneOpt; q.katman = katman; q.golge = false;
+    try { anne12Ciz(g, 0, 0, 1, tm, q); } catch (e) { omHataBildir('anne12Ciz', e); }
+    q.katman = undefined; q.golge = undefined;
   }
   const AN_DURUM = { teker: 0, w: 0, krank: 0, zil: 0, hiz: 0, ayak: 1 };
   function anneYuruCiz(k, tm) {
     if (!anneVar()) return;
     try { anne12Ciz(g, k.anne.ax, k.zemin, 1, tm, k.anneOpt); } catch (e) { omHataBildir('anne12Ciz', e); }
   }
-  function golge(c, x, y, rx, a) {
-    c.globalAlpha = a; oval(c, x, y + 1, rx, 5.5, '#2f3a2c'); c.globalAlpha = a * 0.9; oval(c, x, y + 1, rx * 0.6, 3.5, '#2f3a2c'); c.globalAlpha = 1;
-  }
 
-  // ── annenin şehir bisikleti (köken yer-orta; ölçüler ANNE12_BISIKLET) ──
+  // ── annenin şehir bisikleti (köken yer-orta; ölçüler ANNE12_BISIKLET): alçak kadro, sepet, zil, çamurluklar, okunur zincir ──
   function anneBisikletCiz(c, A, R, d, tm) {
     const r = A.teker, rA = A.arkaTeker, rO = A.onTeker, B = A.pedal, S = A.sele, G = A.gidon, kr = A.krank;
     const Ht = [rO[0] - 12, G[1] + 16], Hb = [rO[0] - 7, G[1] + 30];   // gidon borusu üstü/altı
     const Sp = [S[0] + 3, S[1] + 10];                                    // sele borusu ağzı
-    // uzak pedal kolu (kadronun arkasında)
-    pedalKol(c, B[0], B[1], kr, d.krank + Math.PI, true);
-    // tekerlekler + çamurluklar
-    const stil = { lastik: '#3b3f48', jant: '#d7dee5', tel: '#eef3f6', gobek: '#9aa5af', tel_n: 18 };
+    const ar = kr * 0.62;
+    pedalKol(c, B[0], B[1], kr, d.krank + Math.PI, true);               // uzak pedal (kadronun arkasında)
+    const stil = { lastik: '#394052', jant: '#e3e8ee', tel: '#c9d1d9', gobek: '#b3bcc5', tel_n: 12 };
     tekerlek(c, rA[0], rA[1], r, d.teker, d.w, stil);
     tekerlek(c, rO[0], rO[1], r, d.teker, d.w, stil);
-    camurluk(c, rA[0], rA[1], r + 3.2, Math.PI * 0.98, Math.PI * 1.92, R.camur, R.camurK);
-    camurluk(c, rO[0], rO[1], r + 3.2, Math.PI * 1.12, Math.PI * 2.04, R.camur, R.camurK);
-    oval(c, rA[0] - r - 2.2, rA[1] - 3, 1.6, 2.6, '#ff6f5e');            // arka reflektör
+    camurluk(c, rA[0], rA[1], r + 3, Math.PI * 1.0, Math.PI * 1.9, R.camur);
+    camurluk(c, rO[0], rO[1], r + 3, Math.PI * 1.15, Math.PI * 2.02, R.camur);
+    c.beginPath(); c.ellipse(rA[0] - r - 2.6, rA[1] - 4, 1.6, 2.6, 0, 0, TAU); dolguBoya(c, '#ff6f5e', 0.8);   // arka reflektör
     // arka bagaj
     const bgY = rA[1] - r - 6;
-    c.beginPath(); cizgi(c, rA[0] - 15, bgY, Sp[0] - 3, bgY); cizgi(c, rA[0] - 12, bgY, rA[0], rA[1]); cizgi(c, rA[0] - 2, bgY, rA[0] + 1, rA[1]);
-    boruBoya(c, 2.2, '#7b858f', '#b8c2cb', null);
-    // zincir: aynadan arka dişliye
-    const ar = kr * 0.62;
-    c.beginPath(); cizgi(c, B[0], B[1] - ar, rA[0], rA[1] - 3.4); cizgi(c, B[0], B[1] + ar, rA[0], rA[1] + 3.4);
-    c.strokeStyle = '#5b6068'; c.lineWidth = 1.3; c.stroke();
-    // kadro: alçak (step-through) çift kavisli boru, sele borusu, arka çatallar
+    c.beginPath(); cizgi(c, rA[0] - 14, bgY, Sp[0] - 3, bgY); cizgi(c, rA[0] - 10, bgY, rA[0], rA[1]);
+    boruBoya(c, 1.8, '#c3cbd3', null, 0.9);
+    zincir(c, B, ar, rA, 3.4, d.krank);
+    // kadro: tek kalın alçak kavis (adım atılarak binilir), sele borusu, arka çatallar, gidon borusu
     c.beginPath();
-    c.moveTo(Hb[0], Hb[1]); c.quadraticCurveTo(B[0] + 20, B[1] + 6, B[0] - 1, B[1] - 2);               // alt kavis
-    c.moveTo(Hb[0] - 1, Hb[1] - 7); c.quadraticCurveTo(B[0] + 14, B[1] - 14, Sp[0] + 1, Sp[1] + 22);   // üst kavis
-    c.moveTo(B[0], B[1]); c.lineTo(Sp[0], Sp[1]);                                                         // sele borusu
-    c.moveTo(B[0], B[1]); c.lineTo(rA[0], rA[1]);                                                         // zincir çatalı
-    c.moveTo(Sp[0] - 0.5, Sp[1] + 5); c.lineTo(rA[0], rA[1]);                                             // sele çatalı
-    c.moveTo(Ht[0], Ht[1]); c.lineTo(Hb[0], Hb[1]);                                                       // gidon borusu
-    boruBoya(c, 4.6, R.kenar, R.kadro, R.isik);
-    // ön çatal
-    c.beginPath(); c.moveTo(Hb[0], Hb[1]); c.quadraticCurveTo(rO[0] - 1, rO[1] - 14, rO[0], rO[1]);
-    boruBoya(c, 3.2, '#7b858f', '#c8d1d9', '#f4f7f9');
-    // zincir muhafazası + aynalı dişli (krankla döner)
-    c.save(); c.translate(B[0], B[1]); c.rotate(d.krank);
-    c.beginPath(); for (let i = 0; i < 12; i++) { const a = i * TAU / 12; c.moveTo(Math.cos(a) * ar * 0.55, Math.sin(a) * ar * 0.55); c.lineTo(Math.cos(a) * ar, Math.sin(a) * ar); }
-    c.strokeStyle = '#8f98a1'; c.lineWidth = 1.2; c.stroke(); c.restore();
-    c.beginPath(); c.arc(B[0], B[1], ar + 1.5, Math.PI * 0.95, Math.PI * 2.05); c.lineTo(rA[0] + 4, rA[1] - 5); c.lineTo(rA[0] + 4, rA[1] - 1.5); c.closePath();
-    c.fillStyle = R.kadro; c.globalAlpha = 0.92; c.fill(); c.globalAlpha = 1; c.strokeStyle = R.kenar; c.lineWidth = 0.9; c.stroke();
-    c.beginPath(); c.moveTo(B[0] - ar, B[1] - ar * 0.55); c.lineTo(rA[0] + 6, rA[1] - 4); c.strokeStyle = R.isik; c.lineWidth = 1; c.stroke();
-    oval(c, B[0], B[1], kr * 0.28, kr * 0.28, '#a9b3bc');
+    c.moveTo(Hb[0], Hb[1]); c.quadraticCurveTo(B[0] + 20, B[1] + 5, B[0], B[1]);
+    c.moveTo(B[0], B[1]); c.lineTo(Sp[0], Sp[1]);
+    c.moveTo(B[0], B[1]); c.lineTo(rA[0], rA[1]);
+    c.moveTo(Sp[0] - 0.5, Sp[1] + 4); c.lineTo(rA[0], rA[1]);
+    c.moveTo(Ht[0], Ht[1]); c.lineTo(Hb[0], Hb[1]);
+    boruBoya(c, 4.4, R.kadro, R.isik, 1.3);
+    c.beginPath(); c.moveTo(Hb[0], Hb[1]); c.quadraticCurveTo(rO[0] - 1, rO[1] - 14, rO[0], rO[1]);   // ön çatal
+    boruBoya(c, 3, '#c8d0d8', '#f4f7f9', 1.1);
+    ayna(c, B, ar, d.krank, '#d3dae0');
     // sele borusu + yaylı deri sele
-    c.beginPath(); c.moveTo(Sp[0], Sp[1]); c.lineTo(S[0] + 1, S[1] + 3); boruBoya(c, 2.4, '#7b858f', '#d0d8df', null);
-    c.beginPath(); for (let i = 0; i < 2; i++) { const yx = S[0] - 4 + i * 7; c.moveTo(yx, S[1] + 1.5); c.lineTo(yx, S[1] + 4.5); } c.strokeStyle = '#6c737b'; c.lineWidth = 1.4; c.stroke();
-    c.beginPath(); c.moveTo(S[0] - 9, S[1] + 0.5); c.quadraticCurveTo(S[0] - 9, S[1] - 3.6, S[0] - 1, S[1] - 3.4); c.quadraticCurveTo(S[0] + 8, S[1] - 2.6, S[0] + 11, S[1] - 0.4);
-    c.quadraticCurveTo(S[0] + 2, S[1] + 2.6, S[0] - 9, S[1] + 0.5); c.fillStyle = R.sele; c.fill();
-    c.beginPath(); c.moveTo(S[0] - 7, S[1] - 2); c.quadraticCurveTo(S[0], S[1] - 3.4, S[0] + 7, S[1] - 1.8); c.strokeStyle = R.seleI; c.lineWidth = 1.1; c.stroke();
-    // ön sepet (hasır) + içinde çiçekler; altında far
-    const sx0 = Ht[0] + 4, sy0 = Ht[1] - 9, sw = 27, sh = 19;
+    c.beginPath(); c.moveTo(Sp[0], Sp[1]); c.lineTo(S[0] + 1, S[1] + 3); boruBoya(c, 2.2, '#cdd4db', null, 1);
+    c.beginPath(); c.moveTo(S[0] - 9, S[1] + 0.8); c.quadraticCurveTo(S[0] - 9, S[1] - 3.8, S[0] - 1, S[1] - 3.6); c.quadraticCurveTo(S[0] + 8, S[1] - 2.8, S[0] + 11, S[1] - 0.4);
+    c.quadraticCurveTo(S[0] + 2, S[1] + 2.8, S[0] - 9, S[1] + 0.8); dolguBoya(c, R.sele, 1.1);
+    c.beginPath(); c.moveTo(S[0] - 6, S[1] - 2.2); c.quadraticCurveTo(S[0], S[1] - 3.4, S[0] + 6, S[1] - 2); c.strokeStyle = R.seleI; c.lineWidth = 1; c.stroke();
+    // ön sepet (sade hasır) + içinde bohça ve çiçekler; altında far
+    const sx0 = Ht[0] + 4, sy0 = Ht[1] - 9, sw = 26, sh = 18;
     c.beginPath(); c.moveTo(sx0, sy0); c.lineTo(sx0 + sw, sy0); c.lineTo(sx0 + sw - 3, sy0 + sh); c.lineTo(sx0 + 3, sy0 + sh); c.closePath();
-    c.fillStyle = '#d9a866'; c.fill(); c.strokeStyle = '#9c6b37'; c.lineWidth = 1.2; c.stroke();
+    dolguBoya(c, '#dcae6c', 1.2);
     c.beginPath();
-    for (let i = 1; i < 5; i++) { const yy = sy0 + i * sh / 5; c.moveTo(sx0 + 0.6 * i, yy); c.lineTo(sx0 + sw - 0.6 * i, yy); }
-    for (let i = 1; i < 7; i++) { const xx = sx0 + i * sw / 7; c.moveTo(xx, sy0); c.lineTo(xx - (xx - sx0 - sw / 2) * 0.12, sy0 + sh); }
-    c.strokeStyle = 'rgba(140,90,45,.55)'; c.lineWidth = 0.7; c.stroke();
-    c.beginPath(); c.moveTo(sx0 - 1, sy0); c.lineTo(sx0 + sw + 1, sy0); c.strokeStyle = '#b98345'; c.lineWidth = 2.4; c.stroke();
-    // sepette piknik bohçası ve çiçekler (rüzgârda hafif sallanır)
+    for (let i = 1; i < 3; i++) { const yy = sy0 + i * sh / 3; cizgi(c, sx0 + i, yy, sx0 + sw - i, yy); }
+    for (let i = 1; i < 4; i++) { const xx = sx0 + i * sw / 4; cizgi(c, xx, sy0 + 1, xx - (xx - sx0 - sw / 2) * 0.12, sy0 + sh - 1); }
+    c.strokeStyle = 'rgba(150,98,48,.55)'; c.lineWidth = 0.9; c.stroke();
+    c.beginPath(); cizgi(c, sx0 - 1, sy0, sx0 + sw + 1, sy0); boruBoya(c, 1.8, '#c08a4b', null, 0.9);
     const sal = Math.sin(tm * 3.1) * 0.5 * clamp(d.hiz / 200, 0.2, 1);
-    oval(c, sx0 + 9, sy0 - 2, 7, 5, '#f26b6b'); oval(c, sx0 + 7, sy0 - 4, 2.5, 1.6, '#fff4f4');
+    c.beginPath(); c.ellipse(sx0 + 8, sy0 - 2.5, 6.5, 4.8, 0, Math.PI, TAU); dolguBoya(c, '#f26b6b', 1);
     const cicek = ['#ffd84d', '#ff9ec7', '#ffffff'];
     for (let i = 0; i < 3; i++) {
-      const fx = sx0 + 16 + i * 4 + sal * (i + 1), fy = sy0 - 9 - (i % 2) * 4;
-      c.beginPath(); c.moveTo(sx0 + 15 + i * 3, sy0 + 1); c.quadraticCurveTo(sx0 + 16 + i * 3.5, sy0 - 4, fx, fy); c.strokeStyle = '#5aa35a'; c.lineWidth = 1; c.stroke();
-      for (let j = 0; j < 5; j++) { const a = j * TAU / 5 + tm * 0.2; oval(c, fx + Math.cos(a) * 2, fy + Math.sin(a) * 2, 1.6, 1.6, cicek[i]); }
-      oval(c, fx, fy, 1.1, 1.1, '#f5a623');
+      const fx = sx0 + 16 + i * 4 + sal * (i + 1), fy = sy0 - 8 - (i % 2) * 4;
+      c.beginPath(); c.moveTo(sx0 + 15 + i * 3, sy0); c.quadraticCurveTo(sx0 + 16 + i * 3.5, sy0 - 4, fx, fy); c.strokeStyle = '#4d9a52'; c.lineWidth = 1.1; c.stroke();
+      c.beginPath(); c.arc(fx, fy, 2.6, 0, TAU); dolguBoya(c, cicek[i], 0.8);
+      oval(c, fx, fy, 1, 1, '#f5a623');
     }
-    c.fillStyle = '#f7f1dc'; c.beginPath(); c.roundRect(Hb[0] + 2, Hb[1] - 6, 6, 5, 2); c.fill();   // far
-    oval(c, Hb[0] + 7.8, Hb[1] - 3.5, 1.3, 2, '#fff8c8');
-    // gidon: kısa boğaz, geriye kıvrık şehir gidonu, sap
+    c.beginPath(); c.roundRect(Hb[0] + 2, Hb[1] - 6, 6, 5, 2); dolguBoya(c, '#f7f1dc', 0.9);   // far
+    oval(c, Hb[0] + 7.6, Hb[1] - 3.5, 1.1, 1.8, '#fff3a8');
+    // gidon: kısa boğaz, geriye kıvrık şehir gidonu, deri sap
     const St = [Ht[0] - 1, G[1] + 5];
     c.beginPath(); c.moveTo(Ht[0], Ht[1]); c.lineTo(St[0], St[1]); c.quadraticCurveTo(St[0] + 8, G[1] - 3, G[0] + 4, G[1] - 0.5);
-    boruBoya(c, 2.6, '#7b858f', '#d0d8df', '#f7f9fb');
-    c.beginPath(); c.moveTo(G[0] + 4.5, G[1] - 0.6); c.lineTo(G[0] - 3, G[1] + 0.4); boruBoya(c, 3.6, '#4a3a2e', '#7d5d45', null);   // sap
+    boruBoya(c, 2.4, '#cdd4db', '#f7f9fb', 1.1);
+    c.beginPath(); c.moveTo(G[0] + 4.5, G[1] - 0.6); c.lineTo(G[0] - 3, G[1] + 0.4); boruBoya(c, 3.2, '#7d5d45', null, 1);
     zilCiz(c, St[0] + 4, St[1] - 1.5, 1, d.zil, tm);
     // park ayağı: parkta yere iner, sürerken çatal boyunca katlanır
     const ay = d.ayak, pv = [B[0] - 7, B[1] + 2];
     const uc = [lerp(pv[0] - 24, pv[0] - 9, ay), lerp(pv[1] - 3, -0.5, ay)];
-    c.beginPath(); c.moveTo(pv[0], pv[1]); c.lineTo(uc[0], uc[1]); boruBoya(c, 2, '#6c737b', '#a8b1ba', null);
-  }
-  // Yakın pedal kolu: annenin yakın ayağının altında görünsün diye en son
-  function anneBisikletOnCiz(c, A, d) {
-    pedalKol(c, A.pedal[0], A.pedal[1], A.krank, d.krank, false);
-    oval(c, A.pedal[0], A.pedal[1], A.krank * 0.22, A.krank * 0.22, '#c3ccd4');
+    c.beginPath(); c.moveTo(pv[0], pv[1]); c.lineTo(uc[0], uc[1]); boruBoya(c, 1.8, '#a8b1ba', null, 0.9);
+    pedalKol(c, B[0], B[1], kr, d.krank, false);                        // yakın pedal (annenin yakın bacağı üstünden geçer)
   }
 
-  // ── Feza'nın mavi kick scooter'ı ──
+  // ── Feza'nın mavi kick scooter'ı: alçak tabla, ışıklı tekerlekler ──
   function scooterCiz(c, F, d, tm) {
     const TK = SCOOTER_TEKER, r = TK.r, ar = TK.arka, on = TK.on, G = F.gidon, dy = F.ayak[1];
     const isik = clamp(d.hiz / 120, 0, 1) * 0.85 + 0.15 * (0.5 + 0.5 * Math.sin(tm * 3));
     // ışıklı tekerlerin parıltısı (arkada, yumuşak)
     c.globalCompositeOperation = 'lighter';
     const li = Math.floor((d.teker / TAU) * 3) % 3, lr = LED[(li + 3) % 3], lo = LED[(li + 4) % 3];
-    lekeCiz(c, lr, ar[0], ar[1], r * 3.2, 0.55 * isik); lekeCiz(c, lo, on[0], on[1], r * 3.2, 0.55 * isik);
+    lekeCiz(c, lr, ar[0], ar[1], r * 3.2, 0.5 * isik); lekeCiz(c, lo, on[0], on[1], r * 3.2, 0.5 * isik);
     c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
-    // tekerlekler (saydam poliüretan, içinde dönen LED'ler)
     ledTeker(c, ar[0], ar[1], r, d.teker, isik, li);
     ledTeker(c, on[0], on[1], r, d.teker, isik, li + 1);
-    // arka fren çamurluğu
-    c.beginPath(); c.arc(ar[0], ar[1], r + 1.8, Math.PI * 1.32, Math.PI * 1.96);
-    boruBoya(c, 2.6, '#1e5a9a', '#3f9be6', '#bfe4ff');
-    // tabla: alçak, iki tekerin arasında sarkık; hacimli, kaymaz bant, yıldız çıkartmalar
+    // arka fren çamurluğu + tablayı göbeğe bağlayan kol
+    c.beginPath(); c.arc(ar[0], ar[1], r + 1.8, Math.PI * 1.32, Math.PI * 1.96); boruBoya(c, 2.2, '#3f9be6', '#bfe4ff', 1);
     const x0 = ar[0] + 4, x1 = on[0] - 7, th = 3.6;
-    c.beginPath(); c.moveTo(x0 - 3, dy - 1.2); c.quadraticCurveTo(ar[0] + 1, ar[1] - 0.5, ar[0] + 2.5, ar[1] - 2.5);   // arka kol: tabladan göbeğe
-    boruBoya(c, 3, '#1d5ea6', '#3b9df0', null);
-    c.fillStyle = '#1d5ea6'; c.beginPath(); c.roundRect(x0, dy, x1 - x0, th, th / 2); c.fill();
-    c.fillStyle = '#3b9df0'; c.beginPath(); c.roundRect(x0, dy - 0.6, x1 - x0, th * 0.7, th * 0.35); c.fill();
-    c.fillStyle = '#2c3a52'; c.beginPath(); c.roundRect(x0 + 3, dy - 1, x1 - x0 - 7, 1.3, 0.6); c.fill();
-    c.fillStyle = 'rgba(255,255,255,.55)'; c.fillRect(x0 + 2, dy + 0.3, x1 - x0 - 4, 0.5);
-    c.fillStyle = '#ffe27a'; yildiz4(c, x0 + 8, dy + 1.8, 1.3); c.fillStyle = '#ff9fc6'; yildiz4(c, x0 + 21, dy + 1.8, 1.2);
+    c.beginPath(); c.moveTo(x0 - 3, dy - 1); c.quadraticCurveTo(ar[0] + 1, ar[1] - 0.5, ar[0] + 2.5, ar[1] - 2.5); boruBoya(c, 2.6, '#2f8be0', null, 1);
+    // tabla: konturlu, kaymaz bant, yıldız çıkartmalar
+    c.beginPath(); c.roundRect(x0, dy - 0.6, x1 - x0, th, th / 2); dolguBoya(c, '#3b9df0', 1.2);
+    c.fillStyle = '#2c3a52'; c.beginPath(); c.roundRect(x0 + 3, dy - 0.9, x1 - x0 - 7, 1.2, 0.6); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(x0 + 2.5, dy + 1.2, x1 - x0 - 5, 0.5);
+    c.fillStyle = '#ffe27a'; yildiz4(c, x0 + 8, dy + 1.4, 1.2); c.fillStyle = '#ffffff'; yildiz4(c, x0 + 21, dy + 1.4, 1.1);
     // boyun + çatal + T-çubuk (ön teker üstündeki başlıktan yükselir)
     const Hb = [on[0] - 2.5, on[1] - r - 3.5], Ht = [G[0] + 2, G[1] + 4];
-    c.beginPath(); c.moveTo(x1 - 1.5, dy + 1); c.quadraticCurveTo(Hb[0] - 2, dy, Hb[0], Hb[1]);
-    boruBoya(c, 4.2, '#1d5ea6', '#3b9df0', '#bfe4ff');
-    c.beginPath(); c.moveTo(Hb[0], Hb[1]); c.lineTo(on[0], on[1]); boruBoya(c, 2.6, '#7d8792', '#c9d2da', '#f5f8fa');
-    c.beginPath(); c.moveTo(Hb[0], Hb[1]); c.lineTo(Ht[0], Ht[1]); boruBoya(c, 3.2, '#1d5ea6', '#47a7f2', '#d3edff');
-    c.fillStyle = '#f2f5f8'; c.beginPath(); c.roundRect(lerp(Hb[0], Ht[0], 0.35) - 2.3, lerp(Hb[1], Ht[1], 0.35) - 1.4, 4.6, 2.8, 1); c.fill();   // kelepçe
-    // sap (yandan): kısa çubuk, pembe elcik ve püsküller
-    c.beginPath(); c.moveTo(G[0] - 4, G[1] + 0.6); c.lineTo(G[0] + 4, G[1] - 0.6); boruBoya(c, 3.4, '#c9457d', '#ff8fbf', '#ffd6e8');
+    c.beginPath(); c.moveTo(x1 - 1.5, dy + 1); c.quadraticCurveTo(Hb[0] - 2, dy, Hb[0], Hb[1]); boruBoya(c, 3.8, '#3b9df0', '#bfe4ff', 1.2);
+    c.beginPath(); c.moveTo(Hb[0], Hb[1]); c.lineTo(on[0], on[1]); boruBoya(c, 2.2, '#c9d2da', '#f5f8fa', 1);
+    c.beginPath(); c.moveTo(Hb[0], Hb[1]); c.lineTo(Ht[0], Ht[1]); boruBoya(c, 2.9, '#47a7f2', '#d3edff', 1.2);
+    c.beginPath(); c.roundRect(lerp(Hb[0], Ht[0], 0.35) - 2.3, lerp(Hb[1], Ht[1], 0.35) - 1.4, 4.6, 2.8, 1); dolguBoya(c, '#f2f5f8', 0.8);   // kelepçe
+    // sap (yandan): kısa çubuk, pembe elcik, rüzgârda püsküller
+    c.beginPath(); c.moveTo(G[0] - 4, G[1] + 0.6); c.lineTo(G[0] + 4, G[1] - 0.6); boruBoya(c, 3, '#ff8fbf', '#ffd6e8', 1);
     const p = clamp(d.hiz / 200, 0, 1);
     for (let i = 0; i < 3; i++) {
       const sx = G[0] - 4, sy = G[1] + 0.5, uz = 6 + i * 1.2, a = 1.9 - p * 1.25 + Math.sin(tm * (7 + i) + i) * (0.12 + p * 0.15);
       c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(sx + Math.cos(a) * uz * 0.5 + 1, sy + Math.sin(a) * uz * 0.5, sx + Math.cos(a) * uz, sy + Math.sin(a) * uz);
-      c.strokeStyle = PARILTI[i]; c.lineWidth = 1; c.stroke();
+      c.strokeStyle = PARILTI[i]; c.lineWidth = 1.1; c.lineCap = 'round'; c.stroke();
     }
     zilCiz(c, G[0] + 1, G[1] - 1.8, 0.75, d.zil, tm);
-    oval(c, Hb[0] + 2.5, Hb[1] + 1, 1.6, 1.6, '#fff4b0');   // ön lamba
+    c.beginPath(); c.arc(Hb[0] + 2.5, Hb[1] + 1, 1.6, 0, TAU); dolguBoya(c, '#fff4b0', 0.7);   // ön lamba
     if (d.kaskAsili) kaskCiz(c, G[0] + 1, G[1] + 9, 0.5, tm);
     // park ayağı
     const ay = d.ayak, pv = [x0 + 8, dy + th], uc = [lerp(pv[0] - 8, pv[0] - 5, ay), lerp(pv[1] + 0.2, -0.3, ay)];
-    c.beginPath(); c.moveTo(pv[0], pv[1]); c.lineTo(uc[0], uc[1]); c.strokeStyle = '#6c737b'; c.lineWidth = 1.3; c.lineCap = 'round'; c.stroke();
+    c.beginPath(); c.moveTo(pv[0], pv[1]); c.lineTo(uc[0], uc[1]); boruBoya(c, 1.1, '#a8b1ba', null, 0.7);
   }
   function ledTeker(c, cx, cy, r, aci, isik, li) {
     oval(c, cx, cy, r, r, '#d6f0ff');
-    c.globalAlpha = 0.85; oval(c, cx, cy, r * 0.78, r * 0.78, '#9fd8f6'); c.globalAlpha = 1;
-    c.beginPath(); c.arc(cx, cy, r - 0.7, 0, TAU); c.strokeStyle = '#4f8fc0'; c.lineWidth = 1.4; c.stroke();
+    c.globalAlpha = 0.85; oval(c, cx, cy, r * 0.76, r * 0.76, '#9fd8f6'); c.globalAlpha = 1;
     // dönen üç LED: yanınca parlak, dururken soluk
     for (let i = 0; i < 3; i++) {
       const a = aci + i * TAU / 3, lx = cx + Math.cos(a) * r * 0.5, ly = cy + Math.sin(a) * r * 0.5;
       c.globalAlpha = 0.35 + 0.65 * isik; oval(c, lx, ly, r * 0.2, r * 0.2, LED[(li + i) % 3]);
     }
     c.globalAlpha = 1;
-    oval(c, cx, cy, r * 0.24, r * 0.24, '#eef5fa'); oval(c, cx - r * 0.06, cy - r * 0.06, r * 0.1, r * 0.1, '#ffffff');
+    c.beginPath(); c.arc(cx, cy, r - 0.6, 0, TAU); c.strokeStyle = KONTUR; c.lineWidth = 1.5; c.stroke();
+    c.beginPath(); c.arc(cx, cy, r * 0.24, 0, TAU); dolguBoya(c, '#eef5fa', 0.7);
   }
 
   // ── Feza'nın küçük bisikleti: canlı kırmızı kadro, lacivert/beyaz ayrıntı, şimşek çıkartma, destek tekerlekli, flamalı ──
@@ -792,30 +859,30 @@ const YOL12 = (() => {
   }
   function kucukBisikletCiz(c, F, d, tm) {
     const TK = KUCUK_TEKER, r = TK.r, ar = TK.arka, on = TK.on, B = F.pedal, S = F.sele, G = F.gidon, kr = F.krank;
-    const Ht = [on[0] - 7, G[1] + 9], Hb = [on[0] - 4, G[1] + 18], Sp = [S[0] + 2, S[1] + 6];
-    const kad = '#e8392b', ken = '#9e2219', isk = '#ff9c86', lac = '#24346b', lacI = '#4a64a8';
+    const Ht = [on[0] - 7, G[1] + 9], Hb = [on[0] - 4, Math.max(G[1] + 18, on[1] - r - 2)], Sp = [S[0] + 2, S[1] + 6];
+    const kad = '#e8392b', isk = '#ff9c86', lac = '#24346b', lacI = '#4a64a8';
     const p = clamp(d.hiz / 220, 0, 1);
-    // flama: arka göbekten yükselen esnek direk, ucunda dalgalanan üçgen bayrak
+    // flama: arka göbekten yükselen esnek direk, ucunda dalgalanan turuncu-sarı bayrak (hızla geriye eğilir)
     const fx0 = ar[0] - 3, fy0 = ar[1] - 2, boy = 78, egil = 6 + p * 16 + Math.sin(tm * 2.3) * 1.5;
     const ux = fx0 - egil, uy = fy0 - boy + egil * 0.25;
     c.beginPath(); c.moveTo(fx0, fy0); c.quadraticCurveTo(fx0 - egil * 0.2, fy0 - boy * 0.55, ux, uy);
-    c.strokeStyle = '#e8edf2'; c.lineWidth = 1.2; c.lineCap = 'round'; c.stroke();
+    c.strokeStyle = KONTUR; c.lineWidth = 2; c.lineCap = 'round'; c.stroke(); c.strokeStyle = '#e8edf2'; c.lineWidth = 1; c.stroke();
     const dal = tm * (5 + p * 9);
     c.beginPath(); c.moveTo(ux, uy);
     for (let i = 1; i <= 5; i++) { const u = i / 5; c.lineTo(ux - u * 27, uy + u * 4.5 + Math.sin(dal - u * 4) * 3 * u); }
     for (let i = 5; i >= 0; i--) { const u = i / 5; c.lineTo(ux - u * 27, uy + 14 - u * 9 + Math.sin(dal - u * 4 + 0.4) * 3 * u); }
-    c.closePath(); c.fillStyle = '#ffb347'; c.fill();
+    c.closePath(); dolguBoya(c, '#ffa63d', 1);
     c.beginPath(); c.moveTo(ux, uy + 4.8); for (let i = 1; i <= 5; i++) { const u = i / 5; c.lineTo(ux - u * 24, uy + 6.2 - u * 0.8 + Math.sin(dal - u * 4 + 0.2) * 3 * u); }
-    c.strokeStyle = '#fff3c4'; c.lineWidth = 1.2; c.stroke();
-    oval(c, ux, uy, 1.4, 1.4, '#ffe27a');
-    // uzak pedal kolu
-    pedalKol(c, B[0], B[1], kr, d.krank + Math.PI, true);
-    // tekerlekler (beyaz yanaklı) + çamurluklar
-    const stil = { lastik: '#3e4250', jant: '#e9edf1', tel: '#f4f7f9', gobek: lac, tel_n: 14, beyazYan: true };
+    c.strokeStyle = '#ffe58a'; c.lineWidth = 1.6; c.stroke();
+    c.beginPath(); c.arc(ux, uy, 1.5, 0, TAU); dolguBoya(c, '#ffe27a', 0.6);
+    pedalKol(c, B[0], B[1], kr, d.krank + Math.PI, true);               // uzak pedal
+    // tekerlekler (beyaz yanaklı) + beyaz çamurluklar
+    const stil = { lastik: '#394052', jant: '#e9edf1', tel: '#cfd6de', gobek: lac, tel_n: 10, beyazYan: true };
     tekerlek(c, ar[0], ar[1], r, d.teker, d.w, stil);
     tekerlek(c, on[0], on[1], r, d.teker, d.w, stil);
-    camurluk(c, ar[0], ar[1], r + 2.4, Math.PI * 1.0, Math.PI * 1.85, '#f7f9fc', lac);
-    camurluk(c, on[0], on[1], r + 2.4, Math.PI * 1.15, Math.PI * 1.98, '#f7f9fc', lac);
+    camurluk(c, ar[0], ar[1], r + 2.4, Math.PI * 1.0, Math.PI * 1.85, '#f7f9fc');
+    camurluk(c, on[0], on[1], r + 2.4, Math.PI * 1.15, Math.PI * 1.98, '#f7f9fc');
+    zincir(c, B, kr * 0.75, ar, 2.6, d.krank);
     // kadro: eğimli üst boru, alt boru, sele borusu, çatallar
     c.beginPath();
     c.moveTo(Ht[0], Ht[1] + 2); c.lineTo(Sp[0], Sp[1] + 1.5);
@@ -824,54 +891,54 @@ const YOL12 = (() => {
     c.moveTo(B[0], B[1]); c.lineTo(ar[0], ar[1]);
     c.moveTo(Sp[0], Sp[1] + 1); c.lineTo(ar[0], ar[1]);
     c.moveTo(Ht[0], Ht[1]); c.lineTo(Hb[0], Hb[1]);
-    boruBoya(c, 3.4, ken, kad, isk);
-    c.beginPath(); c.moveTo(Hb[0], Hb[1]); c.quadraticCurveTo(on[0], on[1] - 6, on[0], on[1]); boruBoya(c, 2.6, '#8b95a0', '#d5dde4', '#f7f9fb');
-    // tam zincir muhafazası (çocuk bisikleti)
-    c.beginPath(); c.moveTo(B[0] - kr * 0.2, B[1] - kr * 0.85); c.lineTo(ar[0] + 2, ar[1] - 3.2); c.arc(ar[0], ar[1], 3.6, -Math.PI / 2, Math.PI / 2);
-    c.lineTo(B[0] - kr * 0.2, B[1] + kr * 0.85); c.arc(B[0], B[1], kr * 0.88, Math.PI / 2, Math.PI * 1.5); c.closePath();
-    c.fillStyle = lac; c.fill(); c.strokeStyle = '#162248'; c.lineWidth = 0.8; c.stroke();
-    simsek(c, (B[0] + ar[0]) / 2 + 1, B[1] - 0.2, 3.4);   // sarı şimşek çıkartma
-    oval(c, B[0], B[1], kr * 0.4, kr * 0.4, '#d9dfe5');
-    // sele
-    c.beginPath(); c.moveTo(Sp[0], Sp[1]); c.lineTo(S[0] + 1, S[1] + 2); boruBoya(c, 1.8, '#8b95a0', '#d5dde4', null);
-    c.beginPath(); c.moveTo(S[0] - 5.5, S[1] + 0.3); c.quadraticCurveTo(S[0] - 5, S[1] - 2.6, S[0], S[1] - 2.2); c.quadraticCurveTo(S[0] + 5, S[1] - 1.6, S[0] + 6.5, S[1]);
-    c.quadraticCurveTo(S[0], S[1] + 2, S[0] - 5.5, S[1] + 0.3); c.fillStyle = lac; c.fill(); c.strokeStyle = '#162248'; c.lineWidth = 0.8; c.stroke();
-    c.beginPath(); c.moveTo(S[0] - 3.5, S[1] - 1.2); c.quadraticCurveTo(S[0] + 1, S[1] - 2.4, S[0] + 5, S[1] - 0.6); c.strokeStyle = lacI; c.lineWidth = 0.8; c.stroke();
-    // kadroda beyaz yıldızlar, gidon borusunda küçük far
+    boruBoya(c, 3.4, kad, isk, 1.15);
+    c.beginPath(); c.moveTo(Hb[0], Hb[1]); c.quadraticCurveTo(on[0], on[1] - 6, on[0], on[1]); boruBoya(c, 2.4, '#d5dde4', '#f7f9fb', 1);
+    // zincirin üstünde lacivert ince muhafaza + şimşek; dönen aynalı dişli
+    c.beginPath(); c.moveTo(B[0] + kr * 0.2, B[1] - kr * 0.9); c.lineTo(ar[0] + 3, ar[1] - 3.4); boruBoya(c, 2.6, lac, lacI, 0.9);
+    simsek(c, (B[0] + ar[0]) / 2 + 1, B[1] - 4.8, 3.2);
+    ayna(c, B, kr * 0.75, d.krank, '#dfe4ea');
+    // kadroda beyaz yıldızlar
     c.fillStyle = '#ffffff'; yildiz4(c, lerp(Ht[0], Sp[0], 0.38), lerp(Ht[1] + 2, Sp[1] + 1.5, 0.38) - 0.2, 1.5);
     c.fillStyle = '#ffffff'; yildiz4(c, lerp(Hb[0], B[0], 0.45), lerp(Hb[1], B[1], 0.45), 1.3);
-    c.fillStyle = lac; c.beginPath(); c.roundRect(Ht[0] + 1.2, Ht[1] + 1.5, 4.4, 3.6, 1.6); c.fill();
-    oval(c, Ht[0] + 5.2, Ht[1] + 3.3, 1.1, 1.6, '#fff6c2');
+    // sele (lacivert)
+    c.beginPath(); c.moveTo(Sp[0], Sp[1]); c.lineTo(S[0] + 1, S[1] + 2); boruBoya(c, 1.7, '#d5dde4', null, 0.9);
+    c.beginPath(); c.moveTo(S[0] - 5.5, S[1] + 0.3); c.quadraticCurveTo(S[0] - 5, S[1] - 2.6, S[0], S[1] - 2.2); c.quadraticCurveTo(S[0] + 5, S[1] - 1.6, S[0] + 6.5, S[1]);
+    c.quadraticCurveTo(S[0], S[1] + 2, S[0] - 5.5, S[1] + 0.3); dolguBoya(c, lac, 0.9);
+    c.beginPath(); c.moveTo(S[0] - 3.5, S[1] - 1.2); c.quadraticCurveTo(S[0] + 1, S[1] - 2.4, S[0] + 5, S[1] - 0.6); c.strokeStyle = lacI; c.lineWidth = 0.8; c.stroke();
+    // gidon borusunda küçük far
+    c.beginPath(); c.roundRect(Ht[0] + 1.2, Ht[1] + 1.5, 4.4, 3.6, 1.6); dolguBoya(c, lac, 0.8);
+    oval(c, Ht[0] + 5.2, Ht[1] + 3.3, 1, 1.5, '#fff6c2');
     // gidon + elcik püskülleri
     c.beginPath(); c.moveTo(Ht[0], Ht[1]); c.lineTo(Ht[0] - 0.5, G[1] + 3); c.quadraticCurveTo(Ht[0] + 3, G[1] - 1.5, G[0] + 2.5, G[1] - 0.2);
-    boruBoya(c, 2.2, '#8b95a0', '#d5dde4', '#f7f9fb');
-    c.beginPath(); c.moveTo(G[0] + 2.8, G[1] - 0.3); c.lineTo(G[0] - 2.8, G[1] + 0.3); boruBoya(c, 3, '#162248', lac, lacI);
+    boruBoya(c, 2, '#d5dde4', '#f7f9fb', 1);
+    c.beginPath(); c.moveTo(G[0] + 2.8, G[1] - 0.3); c.lineTo(G[0] - 2.8, G[1] + 0.3); boruBoya(c, 2.8, lac, lacI, 1);
     for (let i = 0; i < 4; i++) {
       const sx = G[0] - 3, sy = G[1] + 0.4, uz = 7 + (i % 2) * 1.5, a = 2.0 - p * 1.35 + Math.sin(tm * (8 + i) + i * 1.3) * (0.1 + p * 0.18);
       c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(sx + Math.cos(a) * uz * 0.5 + 1, sy + Math.sin(a) * uz * 0.5, sx + Math.cos(a) * uz, sy + Math.sin(a) * uz);
-      c.strokeStyle = PUSKUL[i]; c.lineWidth = 1.1; c.stroke();
+      c.strokeStyle = PUSKUL[i]; c.lineWidth = 1.1; c.lineCap = 'round'; c.stroke();
     }
     zilCiz(c, Ht[0] + 1, G[1] + 1, 0.75, d.zil, tm);
-    // kask park hâlinde gidonda asılı (Feza binince başına geçer)
-    if (d.kaskAsili) kaskCiz(c, G[0] - 1, G[1] + 8, 0.55, tm);
+    if (d.kaskAsili) kaskCiz(c, G[0] - 1, G[1] + 8, 0.55, tm);           // parkta kask gidonda asılı
     // destek tekerleği (yakın taraf; arka tekerin önünde)
     const dr = TK.destekR, dx = ar[0] - 7, dyy = -dr;
-    c.beginPath(); c.moveTo(ar[0], ar[1]); c.lineTo(dx + 1, dyy - 1); boruBoya(c, 2, '#8b95a0', '#d5dde4', null);
-    tekerlek(c, dx, dyy, dr, d.teker * r / dr, d.w * r / dr, { lastik: '#4a4e5a', jant: '#ffffff', tel: '#c9d3ea', gobek: kad, tel_n: 6 });
+    c.beginPath(); c.moveTo(ar[0], ar[1]); c.lineTo(dx + 1, dyy - 1); boruBoya(c, 1.6, '#d5dde4', null, 0.9);
+    tekerlek(c, dx, dyy, dr, d.teker * r / dr, d.w * r / dr, { lastik: '#3a4154', jant: '#ffffff', tel: '#c9d3ea', gobek: kad, tel_n: 6 });
+    pedalKol(c, B[0], B[1], kr, d.krank, false);                        // yakın pedal
   }
   function kaskCiz(c, x, y, s, tm) {
     c.save(); c.translate(x, y); c.rotate(Math.sin(tm * 1.7) * 0.06); c.scale(s, s);
     c.beginPath(); c.moveTo(-15, 2); c.quadraticCurveTo(-15, -17, 0, -18); c.quadraticCurveTo(15, -17, 16, 2); c.closePath();
-    c.fillStyle = KASK_RENK; c.fill(); c.strokeStyle = '#4c97c4'; c.lineWidth = 1.4; c.stroke();
+    dolguBoya(c, KASK_RENK, 2.2);
     c.beginPath(); c.moveTo(-9, -14); c.quadraticCurveTo(0, -19, 9, -14); c.strokeStyle = '#ffffff'; c.lineWidth = 3; c.stroke();
     oval(c, -6, -9, 4, 2.4, 'rgba(255,255,255,.6)', -0.4);
     c.restore();
   }
 
-  // Feza'nın aracı ('ciz': Feza'nın arkasında). Binişte P.x/P.y (çizim konumu, ara-kare yumuşatmalı) kullanılır.
+  // Feza'nın aracı ('ciz': Feza'nın arkasında). Binişte P.x/P.y (çizim konumu, ara-kare yumuşatmalı) kullanılır;
+  // P.y'deki binici sallantısı (pedal/itiş) araca geçmesin diye çıkarılır.
   function fezaAracCiz(o, tm) {
     const k = yol(o), binik = P.ucus === o;
-    const x = binik ? P.x : k.x, y = binik ? P.y : k.zemin;
+    const x = binik ? P.x : k.x, y = binik ? P.y - k.binBob : k.zemin;
     if (x < cam.x - 200 || x > cam.x + VW + 200) return;
     const F = fezaOlcu(k.arac);
     const ayak = k.faz === 'park' || k.faz === 'bitti' ? 1 : k.faz === 'binis' ? 1 - smooth(clamp(k.t / 0.35, 0, 1)) : k.faz === 'inis' ? smooth(clamp((k.t - INIS_SURE + 0.3) / 0.3, 0, 1)) : 0;
@@ -879,7 +946,7 @@ const YOL12 = (() => {
     d.teker = k.teker; d.w = k.faz === 'surus' ? k.w : 0; d.krank = k.krank; d.zil = k.zil; d.hiz = k.v; d.ayak = ayak;
     d.kaskAsili = kaskDestek() && (k.faz === 'park' || k.faz === 'bitti');
     const TK = k.arac === 'bisiklet' ? KUCUK_TEKER : SCOOTER_TEKER;
-    golge(g, k.faz === 'surus' || k.faz === 'binis' || k.faz === 'inis' ? x : k.x, k.zemin, k.arac === 'bisiklet' ? 44 : 38, 0.2);
+    golge(g, x, k.zemin, k.arac === 'bisiklet' ? 34 : 30, 0.36);
     g.save(); g.translate(x, y);
     if (binik) g.rotate(yayEgim(k.yay, TK.on[0] - TK.arka[0]));
     if (k.arac === 'bisiklet') kucukBisikletCiz(g, F, d, tm); else scooterCiz(g, F, d, tm);

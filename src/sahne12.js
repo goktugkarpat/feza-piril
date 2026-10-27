@@ -243,6 +243,18 @@ function sh12Ordek(cx, cy, r, yon, a, yavru) {   // yandan süzülen ördek (ann
   g.fillStyle = 'rgba(255,255,255,0.35)'; g.beginPath(); g.ellipse(-r * 0.1, -r * 0.15, r * 0.45, r * 0.18, -0.2, 0, Math.PI * 2); g.fill();   // kanat parlaması
   g.restore();
 }
+function sh12Kaplumbaga(cx, cy, r, adim, a) {   // kıyıda ağır ağır yürüyen minik kaplumbağa (botanik bahçesinin dostu)
+  g.save(); g.translate(cx, cy); g.globalAlpha = a;
+  g.fillStyle = 'rgba(40,60,40,0.25)'; g.beginPath(); g.ellipse(0, r * 0.05, r * 1.2, r * 0.2, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#9ccf7a';   // bacaklar sırayla adım atar
+  for (const [lx, ph] of [[-0.6, 0], [0.55, Math.PI]]) { const k = Math.sin(adim + ph) * r * 0.12; g.beginPath(); g.ellipse(lx * r + k, -r * 0.05, r * 0.2, r * 0.16, 0, 0, Math.PI * 2); g.fill(); }
+  g.beginPath(); g.ellipse(r * 1.05, -r * 0.3 + Math.sin(adim * 0.5) * r * 0.04, r * 0.3, r * 0.24, 0, 0, Math.PI * 2); g.fill();   // baş
+  g.fillStyle = '#2a1f2e'; g.beginPath(); g.arc(r * 1.17, -r * 0.36, r * 0.05, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#5f9a52'; g.beginPath(); g.ellipse(0, -r * 0.3, r, r * 0.62, 0, Math.PI, Math.PI * 2); g.fill();   // kabuk
+  g.fillStyle = '#7fb866'; g.beginPath(); g.ellipse(0, -r * 0.32, r * 0.55, r * 0.36, 0, Math.PI, Math.PI * 2); g.fill();
+  g.fillStyle = 'rgba(255,240,200,0.45)'; g.beginPath(); g.ellipse(-r * 0.3, -r * 0.62, r * 0.25, r * 0.1, -0.3, 0, Math.PI * 2); g.fill();
+  g.restore();
+}
 function sh12Ucurtma(x, y, r, sal, a, ipX, ipY) {   // eşkenar dörtgen uçurtma, ip ve kuyruk kurdeleleri
   g.save(); g.globalAlpha = a;
   if (ipX !== undefined) {
@@ -284,6 +296,13 @@ function sh12Canli(ox, oy, w, h, tm, a, hov) {
     const al = a * Math.min(1, Math.sin(u * Math.PI) * 3);
     for (let i = 3; i >= 1; i--) sh12Ordek(ox + x0 - i * r * 2.6, yy + Math.sin(t * 2 + i) * r * 0.12, r * 0.6, yon, al, true);
     sh12Ordek(ox + x0, yy + Math.sin(t * 1.6) * r * 0.1, r, yon, al, false);
+  }
+  // 2b) kıyıda minik kaplumbağa ağır ağır yürür (gidip gelir)
+  {
+    const v = (tm * 0.012 * hz) % 2, u = v < 1 ? v : 2 - v, yon = v < 1 ? 1 : -1;
+    g.save(); g.translate(ox + w * (0.22 + 0.14 * u), oy + O.kiyi + s * 0.05); g.scale(yon, 1);
+    sh12Kaplumbaga(0, 0, s * 0.018, tm * 4 * hz, a);
+    g.restore();
   }
   // 3) uçurtma salınır; ipi Feza'nın eline iner
   {

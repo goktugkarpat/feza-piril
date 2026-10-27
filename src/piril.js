@@ -582,8 +582,12 @@ function stepDragon(dt) {
   // Feza durduğunda omzunun yanında tatlıca havada asılı kalma (hover / perching)
   const fzDur = P.ground && P.idle > 0.8 && Math.abs(P.vx) < 20 && drFree() && D.mode !== 'otur';
   D.omuzW = lerp(D.omuzW || 0, fzDur ? 1 : 0, 1 - Math.exp(-dt * 3.2));
-  const tx0 = P.x - P.f * 40 + wx, ty0 = P.y - 112 + wy;
-  let tx = lerp(tx0, P.x - P.f * 27 + wx * 0.35, D.omuzW), ty = lerp(ty0, P.y - 72 + wy * 0.45, D.omuzW);
+  // B12: anne Feza'nın hemen arkasında yürür → Pırıl önde/yukarıda uçar ve öndeki omzunda asılı kalır (annenin yüzünü kapatmaz)
+  // (yan, Feza'nın yönüne değil annenin konumuna göre: Feza dönüp annesine baksa da Pırıl annenin karşı yanında kalır)
+  const b12 = BOLUM_NO === 12 && typeof ANNE12 !== 'undefined' && ANNE12 && ANNE12.hazir && isFinite(ANNE12.x);
+  const arka = b12 ? -(Math.sign(P.x - ANNE12.x) || P.f) : P.f;   // Pırıl'ın duracağı yanın tersi (normalde Feza'nın arkası)
+  const tx0 = P.x - arka * (b12 ? 34 : 40) + wx, ty0 = P.y - (b12 ? 122 : 112) + wy;
+  let tx = lerp(tx0, P.x - arka * 27 + wx * 0.35, D.omuzW), ty = lerp(ty0, P.y - 72 + wy * 0.45, D.omuzW);
   let k = lerp(28, 38, D.omuzW), damp = lerp(8.5, 11, D.omuzW), direct = false, hopW = 0, flapW = D.omuzW > 0.05 ? lerp(3.1, 2.1, D.omuzW) : 0, rollW = 0;
   // Feza hızlı koştuğunda arkasından yetişmek için heyecanla kanat çırpma ve rüzgâr girdabı
   const fzFast = Math.abs(P.vx) > 155;
@@ -753,7 +757,7 @@ function stepDragon(dt) {
     } else { D.mode = 'follow'; D.modeT = 0; D.vx = -P.f * 420; D.vy = Math.min(D.vy, 0) - 60; D.lockF = 0.45; }   // arkasından yukarı dön
   } else if (D.mode === 'orbit') {     // Feza durunca başının üstünde oyuncu bir çember
     const a = D.oa + D.modeT * 2.3;
-    tx = P.x + Math.cos(a) * 58; ty = P.y - 104 + Math.sin(a) * 18 + Math.sin(a * 2) * 6;
+    tx = P.x + (BOLUM_NO === 12 && typeof ANNE12 !== 'undefined' && ANNE12 && isFinite(ANNE12.x) ? (Math.sign(P.x - ANNE12.x) || P.f) * 34 : 0) + Math.cos(a) * 58; ty = P.y - 104 + Math.sin(a) * 18 + Math.sin(a * 2) * 6;   // B12: çember öne kayık (arkadaki annenin başına girmesin)
     k = 40; damp = 10;
     if (D.modeT > 2.73 * 2 || P.idle < 0.5) { D.mode = 'follow'; D.modeT = 0; D.nextOrbit = P.idle + 6; }
   } else if (D.mode === 'happy') {

@@ -19,6 +19,12 @@
      k12Ogrenci   uzakta (arka yolda, küçük ölçek, paralaks .86) yürüyen / bisiklet süren / çimde kitap okuyan öğrenciler;
                   Feza yaklaşınca el sallar. Feza'nın şeridine hiç girmez. OLAY 'k12OgrenciSelam'.
      k12Fiskiye   çim fıskiyesi: kavis kavis su, damlalar, güneşte gökkuşağı parıltısı; dokununca fışkırır. OLAY 'k12FiskiyeDokun'.
+   Botanik bahçesi (tur 2; kaplumbağalar BOTANIK'in, ördek/kuğu/kaz GOLET'in):
+     k12KelebekBulut  tarhın üstünde 6–7 kelebek; Feza geçerken çevresinde döner. OLAY 'k12KelebekBulut'.
+     k12Kirlangic     alçaktan süzülüp Feza'nın önünden dalış yapan kırlangıçlar; dokununca takla. OLAY 'k12KirlangicDokun'.
+     k12Kirpi         burnunu kıpırdatarak dolaşan, sırtında yaprak taşıyan yumuşak kirpi. OLAY 'k12KirpiDokun'.
+     k12Kus o.tur 'ispinoz', k12Kedi o.hal 'su' (taş kabından su içer; OLAY 'k12KediSu').
+   Akıcılık: kuyruklar yaylı ikincil hareketle (cnKuyrukYay) izler, bacaklar dizden bükülür, dururken nefes alır, baş adımla salınır.
    Olayların hepsi { o, x, y } taşır (dünya koordinatı). Ses bu dosyada yok (MUZIK dinler).
    Dokunma: pencereye yakalama evresinde tek 'pointerdown' dinleyicisi; dünya koordinatına çevirip yalnız kendi canlılarımıza
    isabet ederse preventDefault + stopPropagation (Feza'nın yürüme girdisi çalınmaz). Binişte (P.ucus) canlı tepki verir ama
@@ -216,11 +222,32 @@ function cnKuyruk(c, bx, by, kx, ky, ux, uy, lw, renk, ucRenk) {
   c.strokeStyle = ucRenk; c.lineWidth = lw * 1.05;
   c.beginPath(); c.moveTo(a * bx + b * kx + d * ux, a * by + b * ky + d * uy); c.quadraticCurveTo(kx + (ux - kx) * u, ky + (uy - ky) * u, ux, uy); c.stroke();
 }
-function cnBacak(c, x0, y0, x1, y1, lw, renk, pati, pr) {
-  c.strokeStyle = renk; c.lineWidth = lw; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+// Bacak: kalçadan patiye; bk ≠ 0 ise diz/bilek o kadar bükülür (adım atarken yumuşak, organik eğri)
+function cnAyak(fz, ph, adim) { return Math.sin(fz + ph) * adim; }                 // adım fazında patinin ileri-geri yeri
+function cnKaldir(fz, ph, kalk) { return Math.max(0, Math.cos(fz + ph)) * kalk; }    // ileri giderken pati yerden kalkar
+function cnBacak(c, x0, y0, x1, y1, lw, renk, pati, pr, bk) {
+  c.strokeStyle = renk; c.lineWidth = lw; c.beginPath(); c.moveTo(x0, y0);
+  if (bk) c.quadraticCurveTo((x0 + x1) / 2 + bk, (y0 + y1) / 2, x1, y1); else c.lineTo(x1, y1);
+  c.stroke();
   cnElips(c, x1 + pr * .25, y1 - pr * .3, pr, pr * .62, 0, pati);
 }
 
+// Kuyruk yayı: çizilen kuyruk hedef pozu biraz gecikmeyle izler (ikincil hareket; ani sıçrama olmaz). Sonuç CN_KY'ye yazılır.
+const CN_KY = { kx: 0, ky: 0, ux: 0, uy: 0 };
+function cnKuyrukYay(k, kx, ky, ux, uy) {
+  let y = k.kuyYay;
+  if (!y) y = k.kuyYay = { kx, ky, ux, uy, vkx: 0, vky: 0, vux: 0, vuy: 0, t: CN.saat };
+  const dt = clamp(CN.saat - y.t, 0, .05); y.t = CN.saat;
+  // kritik altı sönümlü yay: kök tarafı sıkı, uç gevşek (uç biraz geç gelir ve hafifçe sallanır)
+  const s1 = 260, s2 = 120, d1 = 2 * Math.sqrt(s1) * .62, d2 = 2 * Math.sqrt(s2) * .62;
+  y.vkx += ((kx - y.kx) * s1 - y.vkx * d1) * dt; y.kx += y.vkx * dt;
+  y.vky += ((ky - y.ky) * s1 - y.vky * d1) * dt; y.ky += y.vky * dt;
+  y.vux += ((ux - y.ux) * s2 - y.vux * d2) * dt; y.ux += y.vux * dt;
+  y.vuy += ((uy - y.uy) * s2 - y.vuy * d2) * dt; y.uy += y.vuy * dt;
+  if (Math.abs(y.ux - ux) > 40 || Math.abs(y.uy - uy) > 40) { y.kx = kx; y.ky = ky; y.ux = ux; y.uy = uy; y.vkx = y.vky = y.vux = y.vuy = 0; }
+  CN_KY.kx = y.kx; CN_KY.ky = y.ky; CN_KY.ux = y.ux; CN_KY.uy = y.uy;
+  return CN_KY;
+}
 // Kedinin iskeleti (sağa bakış, yer y = 0) tek bir kalıcı nesneye yazılır (karede yeni nesne yok)
 const CN_KI = { kx: 0, ky: 0, ox: 0, oy: 0, rot: 0, gx: 0, gy: 0, bx: 0, by: 0, brot: 0 };
 function cnKediIskelet(k) {
@@ -231,7 +258,10 @@ function cnKediIskelet(k) {
   CN_KI.gx = kx + 10 * co + 1 * si; CN_KI.gy = ky + 10 * si - 1 * co + bob;
   CN_KI.ox = kx + 19 * co + 1 * si; CN_KI.oy = ky + 19 * si - 1 * co + bob + 1.5 * yt;
   CN_KI.bx = CN_KI.ox + 6 - .5 * ot + 1 * yt; CN_KI.by = CN_KI.oy - 12 + .5 * ot + 3.2 * yt - k.ilgi * 1.2 * yt;
-  CN_KI.brot = .1 * yt - .1 * k.mutlu + k.basEgim;
+  // baş adımda gövdeye göre hafif ters sallanır; dururken nefesle çok az kıpırdar
+  CN_KI.by += Math.sin(k.faz * 2 + .6) * .55 * hk + Math.sin(CN.saat * 1.3 + k.tohum) * .3 * (1 - hk);
+  CN_KI.bx += (k.icme || 0) * 3.5; CN_KI.by += (k.icme || 0) * 8;
+  CN_KI.brot = .1 * yt - .1 * k.mutlu + k.basEgim + (k.icme || 0) * .45;
   return CN_KI;
 }
 // Kedi çizimi. (x, y) patilerin bastığı yer; s ölçek; k kedi durumu (yon, yonS, otur, yat, hareket, faz, ilgi, mutlu, dik,
@@ -255,7 +285,6 @@ function cnKediCiz(c, x, y, s, t, k) {
   }
   const K = cnKediIskelet(k), hk = k.hareket, ot = k.otur, yt = k.yat;
   const adim = 5.5 * hk, kalk = 2.6 * hk, fz = k.faz;
-  const ayak = (ph) => Math.sin(fz + ph) * adim, kaldir = (ph) => Math.max(0, Math.cos(fz + ph)) * kalk;
   // kuyruk anahtar pozları: aşağı (ayakta) / patilere dolanmış (oturuş) / yerde uzanmış (yatış) → dik (mutlu)
   const sal = Math.sin(t * (1.6 + k.kuyrukT * 2.2) + k.tohum) * (2.2 + k.kuyrukT * 3);
   let bx = K.kx - 4, by = K.ky - 3 + 3 * ot;
@@ -263,17 +292,19 @@ function cnKediCiz(c, x, y, s, t, k) {
   ux += sal * (1 - ot * .5); uy -= Math.abs(sal) * .3 * (ot + yt);
   const dk = k.dik;
   kx2 = lerp(kx2, -19 + sal * .3, dk); ky2 = lerp(ky2, -36, dk); ux = lerp(ux, -13 + sal * .8, dk); uy = lerp(uy, -46, dk);
+  { const Y = cnKuyrukYay(k, kx2, ky2, ux, uy); kx2 = Y.kx; ky2 = Y.ky; ux = Y.ux; uy = Y.uy; }
   const kuyrukOnde = ot > .5 && dk < .5;
   if (!kuyrukOnde) cnKuyruk(c, bx, by, kx2, ky2, ux, uy, 4.4, p.kuy, p.ku);
   // uzak bacaklar (gölgeli)
   const bacakY = Math.min(K.ky, K.oy);
   if (yt < .9) {
     const lw = 4.8;
-    if (ot < .7) cnBacak(c, K.kx + 2, K.ky + 2, K.kx + 1.5 - ayak(0), -kaldir(0), lw, p.gk, p.gk, 2.3);
-    cnBacak(c, K.ox - 1.5, K.oy + 3, K.ox - 1.5 + ayak(Math.PI) * (1 - ot) + 1.2 * ot, -kaldir(Math.PI) * (1 - ot) - 1.5 * yt, lw, p.gk, p.gk, 2.3);
+    if (ot < .7) cnBacak(c, K.kx + 2, K.ky + 2, K.kx + 1.5 - cnAyak(fz, 0, adim), -cnKaldir(fz, 0, kalk), lw, p.gk, p.gk, 2.3, -1.2 * hk - cnKaldir(fz, 0, kalk) * .8);
+    cnBacak(c, K.ox - 1.5, K.oy + 3, K.ox - 1.5 + cnAyak(fz, Math.PI, adim) * (1 - ot) + 1.2 * ot, -cnKaldir(fz, Math.PI, kalk) * (1 - ot) - 1.5 * yt, lw, p.gk, p.gk, 2.3, cnKaldir(fz, Math.PI, kalk) * .9);
   }
   // gövde
-  c.save(); c.translate(K.gx, K.gy); c.rotate(K.rot); cnKoy(c, sp.govde); c.restore();
+  const nef = Math.sin(t * 2.1 + k.tohum) * (1 - hk);   // nefes: gövde dururken çok hafif kabarıp iner
+  c.save(); c.translate(K.gx, K.gy); c.rotate(K.rot); c.scale(1 + nef * .012, 1 + nef * .028); cnKoy(c, sp.govde); c.restore();
   // oturuşta / yatışta kalça (but) ve arka pati
   const bA = Math.max(ot, yt * .85);
   if (bA > .05) {
@@ -290,11 +321,11 @@ function cnKediCiz(c, x, y, s, t, k) {
   // yakın bacaklar
   if (yt < .9) {
     const lw = 5;
-    if (ot < .7) cnBacak(c, K.kx + 4, K.ky + 2, K.kx + 4 + ayak(Math.PI), -kaldir(Math.PI), lw, p.g, p.pt, 2.5);
+    if (ot < .7) cnBacak(c, K.kx + 4, K.ky + 2, K.kx + 4 + cnAyak(fz, Math.PI, adim), -cnKaldir(fz, Math.PI, kalk), lw, p.g, p.pt, 2.5, -1.2 * hk - cnKaldir(fz, Math.PI, kalk) * .8);
     if (k.pati > .02) {   // pati kaldırma (yalama): ön pati ağza doğru
       const pu = smooth(k.pati), fx = lerp(K.ox + 2, K.bx + 3, pu), fy = lerp(0, K.by + 7, pu);
       cnBacak(c, K.ox + 1.5, K.oy + 3, fx, fy, lw, p.g, p.pt, 2.5);
-    } else cnBacak(c, K.ox + 1.5, K.oy + 3, K.ox + 2 + ayak(0) * (1 - ot) + 1.4 * ot + 3.5 * yt, -kaldir(0) * (1 - ot) - 1.2 * yt, lw, p.g, p.pt, 2.5);
+    } else cnBacak(c, K.ox + 1.5, K.oy + 3, K.ox + 2 + cnAyak(fz, 0, adim) * (1 - ot) + 1.4 * ot + 3.5 * yt, -cnKaldir(fz, 0, kalk) * (1 - ot) - 1.2 * yt, lw, p.g, p.pt, 2.5, cnKaldir(fz, 0, kalk) * .9);
   } else {
     cnElips(c, K.ox + 6, -1.6, 3.6, 2.2, 0, p.pt);   // yatarken öne uzanmış patiler
     cnElips(c, K.ox + 2.5, -1.4, 3.4, 2.1, 0, p.pt);
@@ -314,6 +345,7 @@ function cnKediCiz(c, x, y, s, t, k) {
     c.moveTo(5.5, 3.3); c.lineTo(5.5, 4); c.moveTo(3.9, 4.2); c.quadraticCurveTo(4.7, 5, 5.5, 4); c.quadraticCurveTo(6.3, 5, 7.1, 4.2); c.stroke();
   }
   if (k.mutlu > .3) { c.fillStyle = 'rgba(255,140,160,' + (.35 * k.mutlu) + ')'; c.beginPath(); c.ellipse(8.4, 2.6, 2.4, 1.3, 0, 0, CN_PI2); c.fill(); }
+  if ((k.icme || 0) > .6) { const dl = Math.max(0, Math.sin(t * 11)); if (dl > .2) cnElips(c, 5.6, 6 + dl * 1.6, 1.3, .7 + dl * .8, 0, '#f08ea0'); }
   c.restore();
   c.restore();
   return bacakY;
@@ -360,7 +392,8 @@ function cnKediKur(o) {
   o.kx = o.evX; o.ky = o.evY; o.zy = o.evZ; o.x = o.kx;
   o.yon = o.yon || -1; o.evYon = o.yon; o.yonS = o.yon; o.basTers = false;
   o.durum = 'dinlen'; o.t = 0; o.v = 0; o.faz = 0; o.hareket = 0; o.durT = 0;
-  o.otur = o.hal === 'otur' ? 1 : 0; o.yat = o.hal === 'gunes' ? 1 : 0; o.kivril = o.hal === 'bank';
+  o.otur = o.hal === 'otur' ? 1 : 0; o.yat = o.hal === 'gunes' ? 1 : o.hal === 'su' ? .5 : 0; o.kivril = o.hal === 'bank';
+  o.icme = o.hal === 'su' ? 1 : 0; o.suT = 0; o.suOlay = -99;
   o.ilgi = 0; o.mutlu = 0; o.dik = 0; o.kuyrukT = 0; o.agiz = 0; o.agizT = 0; o.kapak = 0; o.bak = 0; o.basEgim = 0; o.egim = 0;
   o.pati = 0; o.popT = 9; o.kalpT = -9; o.miyavT = -99; o.idleT = 3 + (o.tohum % 4); o.idle = null; o.idleU = 0;
   o.hopU = -1; o.hopY0 = 0; o.hopY1 = 0; o.sevSide = 1; o.takipSay = 0; o.takipYon = 1; o.on = false;
@@ -404,7 +437,14 @@ function cnKediGuncelle(o, dt) {
       // evinde dinlenir: Feza yakındaysa başını kaldırıp bakar, ara sıra miyavlar; değilse esner, patisini yalar, kuyruk sallar
       if (Math.abs(o.kx - o.evX) > 2) cnYuru(o, o.evX, 50, dt, 7.5); else { o.v = 0; o.hareket = cnYaklas(o.hareket, 0, dt * 8); }
       cnDuzlem(o, o.evZ, o.evY, dt);
-      hOtur = o.hal === 'otur' ? 1 : 0; hYat = o.hal === 'gunes' ? 1 : 0;
+      hOtur = o.hal === 'otur' ? 1 : 0; hYat = o.hal === 'gunes' ? 1 : o.hal === 'su' ? .5 : 0;
+      if (o.hal === 'su') {
+        // taş kabından su içer: 4 sn yalar, başını kaldırıp dudaklarını yalar; Feza yakındaysa başını kaldırıp ona bakar
+        o.suT += dt;
+        const ic = adx > 200 && (o.suT % 5.5) < 4;
+        o.icme = cnYaklas(o.icme, ic ? 1 : 0, dt * 4);
+        if (ic && adx < 420 && CN.saat - o.suOlay > 8) { o.suOlay = CN.saat; cnOlay('k12KediSu', o, o.kx + o.yon * 26, o.ky - 6); }
+      }
       if (o.hal === 'bank' && !o.kivril && o.t > 1.2 && o.hopU < 0 && Math.abs(o.ky - o.evY) < 1) { o.kivril = true; o.popT = 0; }
       if (adx < 230) { hIlgi = 1; if (o.hal === 'bank' && o.kivril && adx < 90 && !binis && o.t > 2) { o.kivril = false; o.popT = 0; o.t = 0; } }
       if (adx < 140 && !o.kivril && CN.saat - o.miyavT > 13 && Math.random() < dt * .5) cnMiyav(o, 'k12KediMiyav');
@@ -489,14 +529,32 @@ function cnKediGuncelle(o, dt) {
   o.basTers = o.ilgi > .5 && fYon !== o.yon && o.hareket < .5;
   const basYon = o.basTers ? -o.yon : o.yon;   // başın baktığı yön; göz bebeği Feza'ya kayar
   o.bak = o.ilgi > .5 ? (basYon === fYon ? 1 : -1) * Math.min(1, adx / 60) * .8 : 0;
+  if (o.durum !== 'dinlen') o.icme = cnYaklas(o.icme, 0, dt * 6);
+  if (o.icme > .5) o.kapak = Math.max(o.kapak, .55);
   o.yonS = cnYaklas(o.yonS, o.yon, dt * 16);
   o.x = o.kx; o.on = o.zy > CN_YOL - 1;
+}
+// Bahçedeki küçük taş su kabı: içerken su yüzünde halkalar
+function cnSuKabi(c, x, y, s, t, icme) {
+  c.save(); c.translate(x, y); c.scale(s, s);
+  cnGolge(c, 0, .4, 11, .18);
+  cnElips(c, 0, -3, 9.5, 3.6, 0, '#a7aeb2');
+  c.fillStyle = '#c3c9cc'; c.beginPath(); c.ellipse(0, -4.4, 9.5, 2.8, 0, Math.PI, CN_PI2); c.fill();
+  cnElips(c, 0, -4.6, 7.6, 1.9, 0, '#8fcbe8');
+  c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.ellipse(-3, -5, 2.4, .5, 0, 0, CN_PI2); c.fill();
+  if (icme > .5) {
+    c.strokeStyle = 'rgba(255,255,255,.75)'; c.lineWidth = .5;
+    for (let i = 0; i < 2; i++) { const u = (t * 1.4 + i * .5) % 1; c.globalAlpha = 1 - u; c.beginPath(); c.ellipse(-2, -4.6, 1 + u * 5, .3 + u * 1.2, 0, 0, CN_PI2); c.stroke(); }
+    c.globalAlpha = 1;
+  }
+  c.restore();
 }
 function cnKediCizO(o, t, on) {
   if (o.on !== on) return;
   if (!cnGorunur(o.kx, 80) && !(o.kendiBank && cnGorunur(o.bankX, 80))) return;
   const s = 1.22 * cnDerinlik(o.zy);
   if (o.kendiBank && !on) { const bs = cnDerinlik(CN_CIM); g.save(); g.translate(o.bankX, CN_CIM); g.scale(bs, bs); cnGolge(g, 0, .5, 40, .16); cnKoy(g, cnBankSpr()); g.restore(); }
+  if (o.hal === 'su' && !on) cnSuKabi(g, o.evX + o.evYon * 25 * s, o.evY, s, t, o.icme * (o.durum === 'dinlen' ? 1 : 0));
   if (!cnGorunur(o.kx, 60)) return;
   cnKediCiz(g, o.kx, o.ky, s, t, o);
   cnKalpler(g, o.kx, o.ky - 40 * s, CN.saat - o.kalpT, s);
@@ -591,9 +649,8 @@ function cnKopekCiz(c, x, y, s, t, k) {
   K.kx = kx; K.ky = ky + bob; K.rot = rot;
   K.gx = kx + 17 * co + 1 * si; K.gy = ky + 17 * si - 1 * co + bob;
   K.ox = kx + 32 * co + 1 * si; K.oy = ky + 32 * si - 1 * co + bob + 2 * yt;
-  K.bx = K.ox + 11 - 2 * ot; K.by = K.oy - 16 + 2 * ot + 3 * yt - (1 - k.ilgi) * 3 * yt;
+  K.bx = K.ox + 11 - 2 * ot + Math.sin(fz * 2 + .5) * .5 * hk; K.by = K.oy - 16 + 2 * ot + 3 * yt - (1 - k.ilgi) * 3 * yt;
   const adim = 9 * hk, kalk = 4 * hk;
-  const ayak = ph => Math.sin(fz + ph) * adim, kaldir = ph => Math.max(0, Math.cos(fz + ph)) * kalk;
   // kuyruk: sevinçte sırtın üstünde kıvrık ve hızla sallanır, yatarken yere pıt pıt vurur
   const hz = 3 + k.kuyrukT * 11, sal = Math.sin(t * hz + 1) * (2 + k.kuyrukT * 7);
   const bx = kx - 6, by = ky - 4 + 6 * ot;
@@ -601,16 +658,18 @@ function cnKopekCiz(c, x, y, s, t, k) {
   ux += sal * (1 - yt * .6); uy -= yt * Math.max(0, sal) * .6;
   const dk = Math.max(k.dik, .45) * (1 - ot * .6) * (1 - yt);   // kampüs köpeklerinin kuyruğu hep biraz kıvrık
   kx2 = lerp(kx2, -40 + sal * .3, dk); ky2 = lerp(ky2, -62, dk); ux = lerp(ux, -27 + sal, dk); uy = lerp(uy, -64 + Math.abs(sal) * .3, dk);
+  { const Y = cnKuyrukYay(k, kx2, ky2, ux, uy); kx2 = Y.kx; ky2 = Y.ky; ux = Y.ux; uy = Y.uy; }
   c.lineCap = 'round';
   c.strokeStyle = p.g; c.lineWidth = 9; c.beginPath(); c.moveTo(bx, by); c.quadraticCurveTo(kx2, ky2, ux, uy); c.stroke();
   c.strokeStyle = p.kr; c.lineWidth = 6; c.beginPath(); c.moveTo(lerp(kx2, ux, .55), lerp(ky2, uy, .55)); c.lineTo(ux, uy); c.stroke();
   // uzak bacaklar
   const lw = 10.5;
   if (yt < .5) {
-    if (ot < .6) cnBacak(c, kx + 3, K.ky + 4, kx + 3 - ayak(0), -kaldir(0), lw, p.gk, p.gk, 4.8);
-    cnBacak(c, K.ox - 3, K.oy + 4, K.ox - 3 + ayak(Math.PI) * (1 - ot) + 2 * ot, -kaldir(Math.PI) * (1 - ot), lw, p.gk, p.gk, 4.8);
+    if (ot < .6) cnBacak(c, kx + 3, K.ky + 4, kx + 3 - cnAyak(fz, 0, adim), -cnKaldir(fz, 0, kalk), lw, p.gk, p.gk, 4.8, -2 * hk - cnKaldir(fz, 0, kalk) * 1.2);
+    cnBacak(c, K.ox - 3, K.oy + 4, K.ox - 3 + cnAyak(fz, Math.PI, adim) * (1 - ot) + 2 * ot, -cnKaldir(fz, Math.PI, kalk) * (1 - ot), lw, p.gk, p.gk, 4.8);
   } else cnBacak(c, K.ox, K.oy + 6, K.ox + 13, -3.2, lw, p.gk, p.gk, 4.8);
-  c.save(); c.translate(K.gx, K.gy); c.rotate(rot); cnKoy(c, sp.govde); c.restore();
+  const nef = Math.sin(t * (2 + k.agiz * 5) + k.tohum) * (1 - hk);   // nefes (soluk soluğa sevinçte hızlanır)
+  c.save(); c.translate(K.gx, K.gy); c.rotate(rot); c.scale(1 + nef * .012, 1 + nef * .03); cnKoy(c, sp.govde); c.restore();
   const bA = Math.max(ot, yt);
   if (bA > .05) {   // oturuş / yatış: kalça ve arka pati
     c.globalAlpha = Math.min(1, bA * 1.5);
@@ -622,11 +681,11 @@ function cnKopekCiz(c, x, y, s, t, k) {
   }
   // yakın bacaklar (pati verirken yakın ön bacak öne kalkar)
   if (yt < .5) {
-    if (ot < .6) cnBacak(c, kx + 7, K.ky + 4, kx + 7 + ayak(Math.PI), -kaldir(Math.PI), lw + .4, p.g, p.kr, 5);
+    if (ot < .6) cnBacak(c, kx + 7, K.ky + 4, kx + 7 + cnAyak(fz, Math.PI, adim), -cnKaldir(fz, Math.PI, kalk), lw + .4, p.g, p.kr, 5, -2 * hk - cnKaldir(fz, Math.PI, kalk) * 1.2);
     if (k.pati > .02) {
       const pu = smooth(k.pati), sw = Math.sin(t * 6) * 1.2 * pu;
       cnBacak(c, K.ox + 1, K.oy + 5, lerp(K.ox + 3, K.ox + 19, pu), lerp(0, K.oy + 9, pu) + sw, lw + .4, p.g, p.kr, 5);
-    } else cnBacak(c, K.ox + 1, K.oy + 5, K.ox + 2 + ayak(0) * (1 - ot) + 2 * ot, -kaldir(0) * (1 - ot), lw + .4, p.g, p.kr, 5);
+    } else cnBacak(c, K.ox + 1, K.oy + 5, K.ox + 2 + cnAyak(fz, 0, adim) * (1 - ot) + 2 * ot, -cnKaldir(fz, 0, kalk) * (1 - ot), lw + .4, p.g, p.kr, 5);
   } else cnBacak(c, K.ox + 3, K.oy + 6, K.ox + 17, -3, lw + .4, p.g, p.kr, 5);
   // baş
   c.save(); c.translate(K.bx, K.by); c.rotate(k.basEgim + .05 * yt); if (k.basTers) c.scale(-1, 1);
@@ -733,8 +792,10 @@ TUR.kaydet('k12Kopek', { kur: cnKopekKur, guncelle: cnKopekGuncelle, ciz: cnKope
 // Sürü (o.n kuş): yerde gagalar, hoplar. Feza yaklaşınca birer birer havalanır, Feza'dan uzak tarafta (bölge içinde) yeniden konar.
 // o.kacmaz: kaçmaz (binişte yolun kenarında): yalnız başlarını çevirir, Feza çok yaklaşınca yerinde pırpır hoplar.
 const CN_SERCE = { g: '#b0835a', gk: '#8a603e', kr: '#f2e6d2', bs: '#8d5a37', yn: '#f8f1e4', ga: '#e7ad55' };
-function cnSerceCiz(c, x, y, s, yon, gaga, kanat, ucuyor, cik) {
-  const p = CN_SERCE;
+// İspinoz: mavi-gri başlık, şeftali göğüs, kanatta iki beyaz çizgi (botanik bahçesinde)
+const CN_ISPINOZ = { g: '#a47a5c', gk: '#7d5a44', kr: '#f2c3a6', bs: '#7f93ab', yn: '#e9a383', ga: '#c9b8a0', cb: '#ffffff' };
+function cnSerceCiz(c, x, y, s, yon, gaga, kanat, ucuyor, cik, pal) {
+  const p = pal || CN_SERCE;
   c.save(); c.translate(x, y); c.scale(s * yon, s);
   if (!ucuyor) cnGolge(c, 0, .3, 6.5, .16);
   // kuyruk
@@ -747,7 +808,12 @@ function cnSerceCiz(c, x, y, s, yon, gaga, kanat, ucuyor, cik) {
   if (!ucuyor) { c.strokeStyle = '#c98d5c'; c.lineWidth = .9; c.beginPath(); c.moveTo(-.4, -1); c.lineTo(-1, .2); c.moveTo(1.6, -1); c.lineTo(1.8, .2); c.stroke(); }
   // yakın kanat
   if (ucuyor) { c.fillStyle = p.g; c.beginPath(); c.ellipse(-.5, -7.6, 6.8, 2.8, -1.3 * kanat - .1, 0, CN_PI2); c.fill(); }
-  else { cnElips(c, -1.5, -5.6, 4.4, 2.6, -.2, p.gk); c.strokeStyle = p.kr; c.lineWidth = .6; c.beginPath(); c.moveTo(-4, -5.6); c.lineTo(.6, -5); c.stroke(); }
+  else {
+    cnElips(c, -1.5, -5.6, 4.4, 2.6, -.2, p.gk);
+    c.strokeStyle = p.cb || p.kr; c.lineWidth = p.cb ? .9 : .6; c.beginPath(); c.moveTo(-4, -5.6); c.lineTo(.6, -5);
+    if (p.cb) { c.moveTo(-3.6, -4.2); c.lineTo(0, -3.8); }
+    c.stroke();
+  }
   // baş (gagalarken öne eğilir)
   c.save(); c.translate(3.6, -8); c.rotate(gaga * .9);
   cnElips(c, 0, 0, 3.4, 3.2, 0, p.g);
@@ -770,7 +836,7 @@ function cnKusKur(o) {
   for (let i = 0; i < n; i++) o.kuslar.push({ ox: (i - (n - 1) / 2) * 17 + (r() - .5) * 8, x: 0, y: o.zy, vx: 0, yon: r() < .5 ? 1 : -1,
     uc: false, ucT: 0, hop: 0, pir: false, gaga: 0, gagaT: r() * 3, kanat: 0, faz: r() * 6, hx: 0, sx: 0, sy: 0, sure: 1, tep: 0 });
   for (const k of o.kuslar) { k.x = o.mx + k.ox; k.hx = k.x; }
-  o.durum = 'yer'; o.t = 0; o.cikT = -9;
+  o.durum = 'yer'; o.t = 0; o.cikT = -9; o.pal = o.tur === 'ispinoz' ? CN_ISPINOZ : CN_SERCE; o.tur = o.tur || 'serce';
   cnKayit(o);
 }
 function cnKusHavalan(o, hedefX) {
@@ -838,7 +904,7 @@ function cnKusCizO(o, t) {
   let mx = 0, my = 0, n = 0;
   for (const k of o.kuslar) {
     if (!cnGorunur(k.x, 30)) continue;
-    cnSerceCiz(g, k.x, k.y, s, k.yon, k.gaga, k.kanat, k.uc || k.pir, cik);
+    cnSerceCiz(g, k.x, k.y, s, k.yon, k.gaga, k.kanat, k.uc || k.pir, cik, o.pal);
     mx += k.x; my += k.y; n++;
   }
   if (n) cnIsabet(o, mx / n, my / n - 7, 44, 26);
@@ -1036,6 +1102,11 @@ function cnSincapKur(o) {
   o.durum = 'yer'; o.t = 0; o.faz = 0; o.kemir = 1; o.kabar = 0; o.hedef = o.x; o.v = 0; o.dokT = -9; o.tep = 0;
   cnKayit(o);
 }
+function cnSincapKos(o, hedef, hiz, dt) {   // hoplayarak koşu: faz yol uzunluğuna bağlı
+  const f = hedef - o.sx; o.yon = f > 0 ? 1 : -1;
+  const ad = Math.min(Math.abs(f), hiz * dt); o.sx += Math.sign(f) * ad; o.faz += ad / 9;
+  return Math.abs(hedef - o.sx);
+}
 function cnSincapGuncelle(o, dt) {
   if (!(dt > 0)) return; dt = Math.min(dt, .05);
   if (o.agac === undefined) {   // ağaç bir kez aranır (zemin12 yüklemede yayınlar)
@@ -1045,11 +1116,6 @@ function cnSincapGuncelle(o, dt) {
   const dx = P.x - o.sx, adx = Math.abs(dx), a = o.agac;
   if (o.durum === 'yer' && adx > 1700) return;
   o.t += dt; o.faz += dt;
-  const kos = (hedef, hiz) => {
-    const f = hedef - o.sx; o.yon = f > 0 ? 1 : -1;
-    const ad = Math.min(Math.abs(f), hiz * dt); o.sx += Math.sign(f) * ad; o.faz += ad / 9;
-    return Math.abs(hedef - o.sx);
-  };
   switch (o.durum) {
     case 'yer':
       o.kemir = cnYaklas(o.kemir, 1, dt * 3); o.kabar = cnYaklas(o.kabar, 0, dt * 2);
@@ -1063,15 +1129,15 @@ function cnSincapGuncelle(o, dt) {
       break;
     case 'kac':
       o.kemir = 0;
-      if (kos(o.hedef, 150) < 2) { o.durum = 'yer'; o.t = 0; o.yon = dx > 0 ? 1 : -1; }
+      if (cnSincapKos(o, o.hedef, 150, dt) < 2) { o.durum = 'yer'; o.t = 0; o.yon = dx > 0 ? 1 : -1; }
       break;
     case 'eve':
       o.kemir = 0;
-      if (kos(o.evX, 90) < 2) { o.durum = 'yer'; o.t = 0; o.yon = 1; }
+      if (cnSincapKos(o, o.evX, 90, dt) < 2) { o.durum = 'yer'; o.t = 0; o.yon = 1; }
       break;
     case 'agaca':
       o.kemir = 0;
-      if (kos(a.x, 160) < 2) { o.durum = 'tirman'; o.t = 0; }
+      if (cnSincapKos(o, a.x, 160, dt) < 2) { o.durum = 'tirman'; o.t = 0; }
       break;
     case 'tirman': {
       const tepe = a.y1 + 6, f = tepe - o.sy;
@@ -1152,26 +1218,31 @@ function cnOgrKol(c, x0, y0, x1, y1, renk, cilt) {
   c.strokeStyle = renk; c.lineWidth = 5; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
   cnElips(c, x1, y1, 2.6, 2.6, 0, cilt);
 }
+// Öğrenci parçaları (karede kapanış/nesne üretmemek için üst düzey işlevler)
+function cnOgrAyak(c, hy, fx, fy, renk, bk) {   // kalça (0, hy) → ayak; diz bk kadar öne bükülür
+  c.strokeStyle = renk; c.lineWidth = 6; c.beginPath(); c.moveTo(0, hy); c.quadraticCurveTo(fx * .5 + bk, (hy + fy - 4) / 2, fx, fy - 4); c.stroke();
+  cnElips(c, fx + 2, fy - 1.8, 3.8, 2.1, 0, '#3a3440');
+}
+function cnOgrTeker(c, cx, faz) {
+  c.strokeStyle = '#4a4f5c'; c.lineWidth = 2.6; c.beginPath(); c.arc(cx, -12, 11.5, 0, CN_PI2); c.stroke();
+  c.strokeStyle = 'rgba(90,96,110,.55)'; c.lineWidth = .8; c.beginPath();
+  for (let i = 0; i < 3; i++) { const a = faz * .5 + i * Math.PI / 3; c.moveTo(cx + Math.cos(a) * 11, -12 + Math.sin(a) * 11); c.lineTo(cx - Math.cos(a) * 11, -12 - Math.sin(a) * 11); }
+  c.stroke();
+}
+function cnOgrPedal(c, fx, fy, renk) {   // kalça → diz → pedal
+  const hx = -7, hy = -37, mx = (hx + fx) / 2 + 6, my = (hy + fy) / 2 - 3;
+  c.strokeStyle = renk; c.lineWidth = 5.5; c.beginPath(); c.moveTo(hx, hy); c.quadraticCurveTo(mx + 1, my - 1, fx, fy); c.stroke();
+  cnElips(c, fx + 1.5, fy, 3.2, 1.8, 0, '#3a3440');
+}
 function cnOgrenciCiz(c, x, y, s, yon, v, poz, faz, el, t) {
   c.save(); c.translate(x, y); c.scale(s * yon, s);
   c.lineCap = 'round'; c.lineJoin = 'round';
   const salla = Math.sin(t * 11) * 4 * el;   // el sallama
   if (poz === 'bisiklet') {
     cnGolge(c, 0, .5, 30, .14);
-    const tek = (cx) => {
-      c.strokeStyle = '#4a4f5c'; c.lineWidth = 2.6; c.beginPath(); c.arc(cx, -12, 11.5, 0, CN_PI2); c.stroke();
-      c.strokeStyle = 'rgba(90,96,110,.55)'; c.lineWidth = .8; c.beginPath();
-      for (let i = 0; i < 3; i++) { const a = faz * .5 + i * Math.PI / 3; c.moveTo(cx + Math.cos(a) * 11, -12 + Math.sin(a) * 11); c.lineTo(cx - Math.cos(a) * 11, -12 - Math.sin(a) * 11); }
-      c.stroke();
-    };
-    tek(-17); tek(19);
+    cnOgrTeker(c, -17, faz); cnOgrTeker(c, 19, faz);
     const pa = faz * .5, p1x = -2 + Math.cos(pa) * 5.5, p1y = -12 + Math.sin(pa) * 5.5, p2x = -2 - Math.cos(pa) * 5.5, p2y = -12 - Math.sin(pa) * 5.5;
-    const bacak = (fx, fy, renk) => {   // kalça → diz → pedal
-      const hx = -7, hy = -37, mx = (hx + fx) / 2 + 6, my = (hy + fy) / 2 - 3;
-      c.strokeStyle = renk; c.lineWidth = 5.5; c.beginPath(); c.moveTo(hx, hy); c.lineTo(mx, my); c.lineTo(fx, fy); c.stroke();
-      cnElips(c, fx + 1.5, fy, 3.2, 1.8, 0, '#3a3440');
-    };
-    bacak(p2x, p2y, v.alt);
+    cnOgrPedal(c, p2x, p2y, v.alt);
     c.strokeStyle = v.bis; c.lineWidth = 2.8;
     c.beginPath(); c.moveTo(-17, -12); c.lineTo(-2, -12); c.lineTo(-8, -33); c.lineTo(-17, -12); c.moveTo(-2, -12); c.lineTo(12, -33); c.lineTo(-8, -31); c.moveTo(12, -33); c.lineTo(19, -12); c.stroke();
     c.strokeStyle = '#3a3440'; c.lineWidth = 3; c.beginPath(); c.moveTo(-12, -35); c.lineTo(-4, -35); c.moveTo(12, -34); c.lineTo(10, -40); c.lineTo(14, -41); c.stroke();
@@ -1179,7 +1250,7 @@ function cnOgrenciCiz(c, x, y, s, yon, v, poz, faz, el, t) {
     c.save(); c.translate(-7, -37); c.rotate(.38);
     c.fillStyle = v.ust; c.beginPath(); if (c.roundRect) c.roundRect(-7, -25, 14, 27, 6); else c.rect(-7, -25, 14, 27); c.fill();
     c.restore();
-    bacak(p1x, p1y, v.alt);
+    cnOgrPedal(c, p1x, p1y, v.alt);
     if (el > .05) cnOgrKol(c, 2, -57, 6 + salla, -80, v.ust, v.cilt);
     else cnOgrKol(c, 2, -57, 13, -41, v.ust, v.cilt);
     cnOgrBas(c, v, 7, -70, .12, t);
@@ -1197,16 +1268,20 @@ function cnOgrenciCiz(c, x, y, s, yon, v, poz, faz, el, t) {
     cnOgrBas(c, v, 3, -46, el > .05 ? -.05 : .18, t);
   } else {   // yürüyüş (el sallarken durur)
     cnGolge(c, 0, .5, 13, .14);
-    const ad = Math.sin(faz) * 8, kk = Math.max(0, Math.cos(faz)) * 3;
-    const ayak = (fx, fy, renk) => { c.strokeStyle = renk; c.lineWidth = 6; c.beginPath(); c.moveTo(0, -31); c.lineTo(fx, fy - 4); c.stroke(); cnElips(c, fx + 2, fy - 1.8, 3.8, 2.1, 0, '#3a3440'); };
-    ayak(-ad, -kk * (ad < 0 ? 1 : 0), v.alt);
+    // adım: bacaklar dizden bükülür, gövde her adımda hafifçe yükselir, kollar ters salınır
+    const ad = Math.sin(faz) * 8, kk = Math.max(0, Math.cos(faz)) * 3, bob = Math.abs(Math.cos(faz)) * 1.6 * (1 - el), hy = -31 - bob;
+    cnOgrAyak(c, hy, -ad, -kk * (ad < 0 ? 1 : 0), v.alt, ad < 0 ? 2.5 : .8);
+    c.save(); c.translate(0, -bob);
     cnOgrKol(c, -1, -52, -1 + ad * .9, -34, v.ust, v.cilt);
     c.fillStyle = v.canta; c.beginPath(); if (c.roundRect) c.roundRect(-15, -55, 9, 21, 3); else c.rect(-15, -55, 9, 21); c.fill();
     c.fillStyle = v.ust; c.beginPath(); if (c.roundRect) c.roundRect(-8, -57, 16, 29, 6); else c.rect(-8, -57, 16, 29); c.fill();
     c.fillStyle = 'rgba(255,255,255,.18)'; c.fillRect(-6, -55, 4, 24);
-    ayak(ad, -kk * (ad > 0 ? 1 : 0), v.alt);
+    c.restore();
+    cnOgrAyak(c, hy, ad, -kk * (ad > 0 ? 1 : 0), v.alt, ad > 0 ? 2.5 : .8);
+    c.save(); c.translate(0, -bob);
     if (el > .05) cnOgrKol(c, 2, -52, 9 + salla, -80, v.ust, v.cilt); else cnOgrKol(c, 2, -52, 2 - ad * .9, -34, v.ust, v.cilt);
-    cnOgrBas(c, v, 2, -69, 0, t);
+    cnOgrBas(c, v, 2, -69, Math.sin(faz * 2) * .03, t);
+    c.restore();
   }
   c.restore();
 }
@@ -1311,9 +1386,203 @@ function cnFiskiyeDokun(o) {
 }
 TUR.kaydet('k12Fiskiye', { kur: cnFiskiyeKur, ciz: cnFiskiyeCizO });
 
+// ════════════════════ botanik bahçesi: kirpi ════════════════════
+// Yuvarlak, yumuşak dikenli (sivri değil; tombul tutamlar), krem yüzlü, iri gözlü kirpi; sırtında bir yaprak taşır.
+// Tarhın kenarında burnunu kıpırdatarak ağır ağır dolaşır, arada durup koklar; Feza yaklaşınca durup ona döner ve burnunu oynatır.
+// Dokununca iki küçük sevinç hoplaması, sırtındaki yaprak fırıl döner. OLAY 'k12KirpiDokun'.
+const CN_KIRPI = { d1: '#8d6a4f', d2: '#b48e6c', dc: '#d6b896', kr: '#f3dfc4', ku: '#e8c6a5', ay: '#6b4c3a' };
+function cnKirpiCiz(c, x, y, s, yon, faz, burun, hk, hop, yaprak) {
+  const p = CN_KIRPI;
+  cnGolge(c, x, y + .4, 15 * s, .2);
+  c.save(); c.translate(x, y - hop); c.scale(s * yon, s);
+  // minik ayaklar (adımda öne-arkaya)
+  const a = Math.sin(faz) * 2.2 * hk;
+  cnElips(c, -7 - a, -1, 2.6, 1.6, 0, p.ay); cnElips(c, 6 + a, -1, 2.6, 1.6, 0, p.ay);
+  // gövde: kubbe + kenarında yumuşak diken tutamları (iki tonlu), üstünde açık renk çizgiler
+  const bob = Math.abs(Math.sin(faz)) * .6 * hk;
+  c.translate(0, -bob);
+  cnElips(c, -1, -8, 13.5, 9.5, 0, p.d1);
+  for (let i = 0; i <= 10; i++) {
+    const t = Math.PI * (1.02 + i * .085), ex = -1 + Math.cos(t) * 13.2, ey = -8 + Math.sin(t) * 9.2;
+    cnElips(c, ex, ey, 3.4, 3, t, i % 2 ? p.d2 : p.d1);
+  }
+  cnElips(c, -1.5, -9, 11, 7.2, 0, p.d2);
+  c.strokeStyle = p.dc; c.lineWidth = .9; c.lineCap = 'round'; c.beginPath();
+  for (let i = 0; i < 6; i++) { const t = Math.PI * (1.15 + i * .14); c.moveTo(-1.5 + Math.cos(t) * 5, -9 + Math.sin(t) * 3.4); c.lineTo(-1.5 + Math.cos(t) * 9.4, -9 + Math.sin(t) * 6.4); }
+  c.stroke();
+  // yüz: krem burun konisi, kara burun ucu (kıpır kıpır), iri parlak göz, yuvarlak kulak, pembe yanak
+  cnElips(c, 8.5, -5.2, 7.4, 5.4, .12, p.kr);
+  const bk = Math.sin(burun) * .7;
+  cnElips(c, 13.6, -4.4 + bk * .4, 4.4, 3, .1, p.kr);
+  cnElips(c, 17.6, -4.6 + bk, 1.8, 1.6, 0, '#3b2a26');
+  c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.arc(17.1, -5.3 + bk, .5, 0, CN_PI2); c.fill();
+  cnElips(c, 6.4, -10.4, 2.2, 2, 0, p.ku); cnElips(c, 6.5, -10.2, 1.1, 1, 0, '#e9a9a0');
+  cnElips(c, 10.6, -7.6, 1.55, 1.75, 0, '#2b1d18');
+  c.fillStyle = '#ffffff'; c.beginPath(); c.arc(10.1, -8.2, .6, 0, CN_PI2); c.fill();
+  c.fillStyle = 'rgba(255,140,150,.4)'; c.beginPath(); c.ellipse(10.4, -4.2, 2, 1.1, 0, 0, CN_PI2); c.fill();
+  // sırtındaki yaprak (dokununca döner)
+  c.save(); c.translate(-3, -17.5); c.rotate(-.4 + yaprak * CN_PI2);
+  cnElips(c, 0, -3, 2.6, 4.6, 0, '#86c06a');
+  c.strokeStyle = '#5f9a4c'; c.lineWidth = .6; c.beginPath(); c.moveTo(0, 1.5); c.lineTo(0, -6.5); c.stroke();
+  c.restore();
+  c.restore();
+}
+function cnKirpiKur(o) {
+  o.evX = o.x; o.zy = o.zy || CN_CIM + 3; o.kx = o.x; o.yon = o.yon || 1; o.hedef = o.x + 50 * o.yon;
+  o.durum = 'gez'; o.t = 0; o.sure = 3; o.faz = 0; o.burun = 0; o.hk = 0; o.dokT = -9; o.kalpT = -9;
+  cnKayit(o);
+}
+function cnKirpiGuncelle(o, dt) {
+  if (!(dt > 0)) return; dt = Math.min(dt, .05);
+  const dx = P.x - o.kx, adx = Math.abs(dx);
+  if (adx > 1700) return;
+  o.t += dt;
+  let hiz = 0, burunHiz = 2;
+  if (CN.saat - o.dokT < 1.6) { burunHiz = 14; o.yon = dx > 0 ? 1 : -1; }
+  else if (adx < 150 && !cnFezaBinis()) { o.durum = 'bak'; o.yon = dx > 0 ? 1 : -1; burunHiz = 11; }
+  else if (o.durum === 'bak') { o.durum = 'gez'; o.t = 0; }
+  else if (o.durum === 'kokla') { burunHiz = 16; if (o.t > 1.5) { o.durum = 'gez'; o.t = 0; o.sure = 3 + Math.random() * 2; } }
+  else {   // gez: evinin iki yanı arasında ağır ağır
+    const f = o.hedef - o.kx; o.yon = f > 0 ? 1 : -1; hiz = 16;
+    if (Math.abs(f) < 2) o.hedef = o.evX + (o.hedef > o.evX ? -1 : 1) * (40 + Math.random() * 25);
+    if (o.t > o.sure) { o.durum = 'kokla'; o.t = 0; }
+  }
+  const ad = Math.min(Math.abs(o.hedef - o.kx), hiz * dt);
+  o.kx += o.yon * ad; o.faz += ad / 2.4;
+  o.hk = cnYaklas(o.hk, hiz > 0 ? 1 : 0, dt * 6);
+  o.burun += dt * burunHiz;
+  o.x = o.kx;
+}
+function cnKirpiCizO(o, t) {
+  if (!cnGorunur(o.kx, 40)) return;
+  const s = 1.35 * cnDerinlik(o.zy), du = CN.saat - o.dokT;
+  const hop = du < 1.1 ? Math.abs(Math.sin(du / 1.1 * Math.PI * 2)) * 7 : 0, yaprak = du < 1.1 ? smooth(du / 1.1) : 0;
+  cnKirpiCiz(g, o.kx, o.zy, s, o.yon, o.faz, o.burun, o.hk, hop, yaprak);
+  cnKalpler(g, o.kx, o.zy - 26 * s, CN.saat - o.kalpT, s * .8);
+  cnIsabet(o, o.kx, o.zy - 9 * s, 30, 24);
+}
+function cnKirpiDokun(o) { o.dokT = o.kalpT = CN.saat; cnOlay('k12KirpiDokun', o, o.kx, o.zy - 10); }
+TUR.kaydet('k12Kirpi', { kur: cnKirpiKur, guncelle: cnKirpiGuncelle, ciz: cnKirpiCizO });
+
+// ════════════════════ botanik bahçesi: kırlangıçlar ════════════════════
+// Lacivert sırtlı, beyaz karınlı, pas rengi gerdanlı, çatal kuyruklu; çimenin üstünde alçaktan uzun kavislerle süzülür,
+// arada kanat çırpar. Feza bölgedeyse onun çevresinde dolanıp önünden alçak bir dalışla geçer. Dokununca bir takla atar.
+function cnKirlangicCiz(c, x, y, s, aci, kanat) {
+  c.save(); c.translate(x, y); c.rotate(aci); if (Math.cos(aci) < 0) c.scale(s, -s); else c.scale(s, s);
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  c.strokeStyle = '#26345f'; c.lineWidth = 1.1;
+  c.beginPath(); c.moveTo(-4.5, 0); c.lineTo(-14, -2.8); c.moveTo(-4.5, .4); c.lineTo(-14, 3); c.stroke();   // çatal kuyruk
+  const w = kanat;   // -1 aşağı .. 1 yukarı
+  c.fillStyle = '#1f2a4f'; c.beginPath(); c.moveTo(0, -.5); c.quadraticCurveTo(-3, -6 * w - 2, -9, -10 * w); c.quadraticCurveTo(-3, -3 * w, 2, .4); c.fill();
+  cnElips(c, 0, 0, 6.2, 2.5, 0, '#2c3c6e');
+  cnElips(c, .6, 1.1, 4.8, 1.4, 0, '#fbf7f0');
+  cnElips(c, 5.3, .5, 1.6, 1.3, 0, '#c8643e');
+  cnElips(c, 6, -.5, 2.6, 2.3, 0, '#2c3c6e');
+  c.fillStyle = '#ffffff'; c.beginPath(); c.arc(6.8, -1, .55, 0, CN_PI2); c.fill();
+  c.fillStyle = '#26345f'; c.beginPath(); c.moveTo(8.4, -.6); c.lineTo(10, -.2); c.lineTo(8.4, .3); c.fill();
+  c.fillStyle = '#34467f'; c.beginPath(); c.moveTo(0, -.2); c.quadraticCurveTo(-2, -5 * w - 1, -7, -9 * w + .5); c.quadraticCurveTo(-1.5, -2.5 * w, 2.5, .6); c.fill();   // yakın kanat
+  c.restore();
+}
+function cnKirlangicKur(o) {
+  o.evX = o.x; o.x0 = o.x0 || o.x - 400; o.x1 = o.x1 || o.x + 400; o.cx = o.x; o.kuslar = [];
+  for (let i = 0; i < (o.n || 2); i++) o.kuslar.push({ ph: i * 2.4 + .7, x: o.x + i * 60, y: CN_YOL - 160, vx: 0, vy: 0, aci: 0, kanat: 0, takla: -9 });
+  cnKayit(o);
+}
+function cnKirlangicGuncelle(o, dt) {
+  if (!(dt > 0)) return; dt = Math.min(dt, .05);
+  if (Math.abs(P.x - o.cx) > 2000) return;
+  const icerde = P.x > o.x0 && P.x < o.x1 && !cnFezaBinis();
+  o.cx = cnYaklas(o.cx, icerde ? P.x : o.evX, dt * .8);
+  const T0 = CN.saat;
+  for (const k of o.kuslar) {
+    // uzun yatay kavisler + Feza'nın önünden alçak dalış
+    const dalis = Math.max(0, Math.sin(T0 * .45 + k.ph)) ** 6 * (icerde ? 1 : .4);
+    let hx = o.cx + Math.sin(T0 * .62 + k.ph) * 190 + Math.sin(T0 * 1.7 + k.ph * 2) * 30;
+    let hy = CN_YOL - 165 + Math.sin(T0 * 1.25 + k.ph) * 45 + dalis * 105;
+    const du = CN.saat - k.takla;
+    if (du < 1.1) { const a = du / 1.1 * CN_PI2; hx += Math.sin(a) * 30; hy -= (1 - Math.cos(a)) * 26; }
+    hx = clamp(hx, o.x0 - 60, o.x1 + 60);
+    const nx = cnYaklas(k.x, hx, dt * 2.4), ny = cnYaklas(k.y, hy, dt * 2.4);
+    k.vx = cnYaklas(k.vx, (nx - k.x) / dt, dt * 6); k.vy = cnYaklas(k.vy, (ny - k.y) / dt, dt * 6);
+    k.x = nx; k.y = ny;
+    k.aci = Math.atan2(k.vy, k.vx);
+    // süzülürken kanatlar geride ve yukarıda; arada hızlı çırpış
+    const cirp = Math.sin(T0 * .9 + k.ph) > .2;
+    k.kanat = cirp ? Math.sin(T0 * 22 + k.ph) : .25 + Math.sin(T0 * 2 + k.ph) * .1;
+  }
+  o.x = o.kuslar[0].x;
+}
+function cnKirlangicCizO(o, t) {
+  for (const k of o.kuslar) {
+    if (!cnGorunur(k.x, 30)) continue;
+    cnKirlangicCiz(g, k.x, k.y, 1.8, k.aci, k.kanat);
+    cnIsabet(o, k.x, k.y, 32, 26);   // son çizilen kuşa isabet
+    o.sonKus = k;
+  }
+}
+function cnKirlangicDokun(o) {
+  const k = o.sonKus || o.kuslar[0];
+  k.takla = CN.saat; cnOlay('k12KirlangicDokun', o, k.x, k.y);
+}
+TUR.kaydet('k12Kirlangic', { kur: cnKirlangicKur, guncelle: cnKirlangicGuncelle, ciz: cnKirlangicCizO });
+
+// ════════════════════ botanik bahçesi: kelebek bulutları ════════════════════
+// Çiçek tarhının üstünde 6–7 kelebek birlikte dans eder; Feza geçerken bir süre onun çevresinde döner (sonra tarhına döner);
+// dokununca hepsi parıltıyla yukarı doğru helezon çizip yeniden tarha iner. OLAY 'k12KelebekBulut' (o.dokun: dokunuşla mı).
+function cnBulutKur(o) {
+  const n = o.n || 7, r = rng(Math.floor(o.x) + 31);
+  o.evX = o.x; o.zy = o.zy || CN_CIM + 3; o.kb = []; o.sarT = -99; o.sar = 0; o.dokT = -9; o.dokun = false;
+  for (let i = 0; i < n; i++) o.kb.push({ x: o.x + (r() - .5) * 80, y: o.zy - 30, ph: r() * 6.28, hz: .45 + r() * .4, R: 30 + r() * 40, renk: Math.floor(r() * CN_KELEBEK.length), yon: 1, acik: 1, egim: 0 });
+  o.cicek = []; for (let i = 0; i < 5; i++) o.cicek.push({ x: (i - 2) * 15 + (r() - .5) * 6, boy: 12 + r() * 8, renk: Math.floor(r() * CN_CICEK.length) });
+  cnKayit(o);
+}
+function cnBulutGuncelle(o, dt) {
+  if (!(dt > 0)) return; dt = Math.min(dt, .05);
+  const adx = Math.abs(P.x - o.evX);
+  if (adx > 1700) return;
+  const T0 = CN.saat;
+  // Feza yaklaşınca (25 sn'de bir) 7 sn onun çevresinde döner
+  if (adx < 160 && !cnFezaBinis() && T0 - o.sarT > 25) { o.sarT = T0; o.dokun = false; cnOlay('k12KelebekBulut', o, o.evX, o.zy - 30); }
+  o.sar = cnYaklas(o.sar, T0 - o.sarT < 7 && Math.abs(P.x - o.evX) < 500 ? 1 : 0, dt * 1.5);
+  const du = T0 - o.dokT;
+  let i = 0;
+  for (const k of o.kb) {
+    const a = T0 * k.hz + k.ph;
+    let hx = o.evX + Math.sin(a) * k.R + Math.sin(T0 * 1.7 + k.ph) * 8;
+    let hy = o.zy - 20 - Math.abs(Math.sin(a * 1.3 + i)) * 26 - (i % 3) * 6;
+    if (o.sar > .01) {
+      const fx = P.x + Math.cos(T0 * 1.2 + k.ph) * (36 + i * 6), fy = P.y - 92 + Math.sin(T0 * 1.6 + k.ph * 1.3) * 26;
+      hx = lerp(hx, fx, o.sar); hy = lerp(hy, fy, o.sar);
+    }
+    if (du < 2) { const u = du / 2, b = Math.sin(Math.PI * u); hx += Math.cos(u * 9 + k.ph) * 30 * b; hy -= (40 + i * 8) * b; }
+    const ox = k.x;
+    k.x = cnYaklas(k.x, hx, dt * 2.6); k.y = cnYaklas(k.y, hy, dt * 2.6);
+    if (Math.abs(k.x - ox) > dt * 3) k.yon = k.x > ox ? 1 : -1;
+    k.acik = Math.abs(Math.sin(T0 * (9 + i) + k.ph)); k.egim = Math.sin(T0 * 2 + k.ph) * .18;
+    i++;
+  }
+  o.x = o.evX;
+}
+function cnBulutCizO(o, t) {
+  if (!cnGorunur(o.evX, 520)) return;
+  if (cnGorunur(o.evX, 40)) for (const f of o.cicek) cnCicekCiz(g, o.evX + f.x, o.zy, CN_CICEK[f.renk], f.boy);
+  const du = CN.saat - o.dokT;
+  let mx = 0, my = 0, n = 0;
+  for (const k of o.kb) {
+    if (!cnGorunur(k.x, 20)) continue;
+    if (du < 2) cnIsik(g, '#fff3c4', k.x, k.y - 3, 14, Math.sin(Math.PI * du / 2) * .55);
+    cnKelebekCiz(g, k.x, k.y, 1.05, k.acik, k.renk, k.yon, k.egim);
+    mx += k.x; my += k.y; n++;
+  }
+  if (n) cnIsabet(o, mx / n, my / n, 60, 40);
+}
+function cnBulutDokun(o) { o.dokT = CN.saat; o.dokun = true; cnOlay('k12KelebekBulut', o, o.hx, o.hy); }
+TUR.kaydet('k12KelebekBulut', { kur: cnBulutKur, guncelle: cnBulutGuncelle, ciz: cnBulutCizO });
+
 // ════════════════════ dokunma ════════════════════
 const CN_DOKUN = { k12Kedi: cnKediDokun, k12Kopek: cnKopekDokun, k12Kus: cnKusDokun, k12Marti: cnMartiDokun, k12Kelebek: cnKelebekDokun,
-  k12Sincap: cnSincapDokun, k12Ogrenci: cnOgrenciDokun, k12Fiskiye: cnFiskiyeDokun };
+  k12Sincap: cnSincapDokun, k12Ogrenci: cnOgrenciDokun, k12Fiskiye: cnFiskiyeDokun,
+  k12Kirpi: cnKirpiDokun, k12Kirlangic: cnKirlangicDokun, k12KelebekBulut: cnBulutDokun };
 // Dünya koordinatında en yakın isabet (son 0.3 sn'de çizilmiş canlılar arasından); yoksa null
 function cnIsabetBul(wx, wy) {
   let en = null, ed = 1;
@@ -1346,9 +1615,9 @@ for (const tip of Object.keys(CN_DOKUN)) {
   TUR.kaydet(tip, { guncelle(o, dt) { cnSaatIlerle(); if (gu) gu(o, dt); }, ciz(o, tm) { cnSaatIlerle(); ci(o, tm); } });
 }
 
-// ════════════════════ yerleşim (sütunlar; bölgeler: BOLUM12.md) ════════════════════
+// ════════════════════ yerleşim (sütunlar; bölgeler: BOLUM12.md, tur 2 haritası COLS 1100) ════════════════════
 const yer = (tip, c, o) => nesne(tip, c, yuzey(c), o || {});
-// lojman 0–70 (sabah): tekir kedi güneşleniyor, serçeler, çiçek kelebekleri, çimde fıskiye, sabah koşusundaki öğrenci
+// lojman 0–70 (sabah): tekir kedi güneşleniyor, serçeler, çiçek kelebekleri, çimde fıskiye, sabah yürüyüşündeki öğrenci
 yer('k12Kedi', 27, { kurk: 'tekir', hal: 'gunes', yon: -1 });
 yer('k12Kus', 50, { n: 4, x0: nx(38), x1: nx(64) });
 yer('k12Kelebek', 19, { renk: 0 }); yer('k12Kelebek', 43, { renk: 1 });
@@ -1374,27 +1643,36 @@ yer('k12Kelebek', 342, { renk: 3 }); yer('k12Kelebek', 396, { renk: 4 });
 yer('k12Kus', 383, { n: 5, x0: nx(360), x1: nx(445) });
 yer('k12Ogrenci', 318, { v: 2, poz: 'otur', yon: 1 });
 yer('k12Ogrenci', 432, { v: 0, poz: 'yuru', yon: -1 });
-// bilgi 450–560: iri kampüs köpeği, güneşlenen sarman, öğrenciler, bir kelebek (havuzu ETKINLIK yapıyor)
+// bilgi 450–560: iri kampüs köpeği, havuz kenarında güneşlenen sarman, öğrenciler, bir kelebek (havuzu ETKINLIK yapıyor)
 yer('k12Kopek', 547, { yon: -1 });
 yer('k12Kedi', 489, { kurk: 'sarman', hal: 'gunes', yon: 1 });
 yer('k12Ogrenci', 468, { v: 4, poz: 'yuru', yon: 1 });
 yer('k12Ogrenci', 532, { v: 1, poz: 'otur', yon: -1 });
 yer('k12Kelebek', 515, { renk: 1 });
-// yol2 560–665 (bisiklet, yokuş): sincap, bisikletli öğrenci, kaçmayan serçeler, uzakta martı
-yer('k12Sincap', 588, { yon: 1 });
-yer('k12Ogrenci', 602, { v: 5, poz: 'bisiklet', yon: -1, yakin: 420 });
-yer('k12Ogrenci', 645, { v: 3, poz: 'yuru', yon: -1, yakin: 420 });
-yer('k12Kus', 630, { n: 3, kacmaz: true });
-yer('k12Marti', 620, { gy: 390 });
-// golet 665–830 (ördekler GOLET'in): martılar suyun üstünde, kıyıda kelebek, karşı kıyıda yürüyen öğrenci
-yer('k12Marti', 725, { gy: 410 }); yer('k12Marti', 790, { gy: 380 });
-yer('k12Kelebek', 676, { renk: 0 });
-yer('k12Ogrenci', 818, { v: 1, poz: 'yuru', yon: 1 });
-// tepe 830–900 (gün batımı, final): yalnız bir kelebek ve uzakta martı; piknik sakin kalsın
-yer('k12Kelebek', 842, { renk: 3 });
-yer('k12Marti', 865, { gy: 370 });
+// botanik 560–700 (YENİ; kaplumbağalar ve sera BOTANIK'in): kelebek bulutları, ispinozlar, kırlangıçlar, kirpi, sincap,
+// taş kabından su içen tekir, uzakta bahçede dolaşan bir öğrenci
+yer('k12KelebekBulut', 574, { n: 6 }); yer('k12KelebekBulut', 618, { n: 7 }); yer('k12KelebekBulut', 674, { n: 6 });
+yer('k12Kus', 596, { n: 5, tur: 'ispinoz', x0: nx(565), x1: nx(640) });
+yer('k12Kirlangic', 640, { n: 2, x0: nx(575), x1: nx(698) });
+yer('k12Kirpi', 606, { yon: 1 });
+yer('k12Sincap', 684, { yon: -1 });   // ONPLAN'ın 686'daki ağacına tırmanır
+yer('k12Kedi', 664, { kurk: 'tekir', hal: 'su', yon: 1 });
+yer('k12Ogrenci', 630, { v: 3, poz: 'yuru', yon: -1, yay: 140 });
+// yol2 700–805 (bisiklet, yokuş): sincap, bisikletli öğrenci, kaçmayan serçeler, uzakta martı
+yer('k12Sincap', 728, { yon: 1 });
+yer('k12Ogrenci', 742, { v: 5, poz: 'bisiklet', yon: -1, yakin: 420 });
+yer('k12Ogrenci', 785, { v: 3, poz: 'yuru', yon: -1, yakin: 420 });
+yer('k12Kus', 770, { n: 3, kacmaz: true });
+yer('k12Marti', 760, { gy: 390 });
+// golet 805–1030 (su 830–1005; ördek, kuğu, kaz GOLET'in): martılar suyun üstünde, kıyıda kelebek, karşı kıyıda yürüyen öğrenci
+yer('k12Marti', 865, { gy: 410 }); yer('k12Marti', 930, { gy: 380 }); yer('k12Marti', 985, { gy: 400 });
+yer('k12Kelebek', 816, { renk: 0 });
+yer('k12Ogrenci', 1018, { v: 1, poz: 'yuru', yon: 1, yay: 90 });
+// tepe 1030–1100 (gün batımı, final 1070): yalnız bir kelebek ve uzakta martı; piknik sakin kalsın
+yer('k12Kelebek', 1042, { renk: 3 });
+yer('k12Marti', 1065, { gy: 370 });
 
 // Test kancası (vlib12 ile): CANLI12.liste, CANLI12.dokun(o), CANLI12.isabet(wx, wy)
 globalThis.CANLI12 = { CN, liste: CN.liste, dokun: o => CN_DOKUN[o.tip](o), isabet: cnIsabetBul,
-  cizici: { kedi: cnKediCiz, kopek: cnKopekCiz, serce: cnSerceCiz, marti: cnMartiCiz, kelebek: cnKelebekCiz, sincap: cnSincapCiz, ogrenci: cnOgrenciCiz, ogr: CN_OGR } };
+  cizici: { kedi: cnKediCiz, kopek: cnKopekCiz, serce: cnSerceCiz, marti: cnMartiCiz, kelebek: cnKelebekCiz, sincap: cnSincapCiz, ogrenci: cnOgrenciCiz, ogr: CN_OGR, kirpi: cnKirpiCiz, kirlangic: cnKirlangicCiz, sukabi: cnSuKabi } };
 })();

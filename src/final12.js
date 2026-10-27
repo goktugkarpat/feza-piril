@@ -1,4 +1,4 @@
-/* final12.js — Bölüm 12'nin finali: gün batımı tepesinde piknik (k12Final, sütun 870).
+/* final12.js — Bölüm 12'nin finali: gün batımı tepesinde piknik (k12Final, sütun 1070).
    Feza tepeye yürüyüp piknik örtüsüne basınca kesintisiz bir sinematik an başlar (dokunma gerekmez, ~23 sn):
      1. Feza yavaşlayıp örtünün üstünde durur; anne arkasından gelip örtüye oturur ve Feza'yı yanına çağırır.
      2. Feza annesine dönüp yanına oturur. Gün batımı altınlaşır (güneş göletin üstünde ufka iner).
@@ -26,15 +26,16 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
   // ── yerleşim (dünya birimi; zemin düz, y = 720) ──
   const ORTU_DX = 30;        // örtünün ortası k12Final nesnesinin biraz sağında (Feza soldan gelir)
   const ORTU_YARI = 150;     // örtünün yarı eni
-  const ANNE_ARA = 92;       // otururken anne ile Feza arası (annenin uzanan bacakları Feza'ya değmesin)
-  const SARIL_ARA = 28;      // sarılırken Feza annenin önünde (anne.x + 28·yön; ANNE ile kararlaştırıldı)
+  const ANNE_ARA = 60;       // anne Feza'nın durduğu yerden bu kadar öteye oturur (Feza 1-2 adımla yanına gelir)
+  const YANINDA = 28;        // Feza annenin yanına oturur: anne.x + 28·yön, kalça hizasında (ANNE ile kararlaştırıldı)
   const ANNE_HIZ = 95;       // annenin örtüye yürüme hızı (birim/sn)
+  const FEZA_HIZ = 70;       // Feza'nın annesinin yanına yürüme hızı (birim/sn)
   // örtünün üstündeki şeyler (örtü ortasına göre): hepsi arka sırada, oturanların arkasında kalır
   const YER = { tabak: [32, -7], surahi: [64, -9], bardak1: [50, -6], bardak2: [80, -5], sepet: [116, -8], ucurtma: [190, 0] };
 
   // ── zaman çizelgesi (sn; P.ucus alındığı andan itibaren). Anne yürüyüşü değişken, gerisi ona göre kurulur ──
   const SURE_OTUR = 0.7;     // ayaktan oturmaya geçiş
-  const SURE_CAGIR = 1.3;    // anne çağırır → Feza döner ve oturur
+  const SURE_CAGIR = 1.1;    // anne yanını eliyle vurup çağırır → Feza yürümeye başlar
   const SURE_DANS = 8.0;     // Pırıl'ın müzik anı
   const SURE_SARIL = 7.5;    // sarılma (kararma bunun içinde başlar)
   const SON_PAY = 2.0;       // 'kampusFinalBitti' sonrası oyun.js'in beklemesi (yalnız toplam süre hesabı için)
@@ -289,7 +290,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
 
   // ════════════════ karakter bağdaştırıcıları ════════════════
   // Anne: ANNE12.devral varsa biz çizeriz; yoksa (eski anne12) anne kendi yürüyüşünde kalır ve burada çizilmez.
-  const AOPT = { poz: 'dur', yon: 1, bak: 0, hiz: 0, u: 1, otur: false, katman: null };
+  const AOPT = { poz: 'dur', yon: 1, bak: 0, hiz: 0, u: 1, otur: false, katman: null, salla: 0 };
   function anneBizde(o) { return !!o.anneBizde && typeof anne12Ciz === 'function'; }
   function anneCiz(o, tm, katman) {
     if (!anneBizde(o)) return;
@@ -300,14 +301,15 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
   // Feza: oturana kadar feza.js'in kendi duruşu (normal fizik, kontrol kapalı: P.kilit); oturunca P.ucus = o ve FEZA12'nin
   // pozları — 'otur' {yon, bak, sallan, salla} piknik örtüsünde bağdaş, 'saril' {u, yon} ayağa kalkıp anneye sarılma.
   // fezaPoz12 yoksa (FEZA12 yüklenemediyse) burada fezaCizPoz yedeğiyle çizeriz. Opt nesneleri her kare aynıdır (çöp yok).
-  const FO_OTUR = { yon: 1, u: 0, bak: 0, sallan: 0, salla: 0, sevinc: 0 }, FO_SARIL = { yon: 1, u: 0 };
+  const FO_OTUR = { yon: 1, u: 0, bak: 0, sallan: 0, salla: 0, sevinc: 0 }, FO_SARIL = { yon: 1, u: 0, otur: true, yasla: 0, ox: 0 };
   let fezaPozAd = null;
   function fezaPozVer(ad) {
     fezaPozAd = ad;
     if (typeof fezaPoz12 !== 'function') return;
-    try { fezaPoz12(ad, ad === 'saril' ? FO_SARIL : ad === 'otur' ? FO_OTUR : undefined); }
+    try { if (ad) fezaPoz12(ad, ad === 'saril' ? FO_SARIL : FO_OTUR); else if (fezaPozAcik()) fezaPoz12(null); }
     catch (e) { if (typeof omHataBildir === 'function') omHataBildir('final12.fezaPoz12', e); }
   }
+  function fezaPozAcik() { return typeof FEZA12 !== 'undefined' && FEZA12 && !!FEZA12.poz; }
   function fezaYedekCiz(o, tm) {
     if (typeof fezaPoz12 === 'function' || typeof fezaCizPoz !== 'function' || P.ucus !== o) return;
     g.save(); g.translate(o.fx, o.fy); if (o.fyon < 0) g.scale(-1, 1);
@@ -348,10 +350,13 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     // anne Feza'nın hangi yanındaysa o yanına oturur (genelde solunda, arkasından gelmiştir)
     const ax0 = typeof ANNE12 !== 'undefined' && ANNE12 && Number.isFinite(ANNE12.x) ? ANNE12.x : o.fx - 110;
     const ay0 = typeof ANNE12 !== 'undefined' && ANNE12 && Number.isFinite(ANNE12.y) ? ANNE12.y : o.fy;
+    // ikisi de aynı yöne (güneşe, gölete) bakarak yan yana oturur: anne gerideki yanda, Feza onun önündeki yanında (anne.x + 28·yön)
+    const kenar = bx - ORTU_YARI + 30, kenar2 = bx + ORTU_YARI - 60;
     let yan = ax0 <= o.fx ? -1 : 1;
-    let as = clamp(o.fx + yan * ANNE_ARA, bx - ORTU_YARI + 20, bx + ORTU_YARI - 20);
-    if (Math.abs(as - o.fx) < 50) { yan = -yan; as = clamp(o.fx + yan * ANNE_ARA, bx - ORTU_YARI + 20, bx + ORTU_YARI - 20); }
-    o.yan = yan; o.as = as; o.ax0 = ax0; o.ax = ax0; o.ay = ay0; o.ayon = as >= ax0 ? 1 : -1;
+    let as = clamp(o.fx + yan * ANNE_ARA, kenar, kenar2);
+    if (Math.abs(as - o.fx) < 30 && (as === kenar || as === kenar2)) { yan = -yan; as = clamp(o.fx + yan * ANNE_ARA, kenar, kenar2); }
+    o.yan = yan; o.yon = -yan; o.as = as; o.fs = as + o.yon * YANINDA;   // fs: Feza'nın oturacağı yer
+    o.ax0 = ax0; o.ax = ax0; o.ay = ay0; o.ayon = as >= ax0 ? 1 : -1;
     o.anneBizde = false;
     if (typeof ANNE12 !== 'undefined' && ANNE12 && typeof ANNE12.devral === 'function') {
       try { ANNE12.devral('final'); o.anneBizde = true; } catch (e) { o.anneBizde = false; }
@@ -361,21 +366,23 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     o.zYuru = yol < 8 ? 0 : yol / hiz;
     o.zOtur = o.zYuru;                         // anne oturmaya başlar
     o.zCagir = o.zOtur + SURE_OTUR + 0.35;     // anne Feza'yı çağırır
-    o.zFotur = o.zCagir + SURE_CAGIR;          // Feza döner ve oturur
-    o.zDans = o.zFotur + SURE_OTUR + 0.5;      // Pırıl'ın müzik anı
+    o.zFgel = o.zCagir + SURE_CAGIR;           // Feza annesinin yanına yürür
+    o.zFotur = o.zFgel + Math.max(0.35, Math.abs(o.fs - o.fx) / FEZA_HIZ);   // varır ve oturur
+    o.zDans = o.zFotur + SURE_OTUR + 0.4;      // Pırıl'ın müzik anı
     o.zSaril = o.zDans + SURE_DANS;            // sarılma
+    o.zSalla = o.zSaril + 1.2;                 // anne Feza'yı beşik gibi sallamaya başlar
     o.zAksam = o.zSaril + 1.2;                 // gün kararmaya başlar
     o.zBitti = o.zSaril + SURE_SARIL;          // kampusFinalBitti
     o.anlar = { otur: false, cagir: false, oturdu: false, dans: false, saril: false, yildiz: false };
     o.pdon = 0; o.ezil = 0; o.ppoz = 'ucus'; o.takla = -1; o.taklaYon = 1; o.notaT = 0; o.kalpT = 0;
     o.fyon = P.f < 0 ? -1 : 1;
     o.kurabiye = 3; o.limon = 0;
-    o.adim = () => { if (P.ucus !== o) return; P.x = o.fx; P.y = o.fy; P.vx = P.vy = 0; P.ground = true; P.f = o.fyon; };
+    o.adim = () => { if (P.ucus !== o) return; P.x = o.fx; P.y = o.fy; P.vx = o.fvx || 0; P.vy = 0; P.ground = true; P.f = o.fyon; };
     OLAY.emit('k12FinalBasla', { o, sure: o.zBitti + SON_PAY });
   }
   // Feza oturacağı an kontrol finale geçer (o ana dek kendi duruşuyla, kontrolü kapalı ayakta bekler)
   function kontrolAl(o) {
-    o.fx = P.x; o.fy = P.y;
+    o.fx = o.fx0 = P.x; o.fy = P.y; o.fezaCiz = true;   // fezaCiz: poz yokken feza.js Feza'yı normal yürüyüş/duruşla çizer
     o.px = Number.isFinite(D.x) ? D.x : o.fx - 50; o.py = Number.isFinite(D.y) ? D.y : o.fy - 100;   // Pırıl bulunduğu yerden süzülür
     o.pvx = o.pvy = 0; o.pyon = (D.f || 1) < 0 ? -1 : 1;
     P.ucus = o; P.vx = P.vy = 0; P.ground = true; P.kilit = 0;
@@ -386,21 +393,21 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
   // Kamera: anne + Feza + Pırıl ve üstlerinde biraz gök (akşam olunca yıldızlar için biraz daha)
   function kameraKutu(o) {
     const x0 = Math.min(o.ax, o.fx), x1 = Math.max(o.ax, o.fx);
-    omDkEkle(x0 - 120, o.fy - 250 - 70 * K12FINAL.aksam, x1 + 120, o.fy + 36);
-    omDkEkle(o.px - 40, o.py - 40, o.px + 40, o.py + 30);
+    omDkEkle(x0 - 130, o.fy - 190 - 50 * K12FINAL.aksam, x1 + 130, o.fy + 30);   // gök az, ikisi kadrajın ortasına yakın
+    omDkEkle(o.px - 50, o.py - 62, o.px + 50, o.py + 34);   // Pırıl'ın tamamı (kanat ve ibik dahil)
   }
 
   // Pırıl'ın yolu: çağrıda annenin başının üstünde tur, dansta ikisinin arasında ritimle salınma (bir kez kendiliğinden takla),
   // sarılmada üstlerinde kollarını kavuşturup süzülme. Yaylı (kritik sönümlü) takip: sıçrama yok.
   function pirilAdim(o, t, dt) {
-    const orta = (o.as + o.fx) / 2;
+    const orta = (o.as + o.fs) / 2 + o.yon * 14;
     let tx, ty;
     if (t < o.zDans) { tx = orta + Math.sin(t * 1.3) * 18; ty = o.fy - 128 + Math.sin(t * 2.1) * 6; }   // Feza oturunca aralarına süzülür
     else if (t < o.zSaril) {   // dans: ikisinin arasında ritimle salınır, iki kez sağa sola döner, bir kez kendiliğinden takla
       const d = t - o.zDans;
       tx = orta + Math.sin(d * Math.PI * 0.5) * 34; ty = o.fy - 138 - Math.abs(Math.sin(d * Math.PI * 2)) * 14;
       if (o.takla < 0 && d > 3.6 && d < 3.7) { o.takla = 0; o.taklaYon = o.pyon; }
-    } else { tx = orta + Math.sin(t * 0.9) * 14; ty = o.fy - 128 + Math.sin(t * 1.8) * 5; }
+    } else { tx = o.fs + o.yon * 58 + Math.sin(t * 0.9) * 10; ty = o.fy - 112 + Math.sin(t * 1.8) * 5; }   // sarılmada alçakta, yanlarında (kadrajda tam görünsün)
     const kk = 16, sn = 2 * Math.sqrt(kk);
     o.pvx += (kk * (tx - o.px) - sn * o.pvx) * dt; o.pvy += (kk * (ty - o.py) - sn * o.pvy) * dt;
     o.px += o.pvx * dt; o.py += o.pvy * dt;
@@ -442,51 +449,59 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     const t = o.t;
     K12FINAL.t = t;
 
-    // ── anne: örtüye yürür, oturur, Feza'yı çağırır, müzikte alkışlar, sonra dizlerinin üstüne kalkıp sımsıkı sarılır ──
-    const yuz = o.fx >= o.as ? 1 : -1;   // oturunca Feza'ya bakar
-    AOPT.hiz = 0; AOPT.bak = 0; AOPT.u = 1; AOPT.otur = true;
+    // ── anne: örtüye yürür, güneşe dönük oturur, yanını eliyle vurup Feza'yı çağırır, müzikte alkışlar, sonra yana eğilip
+    //    Feza'ya sımsıkı sarılır ve onu beşik gibi hafifçe sallar; en sonda başını kaldırıp ilk yıldızlara bakar ──
+    AOPT.hiz = 0; AOPT.bak = 0; AOPT.u = 1; AOPT.otur = true; AOPT.yon = o.yon; AOPT.salla = 0;
     if (t < o.zOtur) {
       const u = o.zYuru > 0 ? yum(t / o.zYuru) : 1, eski = o.ax;
       o.ax = lerp(o.ax0, o.as, u);
       AOPT.poz = 'yuru'; AOPT.yon = o.ayon; AOPT.hiz = Math.abs(o.ax - eski) / dt; AOPT.otur = false;
       K12FINAL.faz = 'anne_gelir';
     } else if (t < o.zCagir) {
-      o.ax = o.as; AOPT.poz = 'otur'; AOPT.yon = yuz; AOPT.bak = 1;
+      o.ax = o.as; AOPT.poz = 'otur'; AOPT.otur = false; AOPT.u = arasi(t, o.zOtur, o.zOtur + SURE_OTUR); AOPT.bak = 1;
       an(o, 'otur'); K12FINAL.faz = 'anne_oturur';
-    } else if (t < o.zFotur + SURE_OTUR) {
-      o.ax = o.as; AOPT.poz = 'cagir'; AOPT.yon = yuz; AOPT.bak = 1;   // "Gel bakalım yanıma": eliyle örtüye hafifçe vurur
+    } else if (t < o.zFotur + 0.3) {
+      o.ax = o.as; AOPT.poz = 'cagir'; AOPT.bak = 1;   // "Gel bakalım yanıma": yanına, örtüye eliyle hafifçe vurur
       an(o, 'cagir'); K12FINAL.faz = 'cagir';
     } else if (t < o.zSaril) {
-      o.ax = o.as; AOPT.poz = 'alkis'; AOPT.yon = yuz; AOPT.bak = Math.sin(t * 0.9) > 0.3 ? 1 : -0.6;   // alkışlar; bir Pırıl'a bir Feza'ya bakar
+      o.ax = o.as; AOPT.poz = 'alkis'; AOPT.bak = Math.sin(t * 0.9) > 0.3 ? 1 : -0.6;   // alkışlar; bir Feza'ya bir Pırıl'a bakar
       K12FINAL.faz = 'dans';
     } else {
-      // Feza ayağa kalkıp kollarını açarken anne dizlerinin üstüne kalkıp ona doğru kayar ve sımsıkı sarılır
-      // (Feza annenin önünde: anne.x + 28·yön; FEZA12'nin 'saril' hedefi diz çökmüş annenin boynu)
-      const k = arasi(t, o.zSaril, o.zSaril + 0.9);
-      o.ax = lerp(o.as, o.fx - SARIL_ARA * yuz, k);
-      AOPT.poz = 'saril'; AOPT.otur = false; AOPT.yon = yuz; AOPT.bak = 1; AOPT.u = arasi(t, o.zSaril + 0.3, o.zSaril + 1.8);
+      // anne yanağını Feza'nın başına eğer (FEZA12.bas'ı kendisi okur) ve onu beşik gibi sallar; sonda göğe, ilk yıldızlara bakar
+      o.ax = o.as; AOPT.poz = 'saril'; AOPT.u = arasi(t, o.zSaril, o.zSaril + 1.2);
+      AOPT.salla = arasi(t, o.zSalla, o.zSalla + 1.2);
+      AOPT.bak = t > o.zBitti - 2.2 ? -1 : 1;
       K12FINAL.faz = 'saril';
     }
     if (o.anneBizde && typeof ANNE12 !== 'undefined' && ANNE12) { ANNE12.x = o.ax; ANNE12.y = o.ay; ANNE12.yon = AOPT.yon; }
 
-    // ── Feza: anne çağırana dek ayakta (kendi duruşu, kontrol kapalı); çağrıda annesine döner, oturur, sonra sarılır ──
+    // ── Feza: anne çağırana dek ayakta (kendi duruşu, kontrol kapalı); çağrıda annesine döner, 1-2 adımla yanına yürür,
+    //    güneşe dönüp bağdaş kurar; müzikte salınır; sonra annesine dönüp sarılır ve başını omzuna yaslar ──
     if (P.ucus !== o) {
       P.kilit = Math.max(P.kilit || 0, 0.5); P.buf = 0;
       if (typeof omHepsiniBirak === 'function') omHepsiniBirak();   // parmak basılı kalsa da yürümesin
-      if (t > o.zCagir + 0.45) P.f = o.fyon = o.as < P.x ? -1 : 1;  // "Gel bakalım!" → annesine döner
-      if (t >= o.zFotur && P.ground) kontrolAl(o);
+      if (t > o.zCagir + 0.4) P.f = o.fyon = o.fs < P.x ? -1 : 1;  // "Gel bakalım!" → annesine döner
+      if (t >= o.zFgel && P.ground) kontrolAl(o);
     }
     if (P.ucus === o) {
-      o.fyon = o.as < o.fx ? -1 : 1;
-      if (t < o.zSaril) {
-        FO_OTUR.yon = o.fyon;
+      if (t < o.zFotur) {   // annesinin yanına yürür (feza.js'in kendi yürüyüşü: P.vx ve P.f'ye göre)
+        const sure = o.zFotur - o.zFgel, u = ke((t - o.zFgel) / sure), eski = o.fx;
+        o.fx = lerp(o.fx0, o.fs, yum(u));
+        o.fyon = o.fs < o.fx0 ? -1 : 1; o.fvx = P.vx = (o.fx - eski) / dt;
+        fezaPozVer(null);
+      } else if (t < o.zSaril) {
+        o.fx = o.fs; o.fyon = o.yon; o.fvx = P.vx = 0;
+        FO_OTUR.yon = o.yon;
         FO_OTUR.sallan = arasi(t, o.zDans, o.zDans + 1) * (1 - arasi(t, o.zSaril - 0.6, o.zSaril));
-        FO_OTUR.u = arasi(t, o.zFotur, o.zFotur + SURE_OTUR);                       // ayaktan çömelip bağdaş kurar
+        FO_OTUR.u = arasi(t, o.zFotur, o.zFotur + SURE_OTUR);                       // çömelip bağdaş kurar
         FO_OTUR.bak = -0.5 * FO_OTUR.sallan;                                         // dansta Pırıl'a bakar
         FO_OTUR.sevinc = FO_OTUR.sallan * (0.35 + 0.35 * Math.max(0, Math.sin((t - o.zDans) * Math.PI)));   // ritimle kolları kalkar
         fezaPozVer('otur'); an(o, 'oturdu');
       } else {
-        FO_SARIL.yon = o.fyon; FO_SARIL.u = arasi(t, o.zSaril, o.zSaril + 1.8);
+        o.fx = o.fs; o.fyon = -o.yon; o.fvx = P.vx = 0;   // annesine döner
+        FO_SARIL.yon = -o.yon; FO_SARIL.u = arasi(t, o.zSaril, o.zSaril + 1.4);
+        FO_SARIL.yasla = arasi(t, o.zSaril + 1.4, o.zSaril + 2.4);                  // başını annesinin omzuna yaslar
+        FO_SARIL.ox = typeof ANNE12_SALLA === 'number' ? ANNE12_SALLA * 0.7 : 0;   // annenin beşik sallanmasıyla birlikte (omuz kaymasının %70'i)
         fezaPozVer('saril');
       }
       P.f = o.fyon;
@@ -628,7 +643,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
   }
 
   // Akşam kararması (ARKA gökte kendi kararmasını yapıyorsa yarı güçte) ve ilk yıldızlar. Ekran pikseli.
-  const YILDIZLAR = (() => { const r = rng(1287), a = []; for (let i = 0; i < 22; i++) a.push([0.04 + r() * 0.92, 0.03 + r() * 0.24, 0.5 + r() * 0.7, r() * PI2, r()]); a.sort((p, q) => p[4] - q[4]); return a; })();
+  const YILDIZLAR = (() => { const r = rng(1287), a = []; for (let i = 0; i < 7; i++) a.push([0.04 + r() * 0.92, 0.03 + r() * 0.24, 0.5 + r() * 0.7, r() * PI2, r()]); a.sort((p, q) => p[4] - q[4]); return a; })();
   function aksamCizim(o, tm) {
     const K = K12FINAL.aksam;
     if (K <= 0.005) return;
@@ -686,7 +701,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
   TUR.kaydet('k12Final', {
     kur(o) {
       o.faz = 0; o.t = 0; o.done = false; o.kurabiye = 3; o.limon = 0;
-      o.fx = o.x; o.fy = o.y; o.ax = o.x - 80; o.ay = o.y; o.as = o.ax; o.px = o.x; o.py = o.y - 120; o.yan = -1;
+      o.fx = o.x; o.fy = o.y; o.ax = o.x - 80; o.ay = o.y; o.as = o.ax; o.px = o.x; o.py = o.y - 120; o.yan = -1; o.yon = 1; o.fs = o.x; o.fvx = 0;
       o.kameraFn = () => kameraKutu(o);
     },
     guncelle,

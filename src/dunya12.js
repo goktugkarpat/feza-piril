@@ -1,7 +1,7 @@
 /* dunya12.js — Bölüm 12 "Annemle Sabancı'da Bir Gün": gök ve kampüs arka planı.
    Derinlik sırası (arkadan öne, hepsi dn12Background'da, paralaksla):
      gök (sabah → gün batımı) · güneş · bulutlar · uzak Tuzla/Orhanlı tepeleri · Marmara denizi parıltısı ·
-     ormanlı orta tepeler · kampüs binaları katmanı (fotoğraftan stilize resimler, aralarda ağaç kümeleri, saat kulesi, gölet) ·
+     ormanlı orta tepeler · kampüs binaları katmanı (fotoğraftan stilize resimler + bina12.js çizimleri, ağaç kümeleri, gözlem kulesi, büyük gölet) ·
      yakın çalı sırası (gölette su)
    Zemin, yol ve orta plan (fener, bank, ağaç) ile en ön çimenler ONPLAN'ın zemin12.js'idir: dn12World → zn12World, dn12Foreground → zn12On.
    Başkalarına açık: dn12Gun() 0 sabah … 1 gün batımı, dn12Isik() → {ton, guc}, dn12GunesXY() → {x, y} (ekran pikseli),
@@ -16,7 +16,8 @@ const DN12_CY = 255;           // kameranın düz zemindeki olağan y'si: parala
 const DN12_K = 0.46;           // kampüs resimlerinin ölçeği (dünya birimi / resim pikseli)
 const DN12_TABAN = 668;        // bina katmanının yer çizgisi (resimlerdeki binaların tabanı buraya oturur)
 const DN12_F = { uzak: 0.07, deniz: 0.1, orta: 0.16, bina: 0.36, yakin: 0.62 };   // paralaks çarpanları
-const DN12_GOL = { c0: 665, c1: 830 };   // gölet bölgesi (sütun)
+// Gölet (sütun): uzak göl suyu c0'dan haritanın sonuna (tepeden de göl görünür); yakın katmandaki su y0–y1 (oyun düzlemindeki su 830–1005)
+const DN12_GOL = { c0: 805, c1: 1300, y0: 812, y1: 1022 };
 let DN12_AKSAM = true;         // FINAL için: true = akşam kararmasını (K12FINAL.aksam) gök ben çiziyorum
 
 const DN12 = {
@@ -49,8 +50,8 @@ function dn12Daire(c, x, y, r, renk) { c.fillStyle = renk; c.beginPath(); c.arc(
 function dn12Elips(c, x, y, rx, ry, renk) { c.fillStyle = renk; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); c.fill(); }
 
 // ── Gün ilerleyişi: Feza'nın sütununa göre (sabah lojmanda, altın saat gölette, gün batımı tepede) ──
-const DN12_GUN_SUTUN = [0, 8, 70, 300, 450, 560, 665, 750, 830, 868, 900];
-const DN12_GUN_DEGER = [0, 0, 0.08, 0.3, 0.45, 0.56, 0.66, 0.78, 0.9, 1, 1];
+const DN12_GUN_SUTUN = [0, 8, 70, 300, 450, 560, 700, 805, 920, 1030, 1066, 1100];
+const DN12_GUN_DEGER = [0, 0, 0.08, 0.3, 0.45, 0.52, 0.6, 0.66, 0.78, 0.9, 1, 1];
 function dn12GunHedefi(col) {
   const A = DN12_GUN_SUTUN, B = DN12_GUN_DEGER;
   if (!(col > A[0])) return B[0];
@@ -108,23 +109,35 @@ const DN12_BINALAR = [
   { ad: 'orta-cim-v2',        c: 79,  taban: 362, k: 0.42 },
   { ad: 'fens',               c: 125, taban: 472 },
   { ad: 'universite-merkezi', c: 222, taban: 505 },
-  { ad: 'fens',               c: 293, taban: 472, k: 0.38, ayna: true },
+  { ad: 'fens',               c: 293, taban: 472, k: 0.38, ayna: true, bina: 'sbs' },   // BINA'nın SBS'i gelince o çizilir
   { ad: 'fass-cim-v1',        c: 372, taban: 446 },
-  { ad: 'orta-cim-v2',        c: 441, taban: 362, k: 0.4, ayna: true },
+  { ad: 'orta-cim-v2',        c: 441, taban: 362, k: 0.4, ayna: true, bina: 'sunum', acik: 270 },  // BINA'nın SUNUM'u; önünde ağaç yok (altın kafes görünsün)
   { ad: 'bilgi-merkezi',      c: 505, taban: 412 },
-  { ad: 'kule-cevre',         c: 609, taban: 276 },
-  { ad: 'golet',              c: 748, taban: 293, alt: 700 }   // alt kenarı suyun içinde (su prosedürel olarak devam eder)
+  { ad: null,                 c: 640, bina: 'sera',  w: 380, h: 140 },                      // botanik bahçesinin büyük serası
+  { ad: 'kule-cevre',         c: 738, taban: 276 },
+  { ad: null,                 c: 790, bina: 'yurt',  w: 340, h: 190, olcek: 0.9 },          // gölete inen yokuşta yurt
+  // gölün karşı kıyısı (soldan sağa): yamaçta yurtlar, kıyıda Gösteri Merkezi ve Spor Merkezi (gerçekte yan yana, göle bakar),
+  // sonra yine yurt; golet resmi (c1035) bunlarla aynı anda ekrana girmesin diye aralarında ≥60 sütun boşluk var
+  { ad: null,                 c: 850, bina: 'yurt',  w: 350, h: 195, olcek: 0.34, kiyi: true },
+  { ad: null,                 c: 862, bina: 'yurt2', w: 310, h: 182, olcek: 0.3, kiyi: true },
+  { ad: null,                 c: 895, bina: 'pac',   w: 440, h: 130, olcek: 0.4, kiyi: true },   // Sabancı Gösteri Merkezi (koyu dalga çatı)
+  { ad: null,                 c: 922, bina: 'spor',  w: 420, h: 125, olcek: 0.38, kiyi: true },   // Spor Merkezi (beyaz martı kanadı çatı)
+  { ad: null,                 c: 950, bina: 'yurt',  w: 350, h: 195, olcek: 0.3, kiyi: true },
+  { ad: 'golet',              c: 1035, taban: 293, alt: 700 },                               // Gösteri Merkezi + Spor Merkezi (tepeden de görünür)
+  { ad: null,                 c: 1088, bina: 'yurt', w: 350, h: 195, olcek: 0.34, kiyi: true },
+  { ad: null,                 c: 1100, bina: 'yurt2', w: 310, h: 180, olcek: 0.3, kiyi: true }
 ];
 // Resim boyutları (yüklenmeden önce yerleşim ve ağaç boşlukları hesaplanabilsin diye)
 const DN12_BOYUT = {
   'lojman': [1480, 514], 'orta-cim-v2': [648, 375], 'fens': [1620, 492], 'universite-merkezi': [1760, 560],
   'fass-cim-v1': [1820, 478], 'bilgi-merkezi': [1390, 456], 'kule-cevre': [1520, 302], 'golet': [1612, 293]
 };
-const DN12_KULE_C = 547;   // saat kulesi (Bilgi Merkezi ile yokuş arasında)
+const DN12_KULE_C = 547;   // gözlem kulesi (Bilgi Merkezi'nin yanında, merkez çimenlikte)
 for (const b of DN12_BINALAR) {
+  b.L = b.c * T * DN12_F.bina;
+  if (!b.ad) { b.w = b.w * (b.olcek || 1); b.h = b.h * (b.olcek || 1); b.r = null; continue; }   // yalnız BINA çizimi (yer ayrılır)
   const k = b.k || DN12_K, bo = DN12_BOYUT[b.ad];
   b.w = bo[0] * k; b.h = bo[1] * k;
-  b.L = b.c * T * DN12_F.bina;
   b.y0 = (b.alt || (DN12_TABAN + (bo[1] - b.taban) * k)) - b.h;   // üst kenar (katman birimi)
   b.r = dn12Resim(b.ad);
 }
@@ -184,37 +197,49 @@ function dn12AgacSprite(tur) {
   DN12.onb[ad] = cv; return cv;
 }
 
-// Saat kulesi: kampüsün açık taş + kızıl tuğla kuşaklı dili; ince gövde, dört yüzlü saat, piramit çatı, camlı fener
+// Gözlem kulesi (~33 m, Bilgi Merkezi'nin yanında): sekizgen gövde, açık taş köşe payandaları arasında koyu cam şeritler,
+// tabanda renkli sırlı tuğla deseni, tepede taşkın beyaz seyir balkonu, camlı fener ve basık kubbe (saat yok)
+const DN12_KULE_W = 84, DN12_KULE_H = 330;
 function dn12KuleSprite() {
   if (DN12.onb.kule) return DN12.onb.kule;
-  const w = 90, h = 340, R = 2, cv = dn12Kanvas(w * R, h * R), c = cv.getContext('2d'); c.scale(R, R);
+  const w = DN12_KULE_W, h = DN12_KULE_H, R = 2, cv = dn12Kanvas(w * R, h * R), c = cv.getContext('2d'); c.scale(R, R);
   const cx = w / 2;
-  // kaide
-  c.fillStyle = '#d9cbb3'; c.fillRect(cx - 30, h - 22, 60, 22);
-  c.fillStyle = '#b4694f'; c.fillRect(cx - 30, h - 15, 60, 5);
-  // gövde: sol yüz güneşli, sağ yüz gölgede
-  c.fillStyle = '#f2e9d8'; c.fillRect(cx - 19, 70, 19, h - 92);
-  c.fillStyle = '#dccfb9'; c.fillRect(cx, 70, 19, h - 92);
-  for (let y = 100; y < h - 30; y += 34) {
-    c.fillStyle = '#c0725a'; c.fillRect(cx - 19, y, 19, 6);
-    c.fillStyle = '#a65f49'; c.fillRect(cx, y, 19, 6);
+  // kaide: açık taş, renkli sırlı tuğla kuşağı, koyu giriş
+  c.fillStyle = '#e9dfcc'; c.fillRect(cx - 27, h - 34, 54, 34);
+  c.fillStyle = '#d3c6ae'; c.fillRect(cx + 6, h - 34, 21, 34);
+  const SIR = ['#b8543f', '#3f6f9a', '#d9a63e', '#4f8a6a'];
+  for (let k = 0; k < 13; k++) for (let r = 0; r < 2; r++) { c.fillStyle = SIR[(k + r * 2) % 4]; c.fillRect(cx - 26 + k * 4, h - 30 + r * 4, 3.4, 3.4); }
+  c.fillStyle = '#34484f'; c.fillRect(cx - 6, h - 20, 12, 20);
+  c.fillStyle = '#efe7d6'; c.fillRect(cx - 30, h - 36, 60, 3);
+  // sekizgen gövde: sol yüz güneşli, ön yüz, sağ yüz gölgede; her yüzde koyu cam şerit, köşelerde taş payanda
+  const ust = 74, alt = h - 36;
+  const yuz = [[cx - 18, 9, '#e6ddca', '#4d6670'], [cx - 9, 18, '#ddd3be', '#38525c'], [cx + 9, 9, '#c4b8a2', '#2c414a']];
+  for (const [x, gen, tas, cam] of yuz) {
+    c.fillStyle = tas; c.fillRect(x, ust, gen, alt - ust);
+    c.fillStyle = cam; c.fillRect(x + 2.2, ust + 6, gen - 4.4, alt - ust - 14);
+    c.fillStyle = 'rgba(210,232,238,.28)'; c.fillRect(x + 2.6, ust + 6, Math.max(1, (gen - 5) * 0.3), alt - ust - 14);
+    c.fillStyle = 'rgba(235,230,215,.55)';
+    for (let y = ust + 16; y < alt - 10; y += 12) c.fillRect(x + 2.2, y, gen - 4.4, 1);
   }
-  // dar camlı yarık (merdiven boşluğu)
-  c.fillStyle = '#5f8796'; c.fillRect(cx - 4, 112, 8, h - 150);
-  c.fillStyle = 'rgba(220,240,245,.55)'; c.fillRect(cx - 3, 112, 2, h - 150);
-  // saat katı
-  c.fillStyle = '#efe6d4'; c.fillRect(cx - 24, 40, 48, 34);
-  c.fillStyle = '#d4c7b0'; c.fillRect(cx, 40, 24, 34);
-  dn12Daire(c, cx - 1, 57, 12, '#fbf8ef');
-  c.strokeStyle = '#7b6a58'; c.lineWidth = 1.6; c.beginPath(); c.arc(cx - 1, 57, 12, 0, Math.PI * 2); c.stroke();
-  c.strokeStyle = '#3e4a52'; c.lineCap = 'round'; c.lineWidth = 2;
-  c.beginPath(); c.moveTo(cx - 1, 57); c.lineTo(cx - 1, 48.5); c.moveTo(cx - 1, 57); c.lineTo(cx + 5.5, 59.5); c.stroke();
-  c.fillStyle = '#b4694f'; c.fillRect(cx - 26, 36, 52, 5); c.fillRect(cx - 26, 73, 52, 4);
-  // camlı fener ve piramit çatı
-  c.fillStyle = '#e8e1d0'; c.fillRect(cx - 15, 22, 30, 14);
-  c.fillStyle = '#6f97a6'; for (let x = cx - 12; x < cx + 12; x += 7) c.fillRect(x, 24, 4, 10);
-  c.fillStyle = '#6c7b84'; c.beginPath(); c.moveTo(cx - 20, 23); c.lineTo(cx, 2); c.lineTo(cx + 20, 23); c.closePath(); c.fill();
-  c.fillStyle = '#8a99a1'; c.beginPath(); c.moveTo(cx - 20, 23); c.lineTo(cx, 2); c.lineTo(cx - 2, 23); c.closePath(); c.fill();
+  // gövdenin üst bileziği
+  c.fillStyle = '#f1eadb'; c.fillRect(cx - 20, ust - 8, 40, 8);
+  c.fillStyle = '#cfc3ab'; c.fillRect(cx + 8, ust - 8, 12, 8);
+  // seyir balkonu: geniş beyaz taşkın döşeme, altında gölge, ince korkuluk
+  c.fillStyle = 'rgba(80,70,60,.25)'; c.fillRect(cx - 26, ust - 7, 52, 3);
+  c.fillStyle = '#fbf8ef'; c.fillRect(cx - 32, ust - 14, 64, 7);
+  c.fillStyle = '#d9d2c2'; c.fillRect(cx + 10, ust - 14, 22, 7);
+  c.strokeStyle = '#c9c2b2'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(cx - 31, ust - 22); c.lineTo(cx + 31, ust - 22);
+  for (let x = cx - 30; x <= cx + 30; x += 5) { c.moveTo(x, ust - 22); c.lineTo(x, ust - 14); }
+  c.stroke();
+  // camlı fener katı
+  c.fillStyle = '#2f4650'; c.fillRect(cx - 15, ust - 40, 30, 26);
+  c.fillStyle = 'rgba(200,230,240,.35)'; c.fillRect(cx - 14, ust - 39, 8, 24);
+  c.fillStyle = '#eee8da'; for (let x = cx - 15; x <= cx + 13; x += 7) c.fillRect(x, ust - 40, 2, 26);
+  // çatı plakası ve basık koyu kubbe, tepe ucu
+  c.fillStyle = '#f7f3ea'; c.fillRect(cx - 19, ust - 45, 38, 5);
+  c.fillStyle = '#5c6b72'; c.beginPath(); c.ellipse(cx, ust - 45, 13, 9, 0, Math.PI, 0); c.fill();
+  c.fillStyle = '#7d8c93'; c.beginPath(); c.ellipse(cx - 4, ust - 47, 5, 4, 0, Math.PI, 0); c.fill();
+  c.fillStyle = '#d8d2c4'; c.fillRect(cx - 0.8, ust - 60, 1.6, 7);
   DN12.onb.kule = cv; return cv;
 }
 
@@ -296,22 +321,28 @@ function dn12SeritParca(s, i) {
 
 // Uzak tepeler (Tuzla / Orhanlı): üç sıra yumuşak, puslu sırt (en arkadaki en açık)
 function dn12UzakSirt(L, kat) {
-  const y0 = 512 + kat * 24 - 40 * Math.sin(L * 0.0019 + 1.3 + kat * 1.7) - 24 * Math.sin(L * 0.0051 + 0.9 * kat) - 9 * Math.sin(L * 0.016 + kat * 2)
-    - 22 * dn12Yumusak(1700, 2150, L) * (0.5 + 0.5 * Math.sin(L * 0.0013 + kat));   // gölet tarafında Aydos sırtları
+  const y0 = 512 + 16 * dn12Yumusak(1900, 2300, L) + kat * 24 - 40 * Math.sin(L * 0.0019 + 1.3 + kat * 1.7) - 24 * Math.sin(L * 0.0051 + 0.9 * kat) - 9 * Math.sin(L * 0.016 + kat * 2)
+    - 14 * dn12Yumusak(1950, 2450, L) * (0.5 + 0.5 * Math.sin(L * 0.0013 + kat));   // gölet tarafında Aydos sırtları
   // gün batımı tepesi: ufuk açılır, uzakta yalnız alçak adalar (güneş denize batar)
-  const ac = dn12Yumusak(2150, 2400, L);
+  const ac = dn12Yumusak(2650, 2900, L);
   if (ac <= 0) return y0;
   let ada = 0;
-  for (const [m, w, h] of [[2440, 70, 22], [2540, 45, 14], [2650, 90, 26]]) { const q = 1 - ((L - m) / w) * ((L - m) / w); if (q > 0) ada = Math.max(ada, h * Math.sqrt(q)); }
+  for (const [m, w, h] of [[2980, 70, 22], [3080, 45, 14], [3200, 90, 26]]) { const q = 1 - ((L - m) / w) * ((L - m) / w); if (q > 0) ada = Math.max(ada, h * Math.sqrt(q)); }
   return y0 + (612 - kat * 3 - ada * (kat === 2 ? 1 : 0.6) - y0) * ac;
 }
 function dn12UzakCiz(c, xa, xb) {
-  const kat = [[0, '#bcc3e0', '#d2d6ea'], [1, '#a2b3d6', '#bac8e3'], [2, '#86a8c4', '#a2bfd5']];
+  const kat = [[0, '#c0c6e3', '#d6d9ee'], [1, '#9db0d6', '#b8c6e6'], [2, '#7d9fc0', '#9dbbd6']];
   for (const [k, renk, ust] of kat) {
     const gr = c.createLinearGradient(0, 470 + k * 24, 0, 600 + k * 20);
     gr.addColorStop(0, ust); gr.addColorStop(1, renk);
     c.fillStyle = gr; c.beginPath(); c.moveTo(xa, 660);
     for (let x = xa; x <= xb; x += 6) c.lineTo(x, dn12UzakSirt(x, k));
+    c.lineTo(xb, 660); c.closePath(); c.fill();
+    // sırtın eteğinde sis: her sıra öndekinden ayrılsın (puslu derinlik)
+    const sis = c.createLinearGradient(0, 560 + k * 12, 0, 640);
+    sis.addColorStop(0, 'rgba(226,232,244,0)'); sis.addColorStop(1, 'rgba(226,232,244,.55)');
+    c.fillStyle = sis; c.beginPath(); c.moveTo(xa, 660);
+    for (let x = xa; x <= xb; x += 6) c.lineTo(x, Math.max(dn12UzakSirt(x, k), 560 + k * 12));
     c.lineTo(xb, 660); c.closePath(); c.fill();
     // sırtın güneşli kenarı: ince açık çizgi
     c.strokeStyle = 'rgba(240,242,250,.35)'; c.lineWidth = 1.2; c.beginPath();
@@ -327,7 +358,7 @@ function dn12UzakCiz(c, xa, xb) {
   }
 }
 // Orta tepeler: ormanlı sırt; denizin göründüğü çukurlar (lojman sabahı, gölet, gün batımı tepesi)
-const DN12_CUKUR = [[22, 22, 0.6], [866, 70, 1]];   // [sütun, genişlik (sütun), derinlik]
+const DN12_CUKUR = [[22, 22, 0.6], [1068, 80, 1]];   // [sütun, genişlik (sütun), derinlik]
 function dn12OrtaSirt(L) {
   let y = 576 - 22 * Math.sin(L * 0.0042 + 0.7) - 14 * Math.sin(L * 0.011 + 2.1) - 6 * Math.sin(L * 0.031);
   const col = L / (T * DN12_F.orta);
@@ -403,25 +434,29 @@ function dn12CaliSprite(v) {
 const DN12_AGACLAR = [];       // { L, y, tur, s, ayna, arka }
 const DN12_YAKIN_AGAC = [];    // yakın katman (paralaks .62)
 (function dn12Yerlestir() {
-  const f = DN12_F.bina, golA = DN12_GOL.c0 * T * f, golB = DN12_GOL.c1 * T * f, tepe = 838 * T * f;
+  const f = DN12_F.bina, golA = DN12_GOL.c0 * T * f, golB = DN12_GOL.c1 * T * f;
   const icinde = L => { for (const b of DN12_BINALAR) if (L > b.L - b.w / 2 + 70 && L < b.L + b.w / 2 - 70) return true; return false; };
   let L = -800, i = 0;
   while (L < COLS * T * f + 800) {
     const h = dn12Hash(i * 3.7 + 1);
     L += 48 + h * 70; i++;
     if (L > golA - 120 && L < golB + 60) continue;             // gölde ağaç yok (kıyı ağaçları aşağıda)
-    if (L > tepe && dn12Hash(i * 5.3) > 0.18) continue;          // tepede ara sıra tek ağaç
     const arka = icinde(L);
     if (arka && dn12Hash(i * 2.1) > 0.22) continue;              // bina önünde değil, yalnız ara sıra arkasında
     const t = dn12Hash(i * 1.3);
     let tur = t < 0.34 ? 'yuvarlak' : t < 0.55 ? 'sari' : t < 0.72 ? 'selvi' : t < 0.84 ? 'cam' : 'kiraz';
-    if (L > golB) tur = t < 0.5 ? 'yuvarlak' : 'sari';
+    const col = L / (T * f);
+    if (col > 560 && col < 700) tur = t < 0.3 ? 'cam' : t < 0.5 ? 'selvi' : t < 0.72 ? 'kiraz' : t < 0.86 ? 'yuvarlak' : 'sari';   // botanik: çam, selvi, kiraz
     const s = (arka ? 0.85 : 0.6) + dn12Hash(i * 4.1) * 0.45;
     DN12_AGACLAR.push({ L, y: DN12_TABAN + 4 + dn12Hash(i * 6.6) * 6, tur, s, ayna: dn12Hash(i * 7.7) > 0.5, arka });
   }
   // bina kenarlarına birer ağaç (resimlerin yumuşak yan kenarını örter)
   for (const b of DN12_BINALAR) {
-    if (b.ad === 'golet') continue;
+    if (b.ad === 'golet' || b.kiyi) continue;
+    if (b.acik) {   // önü açık bina: kenar ağaçları biraz dışarıda
+      for (const yon of [-1, 1]) DN12_AGACLAR.push({ L: b.L + yon * (b.acik + 30), y: DN12_TABAN + 6, tur: yon > 0 ? 'selvi' : 'yuvarlak', s: 0.8, ayna: yon > 0, arka: false });
+      continue;
+    }
     for (const yon of [-1, 1]) {
       const n = DN12_AGACLAR.length;
       DN12_AGACLAR.push({ L: b.L + yon * (b.w / 2 - 18), y: DN12_TABAN + 6, tur: n % 3 ? 'yuvarlak' : 'selvi', s: 0.8 + dn12Hash(n) * 0.25, ayna: yon > 0, arka: false });
@@ -432,6 +467,7 @@ const DN12_YAKIN_AGAC = [];    // yakın katman (paralaks .62)
   const kiyiY = golet.alt - (293 - 134) * DN12_K;
   for (let x = golA - 60, k = 0; x < golB + 120; x += 150 + dn12Hash(k * 3.3) * 260, k++) {
     if (x > golet.L - golet.w / 2 + 40 && x < golet.L + golet.w / 2 - 40) continue;
+    if (x > COLS * T * f + 600) break;
     const n = 1 + Math.floor(dn12Hash(k * 5.1) * 3);   // 1-3 ağaçlık küme
     for (let j = 0; j < n; j++) {
       const xx = x + j * (16 + dn12Hash(k + j) * 14), t = dn12Hash(k * 7 + j);
@@ -439,19 +475,28 @@ const DN12_YAKIN_AGAC = [];    // yakın katman (paralaks .62)
     }
   }
   DN12.kiyiY = kiyiY;
+  // önü açık kalacak binalar (SUNUM) ve kıyı binaları: önlerindeki (arka olmayan) ağaçları kaldır
+  for (let i = DN12_AGACLAR.length - 1; i >= 0; i--) {
+    const A = DN12_AGACLAR[i]; if (A.arka) continue;
+    for (const b of DN12_BINALAR) {
+      const yari = b.acik || (b.kiyi && A.kiyi ? b.w / 2 + 6 : 0);
+      if (yari && Math.abs(A.L - b.L) < yari) { DN12_AGACLAR.splice(i, 1); break; }
+    }
+  }
   DN12_AGACLAR.sort((a, b) => (a.arka === b.arka ? a.y - b.y : a.arka ? -1 : 1));
   // yakın katman ağaçları: seyrek, büyük; gölde yok
-  const fy = DN12_F.yakin, yA = DN12_GOL.c0 * T * fy, yB = DN12_GOL.c1 * T * fy;
+  const fy = DN12_F.yakin, yA = DN12_GOL.y0 * T * fy, yB = DN12_GOL.y1 * T * fy;
   for (let x = 300, k = 0; x < COLS * T * fy + 600; x += 1300 + dn12Hash(k * 2.9) * 1200, k++) {
     if (x > yA - 140 && x < yB + 140) continue;
+    if (x > 1030 * T * fy - 100) break;   // tepede yakın ağaç yok (göl manzarası açık)
     const t = dn12Hash(k * 1.7);
     DN12_YAKIN_AGAC.push({ L: x, tur: t < 0.4 ? 'yuvarlak' : t < 0.65 ? 'sari' : t < 0.8 ? 'kiraz' : 'selvi', s: 0.62 + dn12Hash(k * 3.3) * 0.22, ayna: t > 0.5 });
   }
 })();
 // Gölün karşı kıyı çizgisi (bina katmanı, katman birimi): uçlarda çimin hizasından resmin kıyısına yumuşak yükselir
 function dn12GolUst(L) {
-  const f = DN12_F.bina, a = DN12_GOL.c0 * T * f, b = DN12_GOL.c1 * T * f, ust = 700 - (293 - 134) * DN12_K;
-  const u = dn12Yumusak(a - 200, a + 260, L) * (1 - dn12Yumusak(b - 260, b + 200, L));
+  const f = DN12_F.bina, a = DN12_GOL.c0 * T * f, ust = 700 - (293 - 134) * DN12_K;
+  const u = dn12Yumusak(a - 200, a + 260, L);
   return 664 + (ust - 664) * u + 3 * Math.sin(L * 0.02);
 }
 
@@ -469,6 +514,7 @@ function dn12IsitListesi() {
   DN12_ISIT.push(() => dn12Serit1('deniz', [[0, '#c8dcea'], [0.12, '#9ec6e0'], [0.5, '#79acd4'], [1, '#6496c6']]));
   DN12_ISIT.push(() => dn12Serit1('gol', [[0, '#b4cfd0'], [0.16, '#8cbdd9'], [0.55, '#64acdf'], [1, '#5aa6dd']]));
   DN12_ISIT.push(() => dn12Serit1('yakinSu', [[0, 'rgba(110,176,224,.9)'], [1, 'rgba(110,176,224,0)']]));
+  DN12_ISIT.push(() => dn12Serit1('uzakSicak', [[0, 'rgba(255,190,165,0)'], [0.55, 'rgba(250,176,150,.32)'], [1, 'rgba(246,168,140,.42)']]));
   DN12_ISIT.push(() => dn12Serit1('cimPus', [[0, '#a7c77c'], [0.5, '#93bb5f'], [1, '#86b053']]));
   DN12_ISIT.push(() => dn12KuleSprite());
   for (const t of DN12_AGAC_TUR) DN12_ISIT.push(() => dn12AgacSprite(t));
@@ -487,6 +533,8 @@ function dn12Isit() {
     if (typeof performance === 'undefined' || performance.now() - t0 > 6) break;
   }
   if (DN12.isitAdim < DN12_ISIT.length) return false;
+  // BINA'nın bina tuvalleri: kareye bir bina (bitene kadar)
+  if (!DN12.binaHazir && typeof bn12Isit === 'function') { try { DN12.binaHazir = !!bn12Isit(); } catch (e) { DN12.binaHazir = true; } if (!DN12.binaHazir) return false; }
   // resimler hazırsa ana tuvale görünmez küçük bir kopyasını çiz: ekran kartına yüklensin (ilk görünüşte takılma olmasın)
   let hepsi = true;
   for (const ad in DN12_RESIM) { const r = DN12_RESIM[ad]; if (!r.hazir && !r.hata) hepsi = false; else if (r.hazir && !r.isindi && typeof g !== 'undefined') { try { g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 0.004; g.drawImage(r.bmp || r.img, 0, 0, 2, 2); g.globalAlpha = 1; } catch (e) {} r.isindi = true; } }
@@ -513,8 +561,13 @@ function dn12Durum(tm) {
   DN12.aksam = DN12_AKSAM && F && F.aktif && Number.isFinite(F.aksam) ? Math.max(0, Math.min(1, F.aksam)) : 0;
   // güneş: sabah solda alçak, öğle tepede, gün batımında sağda ufka yakın
   DN12.gunesX = 0.2 + 0.52 * u;
-  let gy = u < 0.32 ? 0.22 - 0.11 * (u / 0.32) : 0.11 + 0.49 * dn12Yumusak(0.32, 1, u);
-  gy += altin * 0.07 + DN12.aksam * 0.12;
+  // akşamüstü güneş ekrandaki gerçek ufka (gölün karşı kıyısı) iner: kamera/zoom ne olursa olsun suya batar
+  let ufuk = 0.66;
+  if (typeof cam !== 'undefined' && Number.isFinite(cam.y) && S > 0 && H > 0 && DN12.kiyiY) {
+    const f = DN12_F.bina; ufuk = Math.max(0.3, Math.min(0.9, (DN12.kiyiY - 4 - dn12KatmanY(f)) * S / H));
+  }
+  let gy = u < 0.32 ? 0.22 - 0.11 * (u / 0.32) : 0.11 + (ufuk - 0.07 - 0.11) * dn12Yumusak(0.32, 1, u);
+  gy += altin * 0.055 + DN12.aksam * 0.06;
   DN12.gunesY = gy;
   if (typeof W === 'number') { DN12.gunesXY.x = DN12.gunesX * W; DN12.gunesXY.y = DN12.gunesY * H; }
   const i = Math.round(u * 100);
@@ -527,9 +580,10 @@ function dn12Durum(tm) {
 
 function dn12Hazir() { return typeof g !== 'undefined' && typeof W === 'number' && typeof H === 'number' && S > 0 && typeof cam !== 'undefined' && Number.isFinite(cam.x) && Number.isFinite(cam.y); }
 // Katman dönüşümü: f paralaksında katman birimleri → ekran pikseli
+// Dikey paralaks yatayınkinden çok daha az: kamera aşağı/yukarı kayınca (final kadrajı gibi) ufuk çizgisi zeminle birlikte kalsın
+function dn12KatmanY(f) { return cam.y - (cam.y - DN12_CY) * (1 - f) * 0.3; }
 function dn12Katman(f) {
-  const camY = DN12_CY + (cam.y - DN12_CY) * f;
-  g.setTransform(S, 0, 0, S, W / 2 - DN12.cx * f * S, -camY * S);
+  g.setTransform(S, 0, 0, S, W / 2 - DN12.cx * f * S, -dn12KatmanY(f) * S);
 }
 // Görünen katman aralığı (f'de)
 function dn12Sol(f) { return DN12.cx * f - W / 2 / S; }
@@ -599,7 +653,9 @@ function dn12Background(tm) {
   dn12Bulutlar(t, ak);
 
   // Uzak tepeler ve deniz (gök rengi biraz arkadan sızsın: puslu uzaklık)
-  dn12Katman(DN12_F.uzak); g.globalAlpha = 0.92 - 0.25 * ak; dn12SeritCiz(O.uzak); g.globalAlpha = 1;
+  dn12Katman(DN12_F.uzak); g.globalAlpha = 0.94 - 0.14 * ak; dn12SeritCiz(O.uzak); g.globalAlpha = 1;
+  // gün batımında uzak tepeler ve ufuk sıcak pembe-turuncu ışık alır
+  if (ak > 0.01 && O.uzakSicak) { g.globalAlpha = ak; g.drawImage(O.uzakSicak, 0, 0, 1, 128, dn12Sol(DN12_F.uzak) - 10, 420, dn12Sag(DN12_F.uzak) - dn12Sol(DN12_F.uzak) + 20, 240); g.globalAlpha = 1; }
   dn12Deniz(t);
   dn12Katman(DN12_F.orta); dn12SeritCiz(O.orta);
 
@@ -663,26 +719,22 @@ function dn12Deniz(t) {
   g.globalAlpha = 1;
 }
 
-// Bina katmanı: uzak çim, gölet suyu, arka ağaçlar, binalar, kule, ön ağaçlar
+// Bina katmanı: uzak çim, büyük gölün suyu, arka ağaçlar, binalar (resimler + BINA'nın stilize çizimleri), gözlem kulesi, ön ağaçlar
 function dn12BinaKatmani(t) {
   const f = DN12_F.bina, O = DN12.onb, a = dn12Sol(f) - 20, b = dn12Sag(f) + 20;
-  const golA = DN12_GOL.c0 * T * f, golB = DN12_GOL.c1 * T * f, tepe = 846 * T * f;
-  // uzak çimen: binaların tabanından aşağı (tepe bölgesinde yamaç aşağı iner: deniz görünür)
-  if (a < tepe + 400) {
-    const sag = Math.min(b, tepe + 400);
-    g.fillStyle = '#9cc067';
-    g.beginPath(); g.moveTo(a, 740); g.lineTo(a, 664);
-    // tepe bölgesinde yamaç yumuşakça iner
-    for (let x = a; x <= sag; x += 24) g.lineTo(x, 664 + 60 * dn12Yumusak(tepe - 200, tepe + 400, x) + 1.5 * Math.sin(x * 0.03));
-    g.lineTo(sag, 740); g.closePath(); g.fill();
+  const golA = DN12_GOL.c0 * T * f, golB = DN12_GOL.c1 * T * f;
+  // uzak çimen: binaların tabanından aşağı (gölün başladığı yere kadar; sonrası su)
+  if (a < golA + 300) {
+    const sag = Math.min(b, golA + 300);
+    g.fillStyle = '#9cc067'; g.fillRect(a, 664, sag - a, 80);
     if (O.cimPus) g.drawImage(O.cimPus, 0, 0, 1, 128, a, 676, sag - a, 64);
     // binalar arası yürüyüş yolu: ince açık taş şerit
-    g.fillStyle = 'rgba(240,226,200,.85)'; g.fillRect(a, 678, Math.min(sag, golA - 150) - a, 3.5);
-    if (sag > golB + 150) g.fillRect(Math.max(a, golB + 150), 678, Math.min(sag, tepe - 100) - Math.max(a, golB + 150), 3.5);
+    const yolSag = Math.min(sag, golA - 150);
+    if (yolSag > a) { g.fillStyle = 'rgba(240,226,200,.85)'; g.fillRect(a, 678, yolSag - a, 3.5); }
   }
-  // gölet: karşı kıyı çizgisi uçlarda çimen hizasından yükselir; alt kenarı yakın katmanın altında kalır
-  if (b > golA - 260 && a < golB + 260) {
-    const xa = Math.max(a, golA - 220), xb = Math.min(b, golB + 220);
+  // büyük gölet: karşı kıyı çizgisi başta çimen hizasından yükselir, haritanın sonuna kadar sürer (tepeden de görünür)
+  if (b > golA - 260) {
+    const xa = Math.max(a, golA - 220), xb = Math.min(b, golB);
     g.save();
     g.beginPath(); g.moveTo(xa, 744);
     for (let x = xa; x <= xb; x += 16) g.lineTo(x, dn12GolUst(x));
@@ -694,31 +746,76 @@ function dn12BinaKatmani(t) {
       const h = dn12Hash(x * 0.31), yy = DN12.kiyiY + 10 + h * 80, o = Math.sin(t * 0.8 + x * 0.05) * 4;
       g.globalAlpha = 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 1.1 + h * 9)); g.fillRect(x + o, yy, 12 + h * 16, 1.2);
     }
+    // gün batımında güneşin göldeki altın yolu
+    const ak = dn12Yumusak(0.62, 0.95, DN12.gun);
+    if (ak > 0.01) {
+      const gxL = (DN12.gunesXY.x - W / 2) / S + DN12.cx * f;
+      g.fillStyle = '#ffd88c';
+      for (let i = 0; i < 18; i++) {
+        const yy = DN12.kiyiY + 4 + i * 4.6, gen = 14 + i * 5, dx = Math.sin(t * 1.2 + i * 1.9) * 7;
+        g.globalAlpha = ak * (0.7 - i * 0.03) * (0.6 + 0.4 * Math.sin(t * 2 + i));
+        g.fillRect(gxL - gen / 2 + dx, yy, gen, 1.6);
+      }
+    }
     g.globalAlpha = 1;
     g.restore();
+    dn12KiyiSeridi(a, b);   // karşı kıyı: alçak, kesintisiz çalılık şeridi
+    dn12GolHayati(t, xa, xb);   // uzak gölde yavaş süzülen küçük yelkenliler ve karşı kıyıdaki iskeleler
   }
-  // gölün karşı kıyısı: alçak, kesintisiz çalılık şeridi (resmin kıyısıyla aynı hizada)
-  if (b > golA - 260 && a < golB + 260) dn12KiyiSeridi(a, b);
   // arka ağaçlar (binaların arkasında, çatıların üstünden görünür)
   for (const A of DN12_AGACLAR) if (A.arka) dn12AgacCizKatman(A, a, b);
-  // binalar
+  // binalar: BINA'nın çizimi varsa o, yoksa resim
+  const bnVar = typeof bn12Var === 'function' && typeof bn12Ciz === 'function';
   for (const B of DN12_BINALAR) {
     if (B.L + B.w / 2 < a || B.L - B.w / 2 > b) continue;
-    const r = B.r, im = r.bmp || r.img;
+    if (B.bina && bnVar) {
+      let var_ = false; try { var_ = bn12Var(B.bina); } catch (e) {}
+      if (var_) {
+        const y = B.kiyi ? dn12GolUst(B.L) - 1 : DN12_TABAN;
+        try { bn12Ciz(B.bina, g, B.L, y, B.olcek || 1, t); } catch (e) { if (typeof omHataBildir === 'function') omHataBildir('bn12Ciz', e); }
+        dn12Katman(f); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+        continue;
+      }
+    }
+    const r = B.r; if (!r) continue;
+    const im = r.bmp || r.img;
     if (!r.hazir || !im) continue;   // yüklenmediyse ağaçlar ve tepeler yine güzel bir kampüs gösterir
     if (B.ayna) { g.save(); g.translate(B.L, 0); g.scale(-1, 1); g.drawImage(im, -B.w / 2, B.y0, B.w, B.h); g.restore(); }
     else g.drawImage(im, B.L - B.w / 2, B.y0, B.w, B.h);
   }
-  // saat kulesi
-  const kL = DN12_KULE_C * T * f;
-  if (O.kule && kL > a - 60 && kL < b + 60) g.drawImage(O.kule, kL - 45 * 0.82, DN12_TABAN + 4 - 340 * 0.82, 90 * 0.82, 340 * 0.82);
+  // gözlem kulesi
+  const kL = DN12_KULE_C * T * f, kw = DN12_KULE_W * 0.86, kh = DN12_KULE_H * 0.86;
+  if (O.kule && kL > a - 60 && kL < b + 60) g.drawImage(O.kule, kL - kw / 2, DN12_TABAN + 4 - kh, kw, kh);
   // ön ağaçlar (aralarda kümeler)
   for (const A of DN12_AGACLAR) if (!A.arka) dn12AgacCizKatman(A, a, b);
+}
+const DN12_YELKEN = [{ c: 860, v: 2.2, y: 16, s: 1 }, { c: 945, v: -1.6, y: 34, s: 0.8 }, { c: 1050, v: 1.2, y: 10, s: 0.9 }];
+const DN12_ISKELE = [880, 1010];
+function dn12GolHayati(t, xa, xb) {
+  const f = DN12_F.bina, ky = DN12.kiyiY;
+  // iskeleler: karşı kıyıdan suya uzanan ince ahşap döşeme + direkler
+  for (const c of DN12_ISKELE) {
+    const x = c * T * f; if (x < xa - 60 || x > xb + 60) continue;
+    g.fillStyle = '#a07a5a'; g.fillRect(x - 3, ky - 1, 6, 16);
+    g.fillStyle = '#c69b72'; g.fillRect(x - 5, ky + 13, 34, 3);
+    g.fillStyle = '#7d5d45'; for (let k = 0; k < 4; k++) g.fillRect(x - 4 + k * 10, ky + 16, 1.6, 5);
+    g.fillStyle = 'rgba(120,90,70,.25)'; g.fillRect(x - 5, ky + 21, 34, 2);
+  }
+  // yelkenliler: gövde + iki üçgen yelken, suda kısa yansıma; çok yavaş ileri geri
+  for (const Y of DN12_YELKEN) {
+    const x0 = Y.c * T * f, x = x0 + Math.sin(t * 0.03 * Math.abs(Y.v) + Y.c) * 160 * Math.sign(Y.v);
+    if (x < xa - 40 || x > xb + 40) continue;
+    const y = ky + Y.y + Math.sin(t * 1.1 + Y.c) * 0.6, s = Y.s;
+    g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x - 9 * s, y + 2, 18 * s, 1.2);
+    g.fillStyle = '#f4f1ea'; g.beginPath(); g.moveTo(x - 8 * s, y - 2 * s); g.lineTo(x + 8 * s, y - 2 * s); g.lineTo(x + 6 * s, y + 1); g.lineTo(x - 6 * s, y + 1); g.closePath(); g.fill();
+    g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(x, y - 3 * s); g.lineTo(x, y - 20 * s); g.lineTo(x + 8 * s, y - 3 * s); g.closePath(); g.fill();
+    g.fillStyle = '#e9eef2'; g.beginPath(); g.moveTo(x - 1, y - 3 * s); g.lineTo(x - 1, y - 15 * s); g.lineTo(x - 6 * s, y - 3 * s); g.closePath(); g.fill();
+  }
 }
 function dn12KiyiSeridi(a, b) {
   const O = DN12.onb, f = DN12_F.bina, golA = DN12_GOL.c0 * T * f, golB = DN12_GOL.c1 * T * f;
   const sk = 0.34, cw = DN12_CALI_W * sk, ch = (DN12_CALI_Y1 - DN12_CALI_Y0) * sk;
-  const xa = Math.max(a, golA - 120), xb = Math.min(b, golB + 120);
+  const xa = Math.max(a, golA - 120), xb = Math.min(b, golB);
   for (let i = Math.floor(xa / cw); i * cw < xb; i++) {
     const sp = O['cali' + ((i + 1) % 3)]; if (!sp) continue;
     const x = i * cw, y = dn12GolUst(x + cw / 2);
@@ -736,7 +833,7 @@ function dn12AgacCizKatman(A, a, b) {
 // Yakın katman: çiçekli çalı sırası + seyrek büyük ağaçlar; gölet bölgesinde su (GOLET'in su şeridine renkle bağlanır)
 function dn12YakinKatman(t) {
   const f = DN12_F.yakin, O = DN12.onb, a = dn12Sol(f) - 20, b = dn12Sag(f) + 20;
-  const suA = DN12_GOL.c0 * T * f, suB = DN12_GOL.c1 * T * f;
+  const suA = DN12_GOL.y0 * T * f, suB = DN12_GOL.y1 * T * f;
   const alt = (H / S) + DN12_CY + 200;   // ekranın dibinin güvenle altı (katman birimi)
   // su: üstte açık, y≈700'den aşağısı tam olarak dn12GolRenk().ust
   if (b > suA && a < suB) {
@@ -762,21 +859,22 @@ function dn12YakinKatman(t) {
     if (A.ayna) { g.save(); g.translate(A.L, 0); g.scale(-1, 1); g.drawImage(sp, -ww / 2, 694 - hh, ww, hh); g.restore(); }
     else g.drawImage(sp, A.L - ww / 2, 694 - hh, ww, hh);
   }
-  // çalı sırası parçaları (suyun olduğu yerde kesilir, kıyıda yuvarlak uç)
-  const cw = DN12_CALI_W, ch = DN12_CALI_Y1 - DN12_CALI_Y0, R = DN12_R;
-  for (let i = Math.floor(a / cw); i * cw < b; i++) {
+  // çalı sırası parçaları (suyun olduğu yerde kesilir, kıyıda yuvarlak uç); tepede yok: büyük gölet görünsün
+  const cw = DN12_CALI_W, ch = DN12_CALI_Y1 - DN12_CALI_Y0, R = DN12_R, tepeL = 1030 * T * f;
+  for (let i = Math.floor(a / cw); i * cw < Math.min(b, tepeL); i++) {
     const sp = O['cali' + Math.floor(dn12Hash(i * 1.37 + 5) * 3)]; if (!sp) continue;
     let x0 = i * cw, x1 = x0 + cw;
     // su aralığını çıkar
     if (x1 > suA && x0 < suB) {
       if (x0 < suA) dn12CaliParca(sp, x0, suA, i * cw);
-      if (x1 > suB) dn12CaliParca(sp, suB, x1, i * cw);
+      if (x1 > suB) dn12CaliParca(sp, suB, Math.min(x1, tepeL), i * cw);
       continue;
     }
+    if (x1 > tepeL) { dn12CaliParca(sp, x0, tepeL, i * cw); continue; }
     g.drawImage(sp, x0, DN12_CALI_Y0, cw + 0.6 / S, ch);
   }
   // kıyı uçları: suyun iki yanında birer çalı kümesi (düz kesik görünmesin)
-  for (const x of [suA, suB]) if (x > a - 80 && x < b + 80) {
+  for (const x of [suA, suB, tepeL]) if (x > a - 80 && x < b + 80) {
     const sp = O.agac_yuvarlak; if (sp) g.drawImage(sp, x - 60, 694 - 95, 120, 110);
   }
   void R;

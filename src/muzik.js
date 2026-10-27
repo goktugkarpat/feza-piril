@@ -6990,7 +6990,7 @@ const AU = (() => {
     return v;
   }
   function karisimGuncelle(t, d) {
-    if (bolum12() && m12Acik && !m12Hata) { try { MZ12.karisim(t, d); return; } catch (e) { m12Hata = true; } }   // Bölüm 12 katman düzeyleri MZ12'de
+    if (bolum12() && m12Acik) { try { MZ12.karisim(t, d); } catch (e) { m12Hata++; } return; }   // Bölüm 12 katman düzeyleri MZ12'de (hata olsa da Bölüm 1 karışımına düşmez)
     const ob =mod === 'final' && bolum11() ? 'satoFinal' : mod === 'final' && bolum10() ? 'zamanFinal' : mod === 'final' && bolum9() ? 'ejderFinal' : mod === 'final' && bolum8() ? 'cadiFinal' : mod === 'final' && bolum5() ? 'volkanFinal' : mod === 'final' && bolum6() ? 'senlikFinal' : mod === 'final' && bolum7() ? 'kuzeyFinal' : mod === 'orman' ? ormanAd(d) : mod;
     const k = KARISIM[ob] || KARISIM.patika;
     const r = mod === 'ninni' ? ruya : 0, kr = KARISIM.ruya, kk = (ad) => (k[ad] || 0) * (1 - r) + (kr[ad] || 0) * r;
@@ -7070,7 +7070,7 @@ const AU = (() => {
     if (bolum11()) s11BolgeIzle(t, d.alan11);
     if (bolum12() && m12Calsin(d)) {   // Bölüm 12: ölçüleri MZ12 planlar (aynı ileri bakış, aynı çalgılar ve ses sınırı)
       if (!m12Acik) { m12Acik = true; padBirak(sonrakiCubuk); }
-      while (sonrakiCubuk < t + ILERI) { let uz = BAR; try { uz = MZ12.cubuk(sonrakiCubuk, d) || BAR; } catch (e) { m12Hata = true; } sonrakiCubuk += uz; }
+      while (sonrakiCubuk < t + ILERI) { let uz = BAR; try { uz = MZ12.cubuk(sonrakiCubuk, d) || BAR; } catch (e) { m12Hata++; } sonrakiCubuk += uz; }
     } else {
       if (m12Acik) { m12Acik = false; if (d.durum !== 'giris' && d.durum !== 'baslik') m12Devret(sonrakiCubuk); }
       while (sonrakiCubuk < t + ILERI) { cubukPlanla(sonrakiCubuk); sonrakiCubuk += cubukUz; }
@@ -7185,7 +7185,7 @@ const AU = (() => {
       });
     }
     kaliciKur();
-    if (bolum12()) { m12Acik = false; m12Hata = false; if (typeof MZ12 !== 'undefined' && MZ12 && MZ12.bagla) { try { MZ12.bagla(m12Kit()); } catch (e) { m12Hata = true; } } }
+    if (bolum12()) { m12Acik = false; m12Hata = 0; if (typeof MZ12 !== 'undefined' && MZ12 && MZ12.bagla) { try { MZ12.bagla(m12Kit()); } catch (e) { m12Hata++; } } }
     const t = zaman();
     cikis.gain.value = 0.0001; cikis.gain.setValueAtTime(0.0001, t); if (!sessizDeneme) cikis.gain.exponentialRampToValueAtTime(1, t + 2.5);
     sonrakiCubuk = t + 0.25;
@@ -7244,9 +7244,9 @@ const AU = (() => {
   // ───────────────────────── Bölüm 12 köprüsü (MZ12) ─────────────────────────
   // Bölüm 12'nin bestesi ve efektleri muzik12.js'te; çalgılar, otobüsler, yankı, ses sınırı ve deneme saati burada kalır.
   // MZ12.bagla(kit) her kurulumda (gerçek ya da çevrimdışı deneme) bir kez çağrılır; kit yalnız işlev ve okuyucu içerir.
-  let m12Acik = false, m12Hata = false;
+  let m12Acik = false, m12Hata = 0;   // m12Hata: yakalanan MZ12 hatası sayısı (o ölçü/karışım atlanır, müzik sürer)
   function m12Calsin(d) {   // oyunda ve sabah finalinin başında (MZ12 "bitti" deyene kadar) besteyi MZ12 planlar
-    if (m12Hata || typeof MZ12 === 'undefined' || !MZ12 || typeof MZ12.cubuk !== 'function') return false;
+    if (typeof MZ12 === 'undefined' || !MZ12 || typeof MZ12.cubuk !== 'function') return false;
     return (d.durum === 'oyun' || d.durum === 'final') && !MZ12.bitti;
   }
   function m12Devret(t) {   // sabah oldu: müzik kutusu ninnisi baştan, yumuşakça (bölüm müziğinin son akoru kendi bırakışıyla söner)
@@ -7318,7 +7318,7 @@ const AU = (() => {
     get _sato() { return { oran: +s11S.toFixed(2), bolge: s11Bolge, prog: progAd, uz: +cubukUz.toFixed(3), pi, dongu, mini: s11Mini, ucus: s11Ucus, ucusB: s11UcFB.tur + ':' + s11UcFB.k, final: s11FinalMi(), bolum: s11FB.tur + ':' + s11FB.k, asama: s11Asama, orgCumle: s11OrgCumle, akor: Object.keys(AK).find(k => AK[k] === akor) }; },
     get _zaman() { return { bolum: bolum10(), final: z10Final(), prog: progAd, yer:bolum10()?z10Yer():null,akis:bolum10()?z10Akis(z10Yer()):0 }; },
     get _volkan() { return { bahce: vBahce, mini: vMini, miniAsama: vMiniAsama, sal: vSal, final: vFinal }; },
-    get _tepe() { return { tepe: yukTepe, dusen: yukDus }; }, _tepeSifir() { yukTepe = 0; yukDus = 0; }, _yuzey: e => yuzeyBul(e || null),   // deneme: aynı anda en çok geçici ses (ölçüm)
+    get _m12Hata() { return m12Hata; }, get _tepe() { return { tepe: yukTepe, dusen: yukDus }; }, _tepeSifir() { yukTepe = 0; yukDus = 0; }, _yuzey: e => yuzeyBul(e || null),   // deneme: aynı anda en çok geçici ses (ölçüm)
     _bolum2: v => { b2Deger = !!v; }, _bolum3: v => { b3Deger = !!v; }, _bolum4: v => { b4Deger = !!v; }, _yuzme: v => { yuzmeS = v; }, get _durum() { return { prog: progAd, koS: +koS.toFixed(2), gDoruk: +gDoruk.toFixed(2), ucus: ucusVar(), ac: ac ? ac.state : null }; }, _gok: v => { gBasladi = !!v; }, _yo: v => { yoS = v; }, _dene: dene, _tema: () => ({ PARCA, TEMA, FINAL_MEL, PROG, AK }), _log: () => test && test.log,
   };
 })();

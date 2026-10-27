@@ -11,6 +11,8 @@
                       tempo da hızla biraz açılır (100 → 108)
      cim (FASS)       kalimba ezgi, flüt karşı ezgi, hafif shaker
      havuz (Bilgi)    çelesta ezgi, su damlaları, çan ışıltıları
+     botanik          sera gibi nemli ve yumuşak: flüt + çelesta, buğulu pad, geniş yankı, bol kuş ve damla; kaplumbağaların
+                      ağır ağır yürüyen komik "bup ... bu-bup" motifi (iki ölçüde bir)
      golet / kayik    su gibi akan harp arpejleri (16'lık), uzun flüt notaları, kayıkta kürek nabzı
      tepe             yaylılar + piyano, sıcak; gün ilerledikçe tempo yavaşlar (dn12Gun)
    Bölge geçişi: her bölgenin katmanları ağırlıkla (W) çalınır; ağırlıklar ölçüden ölçüye ve otobüs kazançları saniye saniye
@@ -21,7 +23,7 @@
 
    Efektler (AU.sfx('k12...') ya da OLAY): bisiklet zili, tekerlek tıkırtısı, scooter itişi, kürek şıpırtısı, ördek vak, kedi miyav +
    mırıltı, köpeğin sevimli "huf"u, kuş cıvıltısı, kanat pırpırı, uçurtma vınlaması/takla, çiçek açması, fıskiye, kitap sayfası,
-   piknik (kurabiye, limonata), sarılma kalbi. Hepsi kısık, yumuşak, akorla uyumlu; fren sesi yok.
+   piknik (kurabiye, limonata), sarılma kalbi; tur 2: kaplumbağa "pop"u ve dalışı, kaz, kuğu, balıkçıl kanadı, sera fıskiyesi. Hepsi kısık, yumuşak, akorla uyumlu; fren sesi yok.
    Test: MZ12.durum (bölge ağırlıkları, form yeri, final fazı), AU._dene senaryosunda d.m12 = {x, bolge, binis, kayik, final, gun, hiz}. */
 'use strict';
 const MZ12 = (() => {
@@ -111,7 +113,7 @@ const MZ12 = (() => {
   const FINAL_BPM = { giris: 84, dans: 100, bekle: 84, doruk: 84, parla: 80, sukun: 76, kapanis: 76 };
 
   // ───────────────────────── durum ─────────────────────────
-  const BOLGELER = ['sabah', 'yol', 'cim', 'havuz', 'golet', 'kayik', 'tepe', 'final'];
+  const BOLGELER = ['sabah', 'yol', 'cim', 'havuz', 'botanik', 'golet', 'kayik', 'tepe', 'final'];
   const W = {}, WS = {};             // W: ölçü ağırlığı (nota düzeyi) · WS: saniyelik ağırlık (otobüs kazancı)
   let ilk = true, fi = 0, dongu = 0, bpm = 100, sonAk = null, akor = AK.D, sonBolge = 'sabah';
   let hizB = 0, hizS = 0, dansS = 0, karT = -1;
@@ -119,7 +121,7 @@ const MZ12 = (() => {
   let bitti = false;
   let padSes = null;                 // çalan pad: { g, osc: [] }
   // canlı oyunda hız ölçümü (MZ12.adim her karede): binişte basılı tutma = hızlan
-  let binisOlay = null, kayikOlay = false;
+  let binisOlay = null, kayikOlay = false, eslikT = -1e9, kopruT = -1e9;   // eslikT: kaplumbağa eşlik ediyor · kopruT: köprünün altı
   let hizHam = 0, hizTepe = 300, sonX = null, sonMs = 0, tekerYol = 0, sonHizHam = 0, kayikSu = 0;
 
   for (const b of BOLGELER) { W[b] = 0; WS[b] = 0; }
@@ -164,6 +166,7 @@ const MZ12 = (() => {
       case 'lojman': return 'sabah';
       case 'yol1': case 'yol2': case 'fass': return 'cim';
       case 'bilgi': return 'havuz';
+      case 'botanik': return 'botanik';
       case 'golet': return 'golet';
       case 'tepe': return 'tepe';
       default: return sonBolge;
@@ -254,7 +257,7 @@ const MZ12 = (() => {
 
   // ───────────────────────── katmanlar (bir ölçü) ─────────────────────────
   function katmanGitar(ak, t, e, w) {
-    const parmak = w.sabah * 0.7 + w.cim * 1.0 + w.tepe * 0.8 + w.havuz * 0.5 + w.final * (fin && fin.faz !== 'dans' ? 0.8 : 0);
+    const parmak = w.sabah * 0.7 + w.cim * 1.0 + w.tepe * 0.8 + w.havuz * 0.5 + w.botanik * 0.45 + w.final * (fin && fin.faz !== 'dans' ? 0.8 : 0);
     if (parmak > 0.04) {   // parmakla: bas + tiz teller (p-i-m-a), sekizlik
       const sira = [0, 2, 3, 4, 1, 3, 2, 4];
       for (let s = 0; s < 8; s++) gitar(ak.gtr[sira[s]], t + s * e + 0.01 + hum(), (s === 0 ? 0.027 : 0.018) * parmak, (sira[s] - 2) * 0.12, s === 0 ? 1.3 : 0.8);
@@ -271,9 +274,9 @@ const MZ12 = (() => {
   }
   function katmanBas(ak, t, e, uz, w) {
     const kok = ak.bas < 40 ? ak.bas + 12 : ak.bas;   // 40..50: iPad hoparlörü de duysun
-    const uzun = w.sabah * 0.8 + w.havuz * 0.8 + w.golet + w.kayik + w.tepe + w.final * (fin && fin.faz !== 'dans' ? 1 : 0) + w.cim * 0.5;
+    const uzun = w.sabah * 0.8 + w.havuz * 0.8 + w.botanik * 0.7 + w.golet + w.kayik + w.tepe + w.final * (fin && fin.faz !== 'dans' ? 1 : 0) + w.cim * 0.5;
     if (uzun > 0.05) K.bas(kok, t + 0.01, 0.05 * Math.min(1, uzun), 'uzun', uz * 0.92);
-    if (w.cim > 0.05) K.bas(kok + 7, t + 4 * e + 0.01, 0.034 * w.cim, 'pizz');
+    if (w.cim + w.botanik * 0.6 > 0.05) K.bas(kok + 7, t + 4 * e + 0.01, 0.034 * (w.cim + w.botanik * 0.6), 'pizz');
     if (w.kayik > 0.05) K.bas(kok, t + 4 * e + 0.01, 0.036 * w.kayik, 'nabiz');   // kürek nabzı: bir ... iki
     const yurur = w.yol + w.final * (fin && fin.faz === 'dans' ? 1 : 0);
     if (yurur > 0.05) {   // yürüyen pizz: kök, beşli, oktav, yaklaşma notası
@@ -283,7 +286,7 @@ const MZ12 = (() => {
     }
   }
   function katmanKalimba(ak, t, e, w) {
-    const v = w.sabah * 0.9 + w.cim * 0.8 + w.havuz * 0.3;
+    const v = w.sabah * 0.9 + w.cim * 0.8 + w.havuz * 0.3 + w.botanik * 0.4;
     if (v < 0.05) return;
     const tn = akTon(ak, 74, 5), yol = [0, 2, 4, 3, 1, 3, 2, 4];
     for (let s = 0; s < 8; s++) {
@@ -292,13 +295,13 @@ const MZ12 = (() => {
     }
   }
   function katmanHarp(ak, t, e, w, bar) {   // su gibi akan arpej: 16'lık, iki oktav yukarı aşağı
-    const v = w.golet + w.kayik * 0.9 + w.havuz * 0.6 + w.final * (fin && (fin.faz === 'doruk' || fin.faz === 'parla') ? 0.8 : 0);
+    const v = w.golet + w.kayik * 0.9 + w.havuz * 0.6 + w.botanik * 0.5 + w.final * (fin && (fin.faz === 'doruk' || fin.faz === 'parla') ? 0.8 : 0);
     if (v < 0.05) return;
     const tn = akTon(ak, ak.bas + 24, 8), s16 = e / 2;
     const yol = bar % 2 ? [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 3, 4, 5] : [0, 2, 1, 3, 2, 4, 3, 5, 4, 6, 5, 7, 6, 4, 5, 3];
     const kayik = w.kayik > 0.5;
     for (let s = 0; s < 16; s++) {
-      if (w.havuz > w.golet + w.kayik && s % 2) continue;                 // havuzda sekizlik, gölette 16'lık
+      if (w.havuz + w.botanik > w.golet + w.kayik && s % 2) continue;     // havuzda ve serada sekizlik, gölette 16'lık
       const vurgu = kayik ? s % 8 === 0 || s % 8 === 3 || s % 8 === 6 : s % 4 === 0;   // kayıkta 3+3+2 salınım
       K.arp(tn[yol[s]], t + s * s16 + 0.01 + hum(), 0.0155 * v * (vurgu ? 1.15 : 0.72), (yol[s] - 3.5) * 0.12, vurgu ? 1.9 : 1.3, K.B.arp);
     }
@@ -326,16 +329,26 @@ const MZ12 = (() => {
     const tn = akTon(ak, 62, 4);
     [1, 3, 5, 7].forEach((s, i) => K.hop(tn[i % tn.length], t + s * e + 0.006, 0.03 * v, i % 2 ? 0.3 : -0.3, K.B.hop));
   }
+  // kaplumbağa motifi (botanik): alçak, ağır ağır yürüyen "bup ... bu-bup" — komik ve sevimli; iki ölçüde bir, arada minik çan cevabı
+  function katmanKaplumbaga(ak, t, e, w, bar) {
+    const eslik = t - eslikT < 25, v = Math.max(w.botanik, eslik ? 0.7 : 0);   // eşlikçi kaplumbağa varken her ölçüde
+    if (v < 0.1 || (bar % 2 && !eslik)) return;
+    const tn = akTon(ak, 55, 4);
+    for (const [s, i, k] of [[0, 0, 1], [3, 1, 0.75], [3.5, 0, 0.7], [6, 2, 0.85]]) K.hop(tn[i], t + s * e + 0.01, 0.034 * v * k, i === 1 ? 0.25 : -0.2, K.B.hop);
+    if (bar % 4 === 0) K.zil(hz(akTon(ak, 86, 2, PENT)[1]), t + 7 * e, 0.008 * v, 1.2, 0.3, K.B.zil, false);   // "ta-daa"
+  }
   function katmanIsilti(ak, t, uz, w) {
-    const v = 0.4 + w.havuz * 1.4 + w.golet * 0.6 + w.final * 0.6;
+    const v = 0.4 + w.havuz * 1.4 + w.botanik * 0.5 + w.golet * 0.6 + w.final * 0.6;
     const n = Math.floor(v + rnd() * 0.8), notalar = akTon(ak, 86, 6, PENT);
     for (let i = 0; i < n; i++) K.zil(hz(notalar[Math.floor(rnd() * notalar.length)]), t + 0.2 + rnd() * (uz - 0.5), 0.006 + 0.003 * w.havuz, 1.4, rnd() * 1.2 - 0.6, K.B.zil, rnd() < 0.5);
-    const su = w.havuz + w.golet * 0.7 + w.kayik * 0.5;
+    const su = w.havuz + w.botanik * 0.9 + w.golet * 0.7 + w.kayik * 0.5;   // serada nemli damlalar
     if (su > 0.1) {
       const d = Math.floor(1 + su * 2.2 * rnd() + su);
       for (let i = 0; i < d; i++) K.damla(900 + rnd() * 900, t + 0.1 + rnd() * (uz - 0.3), 0.009 * su, rnd() * 1.2 - 0.6, K.B.su);
     }
-    if ((w.sabah + w.cim * 0.6) > 0.3 && rnd() < 0.45 * (w.sabah + w.cim * 0.6)) K.kus(t + rnd() * uz, rnd() < 0.5 ? -0.55 : 0.55);
+    const kus = w.sabah + w.cim * 0.6 + w.botanik * 1.6;   // botanik bahçesi kuş cıvıltılı
+    if (kus > 0.3 && rnd() < 0.45 * kus) K.kus(t + rnd() * uz, rnd() < 0.5 ? -0.55 : 0.55);
+    if (w.botanik > 0.4 && rnd() < 0.5 * w.botanik) K.kus(t + uz * 0.5 + rnd() * uz * 0.4, rnd() < 0.5 ? -0.35 : 0.35);
   }
   function katmanCan(ak, t, e, w, bar) {   // soprano çanı: tepede ve finalde cümle başlarında
     const v = w.tepe * 0.8 + w.final * (fin && (fin.faz === 'doruk' || fin.faz === 'parla' || fin.faz === 'sukun') ? 1 : 0.3);
@@ -351,6 +364,7 @@ const MZ12 = (() => {
     p.flut += w.yol * 0.75;                     p.kalimba += w.yol * 0.45; p.glok += w.yol * hizB * 0.6;
     p.kalimba += w.cim * (v === 1 ? 0.6 : 1);   p.flut += w.cim * (v === 1 ? 0.8 : 0.3);
     p.celesta += w.havuz * 1.0;                 p.glok += w.havuz * 0.5;
+    p.flut += w.botanik * 0.75;                 p.celesta += w.botanik * 0.45;   // sera: yumuşak flüt + çelesta
     p.flut += w.golet * 0.9;                    p.celesta += w.golet * (C ? 0.5 : 0.2);
     p.celesta += w.kayik * 0.75;                p.flut += w.kayik * 0.35;
     p.flut += w.tepe * 0.8;                     p.piyano += w.tepe * 0.7;
@@ -398,7 +412,7 @@ const MZ12 = (() => {
       if (faz === 'kapanis' && fin.i >= KAPANIS.length) fin.bitti = true;
     } else {
       bolum = TEMA[fi]; kisim = bolum.kisim; bar = fi;
-      const hedefBpm = 100 - 7 * st.gun + 8 * w.yol * hizB - 4 * w.kayik - 3 * w.golet;
+      const hedefBpm = 100 - 7 * st.gun + 8 * w.yol * hizB - 4 * w.kayik - 3 * w.golet - 3 * w.botanik;
       bpm += cl(hedefBpm - bpm, -3, 3);
       fi++; if (fi >= TEMA.length) { fi = 0; dongu++; }
     }
@@ -406,7 +420,7 @@ const MZ12 = (() => {
     akor = ak;
 
     // armoni: pad + yaylılar (akor değişince)
-    const parlak = cl(0.75 - 0.35 * st.gun + 0.25 * w.final + 0.15 * w.yol, 0, 1);
+    const parlak = cl(0.75 - 0.35 * st.gun + 0.25 * w.final + 0.15 * w.yol - 0.25 * w.botanik, 0, 1);   // serada pad buğulu
     if (ak !== sonAk) { padCal(ak, t, st.gun + w.final * 0.5, parlak); sesYurut(ak, t, w.final > 0.5 ? 0.25 : 0.08); sonAk = ak; }
 
     if (fin && fin.faz === 'kapanis') {   // müzik kutusu kadansı: ezgiyi çan çalar, gerisi susar; son akor uzun bırakılır
@@ -435,6 +449,7 @@ const MZ12 = (() => {
     katmanRitim(t, e, w);
     katmanHop(ak, t, e, w);
     katmanIsilti(ak, t, uz, w);
+    katmanKaplumbaga(ak, t, e, w, bar);
     katmanCan(ak, t, e, w, bar);
     if (fin && fin.faz === 'sukun') K.zil(hz(akTon(ak, 81, 4, PENT)[Math.floor(rnd() * 4)]), t + uz * 0.5, 0.008, 2.2, rnd() - 0.5, K.B.zil);
     return uz;
@@ -462,16 +477,23 @@ const MZ12 = (() => {
     };
     for (const ad in T) if (B[ad]) h(B[ad].gain, T[ad] * (duzey[ad] != null ? duzey[ad] : 0), t, ad === 'sik' || ad === 'tahta' ? 0.35 : 1.2);
     for (const [g, gv, tur] of K.kForm) h(g.gain, tur === 2 ? gv : 0, t, 1.5);   // yumuşak "oo" korosu
-    h(K.revMuzik.gain, 0.5 * (0.95 + 0.25 * s.golet + 0.2 * s.kayik + 0.3 * s.final), t, 2);
+    const kopru = t - kopruT < 4 ? 0.45 : 0;   // köprünün altında yankı açılır
+    h(K.revMuzik.gain, 0.5 * (0.95 + 0.25 * s.golet + 0.2 * s.kayik + 0.3 * s.botanik + 0.3 * s.final + kopru), t, kopru ? 0.5 : 2);   // serada nemli, geniş yankı
     h(K.dly.fbG.gain, 0.32 + 0.06 * s.golet, t, 2);
-    h(K.dly.out.gain, 0.6 * (0.42 + 0.25 * s.golet + 0.2 * s.havuz + 0.15 * s.final), t, 2);
+    h(K.dly.out.gain, 0.6 * (0.42 + 0.25 * s.golet + 0.2 * s.havuz + 0.25 * s.botanik + 0.15 * s.final), t, 2);
     // bölgeler arası ses düzeyi eşitleme (ölçüm: diğer bölümler ~ -24 dB RMS; doruk biraz üstünde)
-    const esit = 1 + 0.32 * s.havuz + 0.28 * s.cim + 0.2 * s.yol + 0.08 * s.sabah - 0.08 * s.tepe - s.final * (fin && fin.faz === 'doruk' ? 0.16 : fin && fin.faz === 'sukun' ? 0.2 : 0.06);
+    const esit = 1 + 0.32 * s.havuz + 0.25 * s.botanik + 0.28 * s.cim + 0.2 * s.yol + 0.08 * s.sabah - 0.08 * s.tepe - s.final * (fin && fin.faz === 'doruk' ? 0.16 : fin && fin.faz === 'sukun' ? 0.2 : 0.06);
     h(K.muzikG.gain, 0.77 * esit, t, 2);
     if (B.telLP) h(B.telLP.frequency, 900 + 1300 * cl(0.75 - 0.3 * st.gun + 0.35 * s.final, 0, 1.1), t, 2);
     h(K.ruzgarG.gain, 0.003 + 0.017 * s.yol * hizS + 0.004 * s.cim, t, 0.8);   // binişte rüzgâr (hızla), çimenlikte uçurtma esintisi
     const kh = cl(+v12('kayikHiz') || 0, 0, 1);
-    if (K.yalaG) h(K.yalaG.gain, 0.011 * (s.golet + s.kayik) + 0.006 * kh, t, 1.5);   // gölün yalaması (kayıkta şırıltı)
+    let selale = 0;   // botanikteki şelalenin şırıltısı: yakınlıkla (BOTANIK: x = 650,5 sütun)
+    try {
+      const x = d && d.m12 ? d.m12.x : typeof P !== 'undefined' && P ? P.x : NaN;
+      if (typeof T !== 'undefined' && Number.isFinite(x)) selale = cl(1 - Math.abs(x - 650.5 * T) / (14 * T), 0, 1) * s.botanik;
+    } catch (e) {}
+    if (!Number.isFinite(selale)) selale = 0;
+    if (K.yalaG) h(K.yalaG.gain, 0.011 * (s.golet + s.kayik) + 0.006 * kh + 0.013 * selale, t, 1.5);   // gölün yalaması (kayıkta şırıltı), şelale
   }
 
   // ───────────────────────── final ─────────────────────────
@@ -518,6 +540,13 @@ const MZ12 = (() => {
     const f = yavru ? 560 : 300;
     K.agiz(t, f * 1.08, f * 0.88, yavru ? 0.11 : 0.17, vol, [yavru ? 1500 : 950, yavru ? 2600 : 1650], [yavru ? 1300 : 760, yavru ? 2300 : 1350], 0.012);
   }
+  function popSes(t, vol, pan) {   // kaplumbağanın kafası çıkar: oyuk, sevimli "pop" (perdesi yukarı kayar) + minik tahta tık
+    K.ton(t, 'sine', 320, 720, 0.09, vol, 0.003, pan, 0);
+    K.ton(t + 0.005, 'triangle', 900, 700, 0.03, vol * 0.25, 0.002, pan, 0);
+  }
+  function kaz(t, vol, pan) {   // kaz: dostça, burundan "kak" (ördekten kalın değil, kısa)
+    K.agiz(t, 400, 360, 0.15, vol, [1100, 2300], [900, 2000], 0.01);
+  }
   function huf(t, vol) {   // küçük köpeğin dostça "huf"u: nefesli, kısa, alçak değil (korkutmaz)
     K.agiz(t, 440, 340, 0.1, vol, [700, 1350], [560, 1150], 0.008);
     K.gur(t, 0.09, 'bandpass', 900, 600, 1.2, vol * 0.5, 0.006, 0.2, 0, S());
@@ -563,7 +592,7 @@ const MZ12 = (() => {
     k12BinisBitti(t) { K.ton(t, 'triangle', 650, 600, 0.07, 0.011, 0.003, 0, 0); [86, 81].forEach((n, i) => K.zil(hz(n), t + 0.12 + i * 0.16, 0.011, 1.3, 0.1, S())); },
     k12Kurek(t, v) { sipirti(t, cl(v && Number.isFinite(v.guc) ? 0.45 + 0.55 * v.guc : 0.8, 0.3, 1), v && v.kim === 'feza' ? 0.25 : -0.2); },
     k12Sicrama(t, v) { sipirti(t, cl(v && Number.isFinite(v.guc) ? v.guc : 0.6, 0.25, 1), 0.2); },
-    k12BalikZipla(t) { K.damla(700, t, 0.012, 0.25, S()); sipirti(t + 0.45, 0.5, 0.25); },
+    k12BalikZipla(t, v) { const k = v && v.kisik || 1; K.damla(700, t, 0.012 * k, 0.25, S()); sipirti(t + 0.45, 0.5 * k, 0.25); },
     k12OrdekDal(t) { K.damla(520, t, 0.013, 0.2, S()); },
     k12SuDokun(t) { K.damla(1000 + rnd() * 400, t, 0.014, 0, S()); K.damla(1600, t + 0.09, 0.006, 0.2, S()); },
     k12Damla(t) { K.damla(1100 + rnd() * 500, t, 0.013, 0, S()); },
@@ -610,6 +639,69 @@ const MZ12 = (() => {
       else if (tur === 'yaprak') { vin(t, 1.2, 900, 1500, 0.005, 0); yukselenCan(t + 0.3, 0.007, 3, 86, 0); }
       else yukselenCan(t, 0.009, 3, 86, 0);
     },
+    // botanik bahçesi ve büyük gölet (tur 2)
+    // kaplumbağa sırası: dokunuş "tok" → başını çeker "fup" (Pop gir) → ~0,8 sn sonra "pop!" + iki minik "bup" ve çan (Kafa / Pop cik)
+    k12KaplumbagaKafa(t) {
+      popSes(t, 0.017, 0.15);
+      const tn = akTon(akor || AK.D, 62, 4);
+      K.hop(tn[0], t + 0.16, 0.024, -0.1, S()); K.hop(tn[2], t + 0.32, 0.022, 0.15, S());
+      K.zil(hz(akTon(akor || AK.D, 86, 2, PENT)[0]), t + 0.5, 0.008, 1.2, 0.2, S(), false);
+    },
+    k12KaplumbagaDokun(t) { K.ksilofon(67, t, 0.016, 0.1, 'ahsap', S()); },
+    k12KaplumbagaPop(t, v) { if (v && v.faz === 'gir') K.ton(t, 'sine', 620, 300, 0.12, 0.012, 0.004, 0.1, 0); },   // 'cik' → Kafa sesi (cal'da)
+    k12KaplumbagaBak(t) { const tn = akTon(akor || AK.D, 79, 3, PENT); K.ksilofon(tn[0], t, 0.012, -0.2, 'ahsap', S()); K.ksilofon(tn[2], t + 0.14, 0.011, 0.2, 'ahsap', S()); },   // merakla "pıt-pıt"
+    k12KaplumbagaDal(t) { K.damla(480, t, 0.013, 0.2, S()); sipirti(t + 0.06, 0.45, 0.2); },
+    k12KaplumbagaAdim(t) { K.ton(t, 'triangle', 230, 180, 0.07, 0.006, 0.004, 0, 0); },
+    k12KaplumbagaCik(t) { K.agiz(t, 330, 290, 0.12, 0.007, [700, 1300], [600, 1150], 0.02); K.damla(1200, t + 0.25, 0.006, 0.1, S()); },   // minik "hıh" + damla
+    k12KaplumbagaKule(t, v) { const n = cl((v && v.n) | 0, 2, 3); yukselenCan(t, 0.013, n + 2, 74, 0); K.hop(86, t + 0.1 * (n + 2) + 0.05, 0.02, 0, S()); },   // "ta-da!"
+    k12KaplumbagaYuru(t) {   // eşlikçi kaplumbağa: ağır adımlı, komik "pöm pöm pom" (alçak marimba); müzikte de kaplumbağa motifi sıklaşır
+      eslikT = t;
+      const tn = akTon(akor || AK.D, 50, 4);
+      [[0, 0], [0.42, 1], [0.84, 0], [1.1, 2]].forEach(([dt, i]) => K.hop(tn[i], t + dt, 0.026, -0.1, S()));
+    },
+    k12KaplumbagaYoruldu(t) { K.gur(t, 0.3, 'lowpass', 600, 300, 0.7, 0.01, 0.04, 0, 0, S()); K.ton(t + 0.05, 'sine', 420, 250, 0.25, 0.008, 0.02, 0, 0); eslikT = -1e9; },   // komik "pöf"
+    k12Selale(t, v) {
+      const g = cl(v && Number.isFinite(v.guc) ? v.guc : 0.8, 0.3, 1);
+      K.gur(t, 1.0, 'bandpass', 800, 2000, 0.8, 0.012 * g, 0.12, 0, 1, S());
+      for (let i = 0; i < 3; i++) K.damla(1000 + rnd() * 800, t + 0.3 + i * 0.15 + rnd() * 0.05, 0.007 * g, rnd() - 0.5, S());
+    },
+    k12BotNilufer(t, v) { SFX.k12Nilufer(t, v); },
+    k12BotSuDokun(t, v) { SFX.k12SuDokun(t, v); },
+    // büyük gölet (tur 2 / 3)
+    k12KazUcus(t) {   // uzakta V düzeninde kazlar: hafif "kak kak" soldan sağa + yumuşak kanat
+      for (let i = 0; i < 4; i++) K.agiz(t + i * 0.35 + rnd() * 0.08, 420, 380, 0.13, 0.005, [1100, 2300], [900, 2000], 0.01);
+      K.gur(t + 0.2, 1.4, 'lowpass', 600, 400, 0.6, 0.004, 0.5, 0, 1, S());
+    },
+    k12GolFiskiye(t, v) { SFX.k12Fiskiye(t, { guc: v && v.dokun ? 1 : 0.55 }); },
+    k12Kopru(t) {   // köprünün altı: ferah yankılı an (sıcak akor + uzun yankılı çan); müziğin yankısı da birkaç saniye açılır
+      kopruT = t;
+      const tn = akTon(akor || AK.D, 74, 3);
+      K.kabar((akor || AK.D).pad.map(n => n + 12), t, 0.8, 0.6, 2.4, 0.01, K.sahneG, false);
+      tn.forEach((n, i) => K.cam(hz(n + 12), t + 0.2 + i * 0.22, 0.008, 2.6, (i - 1) * 0.4, S(), true));
+    },
+    k12SazanOp(t) { K.damla(330 + rnd() * 60, t, 0.01, 0.15, S()); K.damla(420 + rnd() * 60, t + 0.13, 0.008, 0.15, S()); },   // "blup-blup" baloncuk
+    k12SazanDokun(t) { sipirti(t, 0.7, 0.2); K.damla(380, t + 0.05, 0.01, 0.2, S()); },
+    k12OrdekSuru(t, v) {
+      if (v && v.faz === 'takip') { vak(t, 0.009, 0.3, true); vak(t + 0.16, 0.008, 0.35, true); yukselenCan(t + 0.35, 0.009, 3, 81, 0.25); return; }
+      pirpir(t, 0.1, 10, 1100, 0.012);   // dağılırken kanat çırpışı + birkaç hafif vak
+      for (let i = 0; i < 3; i++) vak(t + 0.15 + i * 0.19 + rnd() * 0.05, 0.009 - i * 0.002, -0.4 + i * 0.4, i === 2);
+    },
+    // botanik canlıları (CANLI tur 2)
+    k12KirpiDokun(t) { for (let i = 0; i < 2; i++) K.gur(t + i * 0.12, 0.05, 'bandpass', 3200, 2800, 2, 0.007, 0.006, 0.2, 0, S()); },   // "fıs fıs"
+    k12KirlangicDokun(t) { cikCik(t, 0.35, 2); K.ton(t + 0.25, 'sine', 3400, 4300, 0.1, 0.006, 0.01, 0.4, 1); },
+    k12KelebekBulut(t, v) {
+      const dokun = !!(v && (v.dokun || (v.o && v.o.dokun)));
+      if (dokun) [98, 95, 93, 90, 86].forEach((n, i) => K.cam(hz(n), t + i * 0.09, 0.007, 1.6, (rnd() - 0.5) * 1.2, S(), i === 4));
+      else yukselenCan(t, 0.005, 3, 88, 0);
+    },
+    k12KediSu(t) { for (let i = 0; i < 2; i++) K.gur(t + i * 0.2, 0.04, 'lowpass', 1800, 1200, 1, 0.004, 0.004, 0.25, 0, S()); },   // çok kısık "şap şap"
+    k12SeraFiskiye(t, v) {   // sera sisi: uzun, yumuşak "fışşş" + birkaç damla
+      const g = cl(v && Number.isFinite(v.guc) ? v.guc : 0.6, 0.3, 1);
+      K.gur(t, 1.3, 'highpass', 3200, 4200, 0.6, 0.007 * g, 0.35, 0, 1, S());
+      for (let i = 0; i < 3; i++) K.damla(1300 + rnd() * 700, t + 0.5 + i * 0.22 + rnd() * 0.08, 0.005 * g, rnd() - 0.5, S());
+    },
+    k12Kaz(t) { kaz(t, 0.014, 0.3); kaz(t + 0.26, 0.011, 0.3); },
+    k12Balikcil(t) { for (let i = 0; i < 3; i++) K.gur(t + i * 0.32, 0.26, 'lowpass', 700, 380, 0.7, 0.012 * (1 - i * 0.2), 0.08, 0.3 - i * 0.2, 1, S()); },
     // final
     k12FinalBasla(t) { K.kabar([50, 57, 62, 66, 69], t, 1.6, 1.2, 2.8, 0.014, K.sahneG, false); },
     k12FinalAn(t, v) {
@@ -626,11 +718,16 @@ const MZ12 = (() => {
   const ENAZ = { k12Zil: 0.5, k12Teker: 0.03, k12ScooterIt: 0.2, k12Kurek: 0.25, k12Sicrama: 0.2, k12BalikZipla: 0.6, k12OrdekVak: 0.5, k12OrdekKatildi: 0.6,
     k12KediSev: 0.9, k12KediMiyav: 2.5, k12KopekSev: 0.9, k12KopekHav: 2.5, k12KusDokun: 0.4, k12KusHavalan: 1.2, k12MartiDokun: 1.5, k12CicekActi: 0.07,
     k12UcurtmaTakla: 0.8, k12Ucurtma: 0.6, k12Sayfa: 0.15, k12Fiskiye: 0.4, k12FiskiyeDokun: 0.4, k12Damla: 0.06, k12SuDokun: 0.1, k12Nilufer: 0.25,
-    k12FinalBasla: 3, k12Kelebek: 0.3, k12UcurtmaDon: 2, k12SayfaResim: 0.3, k12BinisAdim: 0.2, k12BinisBasla: 2, k12BinisBitti: 2, k12OgrenciSelam: 2, k12Surpriz: 0.3, k12FinalAn: 0.15 };
+    k12KaplumbagaPop: 0.3, k12KaplumbagaBak: 2, k12KaplumbagaCik: 0.6, k12KaplumbagaKule: 1, k12KaplumbagaYuru: 3, k12KaplumbagaYoruldu: 2, k12Selale: 0.5,
+    k12BotNilufer: 0.25, k12BotSuDokun: 0.1, k12KazUcus: 6, k12GolFiskiye: 0.5, k12Kopru: 3, k12SazanOp: 0.45, k12SazanDokun: 0.4, k12OrdekSuru: 0.8,
+    k12KirpiDokun: 0.5, k12KirlangicDokun: 0.5, k12KelebekBulut: 0.7, k12KediSu: 2,
+    k12FinalBasla: 3, k12KaplumbagaKafa: 0.2, k12KaplumbagaDokun: 0.2, k12KaplumbagaDal: 0.3, k12KaplumbagaAdim: 0.15, k12SeraFiskiye: 1, k12Kaz: 1, k12Balikcil: 1.5, k12Kelebek: 0.3, k12UcurtmaDon: 2, k12SayfaResim: 0.3, k12BinisAdim: 0.2, k12BinisBasla: 2, k12BinisBitti: 2, k12OgrenciSelam: 2, k12Surpriz: 0.3, k12FinalAn: 0.15 };
   let cicekN = 0;
   const sonCal = {};
   function cal(ad, v) {   // efekti şimdi çal (sessiz, uyuyan ya da kurulmamış motorda hiçbir şey olmaz)
     if (!K || !SFX[ad] || !K.calabilir()) return false;
+    if (ad === 'k12KaplumbagaPop' && v && v.faz === 'cik') ad = 'k12KaplumbagaKafa';   // aynı "pop" iki olaydan gelir: bir kez çalsın
+    if (ad === 'k12BalikZipla' && v && v.suru) v = Object.assign({}, v, { kisik: 0.5 });   // sürüde seyrek ve kısık
     const t = K.zaman() + 0.012, enAz = ENAZ[ad] != null ? ENAZ[ad] : 0.12;
     const anahtar = v && ad === 'k12FinalAn' ? ad + (v.an || v.ad) : v && ad === 'k12Zil' ? ad + (v.kim || '') : v && ad === 'k12Surpriz' ? ad + (v.tur || '') + (v.i | 0) : ad;
     if (sonCal[anahtar] != null && t - sonCal[anahtar] < enAz && t >= sonCal[anahtar]) return true;
@@ -707,7 +804,7 @@ const MZ12 = (() => {
   // ───────────────────────── kurulum ─────────────────────────
   function reset() {
     ilk = true; fi = 0; dongu = 0; bpm = 100; sonAk = null; akor = AK.D; sonBolge = 'sabah';
-    hizB = 0; hizS = 0; dansS = 0; karT = -1; fin = null; binisOlay = null; kayikOlay = false; bitti = false; padSes = null; cicekN = 0; sonNota = -1;
+    hizB = 0; hizS = 0; dansS = 0; karT = -1; eslikT = -1e9; kopruT = -1e9; fin = null; binisOlay = null; kayikOlay = false; bitti = false; padSes = null; cicekN = 0; sonNota = -1;
     for (const b of BOLGELER) { W[b] = 0; WS[b] = 0; }
     for (const k in sonCal) delete sonCal[k];
   }

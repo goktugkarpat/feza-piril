@@ -436,11 +436,18 @@ const SES = (() => {
     "p_q_takla": "Ne güzel takla attı!",
     "p_q_havuz": "Bak, fıskiyeler dans ediyor! Suya dokun.",
     "p_q_sayfa": "Kitabın sayfaları kuş gibi uçuyor!",
+    "p_q_botanik": "Botanik bahçesine geldik! Ne çok çiçek var.",
+    "p_q_kaplumbaga": "Bak, kaplumbağalar! Dokun, kafasını çıkarsın.",
+    "an_q_goster": "Bak Feza, kaplumbağalar güneşleniyor!",
+    "p_q_kplkule": "Vay! Kaplumbağa kulesi!",
     "p_q_bisiklet": "Şimdi küçük bisikletine bin! Kaskın da başında.",
     "an_q_yokus": "Yavaş yavaş süzülelim, ben arkandayım.",
     "p_q_ordek": "Ördekler peşimize takıldı, vak vak!",
     "p_q_kayik": "Annenle kayığa binelim! Basılı tut, kürekler hızlansın.",
     "an_q_kayik": "Sıkı tutun, kürek çekiyorum!",
+    "p_q_buyukgolet": "Ne büyük bir gölet! Bak, kuğular yüzüyor.",
+    "an_q_gol": "Seninle burada olmak ne güzel.",
+    "p_q_sazan": "Bak, kocaman balıklar! Öpücük veriyorlar.",
     "p_q_gunbatimi": "Bak, güneş batıyor. Gökyüzü pembe oldu!",
     "an_q_cagir": "Gel bakalım yanıma, bir tanem.",
     "p_q_dans": "Müzik başladı, hadi dans edelim!",
@@ -729,7 +736,7 @@ const SES = (() => {
     if (!sesSert(s)) return 'oyun bitti';
     if (agacYandi() && !ovguMu(s.k)) return 'ağaç yandı';
     const o = s.o, p = gP();
-    if (/^(p|an)_q_(cicek|kokla|scooter|bisiklet|ucurtma|takla|havuz|sayfa|yokus|ordek|kayik)$/.test(s.k) && o && (o.done || (o.tk && o.tk.bitti))) return 'etkinlik bitti';   // Bölüm 12: etkinliği bitti/geçildi
+    if (/^(p|an)_q_(cicek|kokla|scooter|bisiklet|ucurtma|takla|havuz|sayfa|yokus|ordek|kayik|botanik|kaplumbaga|buyukgolet|gol|goster|kplkule|sazan)$/.test(s.k) && o && (o.done || (o.tk && o.tk.bitti))) return 'etkinlik bitti';   // Bölüm 12: etkinliği bitti/geçildi
     if (o && p && typeof o.gec === 'number' && p.x > o.gec) return 'yeri geçti (gec)';
     if (o && o.konu && sesKonuBitti(o.konu)) return 'konusu bitti';
     const f = KOSUL[sesTaban(s.k)] || (ses8Komsu(s.k) || /^p_c_sekermi/.test(s.k) ? ses8KapiYakin : null);   // komşu sözü: Feza kapıdan uzaklaştıysa atılır
@@ -1484,6 +1491,7 @@ const SES = (() => {
   // takla, sayfa, yıldız) yalnız ortalık sessizken ve son cümleden 8 sn sonra. Cümleler olaylara bağlı (BOLUM12.md › Olaylar).
   Object.assign(SES_TEK, { p_q_uyku: 1, p_q_giris: 1, an_q_merhaba: 1, p_q_cicek: 1, an_q_kokla: 1, p_q_scooter: 1, an_q_bisiklet: 1, an_q_ucurtma: 1,
     p_q_ucurtma: 1, p_q_takla: 1, p_q_havuz: 1, p_q_sayfa: 1, p_q_bisiklet: 1, an_q_yokus: 1, p_q_ordek: 1, p_q_kayik: 1, an_q_kayik: 1,
+    p_q_botanik: 1, p_q_kaplumbaga: 1, an_q_goster: 1, p_q_kplkule: 1, p_q_buyukgolet: 1, an_q_gol: 1, p_q_sazan: 1,
     p_q_gunbatimi: 1, an_q_cagir: 1, p_q_dans: 1, an_q_saril: 1, p_q_yildiz: 1, p_q_kedi: 1, p_q_kopek: 1, a_q_final1: 1, p_q_sabah: 1 });
   Object.assign(SES_SAHNE, { p_q_uyku: 1, p_q_giris: 1, a_q_final1: 1, p_q_sabah: 1 });
   let ses12SonT = -1e9, ses12OvguT = -1e9, ses12OvguSon = '', ses12Takla = 0;
@@ -1498,7 +1506,8 @@ const SES = (() => {
     setTimeout(() => { if (ses12Bos(3)) { ses12OvguT = sesSaat(); ses12OvguSon = k; ses12(k, { oncelik: 0 }); } }, 700);
   };
   // sıralı cümleler: biri başlayınca öbürü sıraya girer (anne cevap verir)
-  const SES12_ZINCIR = { p_q_giris: 'an_q_merhaba', p_q_scooter: 'an_q_bisiklet', p_q_bisiklet: 'an_q_yokus', an_q_ucurtma: 'p_q_ucurtma', p_q_kayik: 'an_q_kayik' };
+  const SES12_ZINCIR = { p_q_giris: 'an_q_merhaba', p_q_scooter: 'an_q_bisiklet', p_q_bisiklet: 'an_q_yokus', an_q_ucurtma: 'p_q_ucurtma', p_q_kayik: 'an_q_kayik',
+    an_q_goster: 'p_q_kaplumbaga' };   // anne gösterir, Pırıl sevinir
   OLAY.on('konusma', e => { if (sesB12() && e && SES12_ZINCIR[e.anahtar]) soyle(SES12_ZINCIR[e.anahtar], e.anahtar === 'p_q_giris' ? undefined : { oncelik: 2 }); });
   OLAY.on('sahneAn', e => { if (sesB12() && e && e.mod === 'final' && e.ad === 'feza_uyandi') soyle('p_q_sabah', { oncelik: 3 }); });
   OLAY.on('k12CicekActi', e => { if (e && e.n >= 2) ses12('p_q_cicek', { o: e.o }); });
@@ -1510,7 +1519,28 @@ const SES = (() => {
   OLAY.on('k12Fiskiye', e => ses12('p_q_havuz', { o: e && e.o }));
   OLAY.on('k12Sayfa', e => ses12Istege('p_q_sayfa', { o: e && e.o }));
   OLAY.on('k12OrdekKatildi', e => { if (!sesSoylendi.p_q_ordek) ses12('p_q_ordek', { o: e && e.o }); else if (e && e.n === 4) ses12Ovgu(0.5); });
-  OLAY.on('k12KayikBasla', e => ses12('p_q_kayik', { o: e && e.o }));
+  OLAY.on('k12KayikBasla', e => {
+    ses12('p_q_kayik', { o: e && e.o });
+    // büyük gölette (kayık uzun): ortalık sessizse Pırıl kuğuları gösterir, sonra anne sıcak bir söz söyler
+    const kayikta = () => { const p = gP(); return !!(p && p.ucus && p.ucus.tip === 'k12Kayik'); };
+    setTimeout(() => { if (kayikta()) ses12Istege('p_q_buyukgolet'); }, 14000);
+    setTimeout(() => { if (kayikta()) ses12Istege('an_q_gol'); }, 26000);
+  });
+  // botanik bahçesi: girişte bir kez; kaplumbağalar ilk kafasını çıkarınca (ya da dokununca) bir kez, olay gelmezse bahçenin ortasında
+  const ses12Kaplumbaga = () => { if (!sesSoylendi.p_q_kaplumbaga) ses12('p_q_kaplumbaga'); };
+  // yere bağlı cümleler: Feza o bölgeden çıktıysa (sırada beklerken) söylenmez
+  const ses12Yerde = (ad, pay) => () => {
+    const p = gP(), b = typeof BOLUM !== 'undefined' && BOLUM && BOLUM.bolgeler ? BOLUM.bolgeler.find(v => v.ad === ad) : null;
+    return !p || !b || (p.x >= b.x0 - (pay || 0) * T && p.x < b.x1 + (pay || 0) * T);
+  };
+  Object.assign(KOSUL, { p_q_botanik: ses12Yerde('botanik'), p_q_kaplumbaga: ses12Yerde('botanik', 6), an_q_goster: ses12Yerde('botanik', 4), p_q_kplkule: ses12Yerde('botanik', 4),
+    p_q_havuz: ses12Yerde('bilgi', 4), p_q_sayfa: ses12Yerde('bilgi', 4), p_q_gunbatimi: ses12Yerde('tepe'), p_q_cicek: ses12Yerde('lojman', 6) });
+  OLAY.on('k12KaplumbagaKafa', ses12Kaplumbaga);
+  OLAY.on('k12KaplumbagaDokun', ses12Kaplumbaga);
+  OLAY.on('k12KaplumbagaBak', ses12Kaplumbaga);
+  OLAY.on('k12AnneGoster', () => ses12('an_q_goster'));
+  OLAY.on('k12KaplumbagaKule', () => ses12Istege('p_q_kplkule'));
+  OLAY.on('k12SazanOp', () => { if (!sesSoylendi.p_q_sazan) ses12Istege('p_q_sazan'); });
   OLAY.on('k12KayikBitti', () => ses12Ovgu(0.6));
   OLAY.on('k12KediSev', () => ses12Istege('p_q_kedi'));
   OLAY.on('k12KopekSev', () => ses12Istege('p_q_kopek'));
@@ -1522,6 +1552,13 @@ const SES = (() => {
     else if (an === 'saril') ses12('an_q_saril', { oncelik: 3 });
     else if (an === 'yildiz') ses12Istege('p_q_yildiz');
   });
+  setInterval(() => {   // botanik bahçesi (girişte; kaplumbağa yedeği ortasında)
+    if (!sesB12() || typeof DURUM === 'undefined' || DURUM !== 'oyun' || typeof BOLUM === 'undefined' || !BOLUM.bolgeler) return;
+    const p = gP(), b = BOLUM.bolgeler.find(v => v.ad === 'botanik');
+    if (!p || !b || p.ucus || p.x < b.x0 + 2 * T || p.x > b.x1) return;
+    if (!sesSoylendi.p_q_botanik) ses12('p_q_botanik');
+    else if (!sesSoylendi.p_q_kaplumbaga && p.x > (b.x0 + b.x1) / 2 && ses12Bos(5)) ses12Kaplumbaga();
+  }, 1000);
   setInterval(() => {   // gün batımı tepesine varınca bir kez
     if (!sesB12() || sesSoylendi.p_q_gunbatimi || typeof DURUM === 'undefined' || DURUM !== 'oyun' || typeof BOLUM === 'undefined' || !BOLUM.bolgeler) return;
     const p = gP(), b = BOLUM.bolgeler.find(v => v.ad === 'tepe');

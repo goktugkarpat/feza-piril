@@ -76,10 +76,16 @@
     else { ANNE_CANTA.x = P.x - 120 * (P.f || 1); ANNE_CANTA.y = P.y - 62; }
     return ANNE_CANTA;
   }
-  function anneKisaPoz(poz, sure, hedefX) {
-    if (typeof ANNE12 === 'undefined' || !ANNE12 || typeof ANNE12.kisaPoz !== 'function') return false;
-    try { return ANNE12.kisaPoz(poz, sure, { hedefX }) !== false; } catch (_) { return false; }
+  // Kısa poz yalnız "yürürken" biçimiyle istenir: anne durmaz, takip ve adımları bozulmaz, yalnız üst gövdesi poz verir.
+  // anne12.js bunu desteklemiyorsa (ANNE12.yuruyerekPoz yok) hiç istenmez: anne dursun da sonra koşsun istemiyoruz.
+  function anneYuruyerekPoz(poz, sure, opt) {
+    if (typeof ANNE12 === 'undefined' || !ANNE12 || typeof ANNE12.kisaPoz !== 'function' || ANNE12.yuruyerekPoz !== true) return false;
+    opt.yuruyerek = true;
+    try { return ANNE12.kisaPoz(poz, sure, opt) !== false; } catch (_) { return false; }
   }
+  const KOKLA_OPT = { hedefX: 0, yuruyerek: true };
+  const VER_OPT = { hedefX: 0, yuruyerek: true, u: 0 };
+  const KOKLA_SURE = 1.3;
   // Uçurtma ipini tutan el: FEZA12 'ucurtma' pozunun eli (P.a_ipX/Y), yoksa ön el, o da yoksa omuz hizası.
   function fezaEli() {
     const fx = P.rx !== undefined ? P.rx : P.x, fy = P.ry !== undefined ? P.ry : P.y;
@@ -357,34 +363,34 @@
       // sap: rüzgârda salınır, Feza yanından geçerken sürtünüp eğilir
       let hedefEgim = .06 * Math.sin(t * 1.5 + f.faz) + .03 * Math.sin(t * 3.7 + f.faz * 2);
       if (Math.abs(dx) < 34 && Math.abs(pvx) > 20 && !f.on) hedefEgim += sinir(pvx / 250, -1, 1) * .4 * (1 - Math.abs(dx) / 34);
-      if (f.koklaT > 0) { f.koklaT -= dt; hedefEgim -= .22 * anneYon() * Math.sin(Math.PI * sinir(f.koklaT / 1.8, 0, 1)); }
+      if (f.koklaT > 0) { f.koklaT -= dt; hedefEgim -= .25 * anneYon() * Math.sin(Math.PI * sinir(f.koklaT / KOKLA_SURE, 0, 1)); }   // anneye doğru uzanır
       f.ev += ((hedefEgim - f.egim) * 60 - f.ev * 6) * dt; f.egim += f.ev * dt;
       f.dokunT = Math.max(0, f.dokunT - dt); f.parla = Math.max(0, f.parla - dt * 1.2);
     }
     annenKoklamasi(o, dt);
   }
-  // Anne yolda açık bir çiçeğe varınca eğilip koklar (en çok iki kez, aralarında mesafe).
+  // Anne tarhta bir kez, yürümesini hiç bozmadan, açık bir çiçeğin yanından geçerken eğilip onu koklar.
+  // Çağrı çiçeğe varmadan biraz önce yapılır: eğilme tam çiçeğin hizasında olur.
   function annenKoklamasi(o, dt) {
     const K = o.k.kokla;
-    if (K.sayi >= 2 || !anneVar() || DURUM !== 'oyun' || P.ucus || o.k.acilan < 3) return;
-    K.bekle = Math.max(0, K.bekle - dt);
-    const ax = ANNE12.x, yon = anneYon();
-    if (K.hedef && (K.hedef.x - ax) * yon < -30) K.hedef = null;        // anne çiçeği geçti: başka birini seç
+    if (K.sayi >= 1 || !anneVar() || DURUM !== 'oyun' || P.ucus || o.k.acilan < 4) return;
+    const ax = ANNE12.x, yon = anneYon(), avx = Number.isFinite(ANNE12.vx) ? Math.abs(ANNE12.vx) : 200;
+    if (K.hedef && (K.hedef.x - ax) * yon < 0) K.hedef = null;          // çiçeği geçti: sıradakini seç
     if (!K.hedef) {
       let en = null, enD = 1e9;
       for (let i = 0; i < o.k.cicekler.length; i++) {
         const f = o.k.cicekler[i]; if (!f.acildi || f.on) continue;
         const d = (f.x - ax) * yon;
-        if (d > 25 && d < 260 && d < enD && Math.abs(f.x - K.sonX) > 500) { en = f; enD = d; }
+        if (d > 30 && d < 320 && d < enD) { en = f; enD = d; }
       }
       K.hedef = en;
     }
-    const f = K.hedef;
-    if (f && K.bekle <= 0 && Math.abs(f.x - ax) < 24) {
-      if (anneKisaPoz('kokla', 1.8, f.x)) {
-        f.koklaT = 1.8; K.sayi++; K.sonX = f.x; K.hedef = null; K.bekle = 4;
-        olay('k12AnneKokla', { o, x: f.x });
-      } else { K.hedef = null; K.bekle = 1.5; }
+    const f = K.hedef; if (!f) return;
+    const ileri = (f.x - ax) * yon, erken = sinir(avx * .25, 12, 70);   // hızlı yürüyorsa biraz daha erken eğilsin
+    if (ileri > 0 && ileri < erken) {
+      KOKLA_OPT.hedefX = f.x;
+      if (anneYuruyerekPoz('kokla', KOKLA_SURE, KOKLA_OPT)) { f.koklaT = KOKLA_SURE; K.sayi++; olay('k12AnneKokla', { o, x: f.x }); }
+      K.hedef = null;
     }
   }
 
@@ -484,15 +490,12 @@
   // Koklanan çiçekten anneye doğru süzülen minik kalp ve kokular
   function kokuCiz(f, t) {
     if (f.koklaT <= 0) return;
-    const u = 1 - f.koklaT / 1.8, yon = -anneYon();
+    const u = 1 - f.koklaT / KOKLA_SURE, yon = -anneYon();
     for (let j = 0; j < 3; j++) {
       const v = sinir(u * 1.4 - j * .2, 0, 1); if (v <= 0 || v >= 1) continue;
       const x = f.hx + yon * v * 26 + Math.sin(v * 9 + j) * 4, y = f.hy - 8 - v * 34, s = 2.2 + j * .5;
       g.globalAlpha = Math.sin(Math.PI * v) * .9;
-      g.fillStyle = j === 1 ? '#ffb3c8' : '#ff8fb1';
-      g.beginPath(); g.moveTo(x, y + s * 1.1);
-      g.bezierCurveTo(x - s * 1.9, y - s * .2, x - s * 1.1, y - s * 1.7, x, y - s * .7);
-      g.bezierCurveTo(x + s * 1.1, y - s * 1.7, x + s * 1.9, y - s * .2, x, y + s * 1.1); g.fill();
+      kalpCiz(x, y, s, j === 1 ? '#ffb3c8' : '#ff8fb1');
     }
     g.globalAlpha = 1;
   }
@@ -585,46 +588,53 @@
     });
     return SPR_FIYONK[i];
   }
-  // Kurdele zinciri: her parçanın açısı rüzgâr yönüne gecikmeyle döner (uca doğru daha geç), üstüne uca doğru büyüyen
-  // dalga biner. Fizik değil ama hiç düğümlenmez ve hep yumuşak dalgalanır.
-  function zincir(n, seg) { return { n, seg, x: new Float32Array(n), y: new Float32Array(n), a: new Float32Array(n) }; }
-  function zincirKoy(z, x, y) { for (let i = 0; i < z.n; i++) { z.x[i] = x; z.y[i] = y + i * z.seg; z.a[i] = Math.PI / 2; } }
-  function zincirAdim(z, bx, by, rx, ry, dt, genlik, faz) {
-    const taban = Math.atan2(ry, rx);
+  // Kurdele zinciri (yay fiziği): her parçanın açısı yay-sönümle rüzgâr yönüne döner, bir öncekine bağlı olduğu için dalga
+  // kökten uca doğru akar. Bağlantı noktası ani hareket edince (takla, rüzgâr savruluşu) kurdele ters yöne savrulup geri gelir.
+  function zincir(n, seg) {
+    return { n, seg, x: new Float32Array(n), y: new Float32Array(n), a: new Float32Array(n), w: new Float32Array(n), bx: NaN, by: NaN, ox: 0, oy: 0, vx: 0, vy: 0 };
+  }
+  function zincirKoy(z, x, y) {
+    for (let i = 0; i < z.n; i++) { z.x[i] = x; z.y[i] = y + i * z.seg; z.a[i] = Math.PI / 2; z.w[i] = 0; }
+    z.bx = x; z.by = y; z.ox = z.oy = z.vx = z.vy = 0;
+  }
+  function zincirAdim(z, bx, by, rx, ry, dt, genlik, faz, olcek) {
+    const L = z.seg * (olcek || 1);   // uçurtma küçükken (annenin elinde) kurdeleler de kısa
+    // bağlantının anlık hızı ile yavaş ortalaması arasındaki fark = savrulma (sabit yürüyüş zaten rx'in içinde)
+    if (Number.isFinite(z.bx)) {
+      const ivx = (bx - z.bx) / dt, ivy = (by - z.by) / dt;
+      z.ox += (ivx - z.ox) * (1 - Math.exp(-dt * 14)); z.oy += (ivy - z.oy) * (1 - Math.exp(-dt * 14));
+      z.vx += (z.ox - z.vx) * (1 - Math.exp(-dt * 1.5)); z.vy += (z.oy - z.vy) * (1 - Math.exp(-dt * 1.5));
+    }
+    z.bx = bx; z.by = by;
+    const sx = sinir((z.ox - z.vx) * .0045, -1.2, 1.2), sy = sinir((z.oy - z.vy) * .0045, -1.2, 1.2);
+    const taban = Math.atan2(ry - sy, rx - sx);
     z.x[0] = bx; z.y[0] = by;
     for (let i = 1; i < z.n; i++) {
-      const u = i / z.n, hedef = taban + Math.sin(now * 5.5 - i * .55 + faz) * genlik * u;
-      z.a[i] += aciFark(z.a[i], hedef) * (1 - Math.exp(-dt * (13 - 8 * u)));
-      z.x[i] = z.x[i - 1] + Math.cos(z.a[i]) * z.seg; z.y[i] = z.y[i - 1] + Math.sin(z.a[i]) * z.seg;
+      const u = i / z.n, K = 70 - 45 * u, C = 2 * Math.sqrt(K) * .42;
+      const dalga = Math.sin(now * 5.2 - i * .6 + faz) * genlik * u;
+      const ust = i > 1 ? z.a[i - 1] : taban;
+      const hedef = taban + dalga + aciFark(taban, ust) * .45;        // bir öncekinin açısını izler: dalga uca doğru akar
+      z.w[i] += (K * aciFark(z.a[i], hedef) - C * z.w[i]) * dt;
+      z.a[i] += z.w[i] * dt;
+      z.x[i] = z.x[i - 1] + Math.cos(z.a[i]) * L; z.y[i] = z.y[i - 1] + Math.sin(z.a[i]) * L;
     }
   }
-  // İki ucu tutulan ip (Verlet): el ↔ uçurtma, hafif sarkık.
-  const IPN = 14;
-  function ipAdim(ip, hx, hy, kx, ky, serbest, dt) {
-    const dt2 = dt * dt, n = IPN;
-    const uz = Math.hypot(kx - hx, ky - hy), seg = Math.max(4, uz / (n - 1)) * (serbest ? 1 : 1.025);
-    for (let i = 0; i < n; i++) {
-      if (i === n - 1 || (i === 0 && !serbest)) continue;
-      const vx = (ip.x[i] - ip.ox[i]) * .96, vy = (ip.y[i] - ip.oy[i]) * .96;
-      ip.ox[i] = ip.x[i]; ip.oy[i] = ip.y[i];
-      ip.x[i] += vx + Math.sin(now * 2.2 + i) * 30 * dt2; ip.y[i] += vy + 520 * dt2;
-    }
-    if (!serbest) { ip.x[0] = hx; ip.y[0] = hy; }
-    ip.x[n - 1] = kx; ip.y[n - 1] = ky;
-    for (let k = 0; k < 4; k++) {
-      for (let i = 1; i < n; i++) {
-        const dx = ip.x[i] - ip.x[i - 1], dy = ip.y[i] - ip.y[i - 1], d = Math.hypot(dx, dy) || 1, fark = (d - seg) / d;
-        const ilkSabit = i - 1 === 0 && !serbest, sonSabit = i === n - 1;
-        if (ilkSabit && sonSabit) continue;
-        if (ilkSabit) { ip.x[i] -= dx * fark; ip.y[i] -= dy * fark; }
-        else if (sonSabit) { ip.x[i - 1] += dx * fark; ip.y[i - 1] += dy * fark; }
-        else { ip.x[i] -= dx * fark * .5; ip.y[i] -= dy * fark * .5; ip.x[i - 1] += dx * fark * .5; ip.y[i - 1] += dy * fark * .5; }
-      }
-    }
+  // İp (yay fiziği): el ile uçurtma arasında tek bir eğri; sarkma noktası yay-sönümle hedefine gider, böylece ip
+  // hiç titremez, Feza zıplayınca ya da uçurtma takla atınca yumuşakça dalgalanıp yerine oturur.
+  function ipAdim(k, hx, hy, kx, ky, dt) {
+    if (k.ipSerbest) {   // elden bırakılınca ipin ucu uçurtmanın altında sallanarak sarkar
+      const ex = kx - k.yonY * 26 + Math.sin(now * 2.1) * 14, ey = ky + 95;
+      k.ipEvx += ((ex - k.ipEx) * 18 - k.ipEvx * 4.5) * dt; k.ipEvy += ((ey - k.ipEy) * 18 - k.ipEvy * 4.5) * dt;
+      k.ipEx += k.ipEvx * dt; k.ipEy += k.ipEvy * dt;
+      hx = k.ipEx; hy = k.ipEy;
+    } else { k.ipEx = hx; k.ipEy = hy; k.ipEvx = k.ipEvy = 0; }
+    const d = Math.hypot(kx - hx, ky - hy);
+    const sark = (.07 + .12 * (1 - sinir(k.hiz, 0, 1))) * d + 8;           // yavaşken daha sarkık
+    const cx = (hx + kx) * .5 - k.yonY * .05 * d + Math.sin(now * 1.7) * 6, cy = (hy + ky) * .5 + 2 * sark;
+    k.ipVx += ((cx - k.ipCx) * 20 - k.ipVx * 5) * dt; k.ipVy += ((cy - k.ipCy) * 20 - k.ipVy * 5) * dt;
+    k.ipCx += k.ipVx * dt; k.ipCy += k.ipVy * dt;
   }
-  function ipKoy(ip, hx, hy, kx, ky) {
-    for (let i = 0; i < IPN; i++) { const u = i / (IPN - 1); ip.x[i] = ip.ox[i] = hx + (kx - hx) * u; ip.y[i] = ip.oy[i] = hy + (ky - hy) * u; }
-  }
+  function ipKoy(k, hx, hy, kx, ky) { k.ipCx = (hx + kx) * .5; k.ipCy = (hy + ky) * .5 + 30; k.ipVx = k.ipVy = 0; k.ipEx = hx; k.ipEy = hy; k.ipEvx = k.ipEvy = 0; }
   // Uçurtmanın yerel noktasını (lx, ly) dünyaya çevir
   const UC_NOKTA = { x: 0, y: 0 };
   function ucNokta(k, lx, ly) {
@@ -632,16 +642,25 @@
     UC_NOKTA.x = k.cx + (lx * c - ly * s) * o; UC_NOKTA.y = k.cy + (lx * s + ly * c) * o;
     return UC_NOKTA;
   }
+  // minik kalp (veriliş anı, koklama)
+  function kalpCiz(x, y, s, renk) {
+    g.fillStyle = renk;
+    g.beginPath(); g.moveTo(x, y + s * 1.1);
+    g.bezierCurveTo(x - s * 1.9, y - s * .2, x - s * 1.1, y - s * 1.7, x, y - s * .7);
+    g.bezierCurveTo(x + s * 1.1, y - s * 1.7, x + s * 1.9, y - s * .2, x, y + s * 1.1); g.fill();
+  }
 
+  // Veriliş zamanlaması: anne uçurtmayı başının üstünde tutar (TUT), sonra öne uzatır ve uçurtma kavis çizerek Feza'nın eline
+  // süzülür (UZAT). Anne de Feza da hiç durmaz.
+  const VER_TUT = .6, VER_UZAT = .9;
   function ucurtmaKur(o) {
     o.x0 = Number.isFinite(o.x0) ? o.x0 : o.x - 60 * T; o.x1 = Number.isFinite(o.x1) ? o.x1 : o.x + 60 * T; o.merkez = o.x;
     o.k = {
       durum: 'bekle', u: 0, bitisSag: false,
-      kx: 0, ky: 0, kvx: 0, kvy: 0, cx: 0, cy: 0, aci: 0, aciCiz: 0, olc: .62, alfa: 1,
-      yonY: 1, hiz: 0, boy: 150, takla: 0, taklaSira: 0, taklaSay: 0, sonDokunus: -99, kurdeleT: 0, otoT: 0,
-      ip: { x: new Float32Array(IPN), y: new Float32Array(IPN), ox: new Float32Array(IPN), oy: new Float32Array(IPN) }, ipSerbest: false,
-      kuyruk: zincir(15, 10), solK: zincir(9, 10), sagK: zincir(9, 10),
-      vx0: 0, vy0: 0, vx1: 0, vy1: 0                               // veriliş eğrisinin uçları
+      kx: 0, ky: 0, kvx: 0, kvy: 0, cx: 0, cy: 0, aci: 0, aw: 0, aciCiz: 0, olc: .62, alfa: 1,
+      yonY: 1, hiz: 0, boy: 150, takla: 0, taklaSira: 0, taklaSay: 0, sonDokunus: -99,
+      ipCx: 0, ipCy: 0, ipVx: 0, ipVy: 0, ipEx: 0, ipEy: 0, ipEvx: 0, ipEvy: 0, ipSerbest: false, ipGor: 0,
+      kuyruk: zincir(15, 10), solK: zincir(9, 10), sagK: zincir(9, 10), sevgi: 0
     };
   }
   function ucurtmaGuncelle(o, dt) {
@@ -664,23 +683,32 @@
       return;
     }
     const el = fezaEli();
+    let hedefAci = 0;
     if (k.durum === 'ver') {
-      // anne uzatır: uçurtma annenin elinden kavis çizerek Feza'nın eline (ve hemen üstüne) süzülür
-      const a = anneEli(), u = yumusak(k.u / .9);
-      const bx = el.x - k.yonY * 30, by = el.y - 60, mx = (a.x + bx) * .5, my = Math.min(a.y, by) - 70;
-      const iu = 1 - u;
-      k.kx = iu * iu * a.x + 2 * iu * u * mx + u * u * bx; k.ky = iu * iu * a.y + 2 * iu * u * my + u * u * by;
-      k.olc = .3 + .32 * u; k.aci = Math.sin(k.u * 5) * .25 * (1 - u);
-      k.cx = k.kx; k.cy = k.ky; k.aciCiz = k.aci;
-      if (k.u > .55) fezaPoz('ucurtma', ucPozOpt(k, el));
-      if (k.u >= .9) {
-        k.durum = 'uc'; k.u = 0; k.kvx = -k.yonY * 60; k.kvy = -160;
-        ipKoy(k.ip, el.x, el.y, k.kx, k.ky + 4); k.ipSerbest = false;
-        zincirKoy(k.kuyruk, k.kx, k.ky + 40); zincirKoy(k.solK, k.kx - 30, k.ky); zincirKoy(k.sagK, k.kx + 30, k.ky);
+      const a = anneEli();
+      VER_OPT.hedefX = P.x; VER_OPT.u = yumusak((k.u - VER_TUT * .6) / (VER_UZAT + .2));   // annenin kolu uçurtmayla birlikte uzanır
+      if (k.u < VER_TUT) {
+        // annenin elinde, başının üstünde: rüzgârı yakalamış gibi hafifçe sallanır
+        const u = yumusak(k.u / VER_TUT);
+        k.kx = a.x + k.yonY * 4; k.ky = a.y - 22 - 14 * u;
+        k.olc = .34 + .06 * u; hedefAci = Math.sin(t * 6) * .18;
+      } else {
+        // kavis çizerek Feza'nın eline (ve hemen üstüne) süzülür; arkasında parıltı ve minik kalpler
+        const u = yumusak((k.u - VER_TUT) / VER_UZAT), iu = 1 - u;
+        const ax = a.x + k.yonY * 4, ay = a.y - 36, bx = el.x - k.yonY * 26, by = el.y - 62;
+        const mx = (ax + bx) * .5, my = Math.min(ay, by) - 80;
+        k.kx = iu * iu * ax + 2 * iu * u * mx + u * u * bx; k.ky = iu * iu * ay + 2 * iu * u * my + u * u * by;
+        k.olc = .4 + .22 * u; hedefAci = Math.sin(u * Math.PI) * .45 * k.yonY;
+        k.sevgi = Math.sin(u * Math.PI);
+        if (Math.random() < .5) parca(k.kx, k.ky + 10, (Math.random() - .5) * 30, 10 + Math.random() * 20, .7, Math.random() < .5 ? '#fff3b0' : RENK[(Math.random() * RENK.length) | 0], 3 + Math.random() * 3);
+        if (u > .45) fezaPoz('ucurtma', ucPozOpt(k, el));
       }
-      return;
-    }
-    if (k.durum === 'uc') {
+      k.ipGor = sinir((k.u - VER_TUT - VER_UZAT * .5) / (VER_UZAT * .4), 0, 1);   // ip Feza'nın eline geçerken belirir
+      if (k.u >= VER_TUT + VER_UZAT) {
+        k.durum = 'uc'; k.u = 0; k.kvx = -k.yonY * 70; k.kvy = -180; k.ipGor = 1; k.sevgi = 0;
+        burst(k.kx, k.ky, 10, ['#fff3b0', '#ffd6e4', '#ffffff'], 90, .8, 5);
+      }
+    } else if (k.durum === 'uc') {
       fezaPoz('ucurtma', ucPozOpt(k, el));
       // hedef: elden geriye ve yukarı; hız arttıkça ip uzar, açı dikleşir
       const boyH = 150 + 170 * Math.min(k.hiz, 1.15);
@@ -694,7 +722,7 @@
       const dx = k.kx - el.x, dy = k.ky - el.y, d = Math.hypot(dx, dy), en = k.boy * 1.08;
       if (d > en) { k.kx = el.x + dx / d * en; k.ky = el.y + dy / d * en; }
       // ipin yönüne yaslanır, rüzgârda kafa sallar
-      k.aci = sinir(Math.atan2(dx, -dy) * .35, -.55, .55) + .08 * Math.sin(t * 2.6) + sinir(k.kvx * .001, -.2, .2);
+      hedefAci = sinir(Math.atan2(dx, -dy) * .35, -.55, .55) + .08 * Math.sin(t * 2.6) + sinir(k.kvx * .001, -.2, .2);
       taklaIlerle(o, k, dt);
       // dokunulmasa da çimenliğin ortasında bir kez kendiliğinden takla
       if (k.taklaSay === 0 && P.x > (o.x0 + o.x1) * .5 && k.u > 3) takla(o, true);
@@ -706,27 +734,32 @@
       k.kvx += ((a.x - k.kx) * sert - k.kvx * 2.4) * dt; k.kvy += ((a.y - 20 - k.ky) * sert - k.kvy * 2.4) * dt + Math.sin(t * 3) * 20 * dt;
       k.kx += k.kvx * dt; k.ky += k.kvy * dt;
       k.olc += (.4 - k.olc) * (1 - Math.exp(-dt * 1.6));
-      k.aci += (Math.sin(t * 2.2) * .2 - k.aci) * (1 - Math.exp(-dt * 3));
+      hedefAci = Math.sin(t * 2.2) * .2;
       taklaIlerle(o, k, dt);
-      if (k.u > 1.2 && (Math.hypot(a.x - k.kx, a.y - 20 - k.ky) < 30 || k.u > 2.6)) { k.durum = 'canta'; k.u = 0; anneKisaPoz('ucurtma_ver', .7, k.kx); }
+      if (k.u > 1.2 && (Math.hypot(a.x - k.kx, a.y - 20 - k.ky) < 30 || k.u > 2.6)) { k.durum = 'canta'; k.u = 0; }
     } else if (k.durum === 'canta') {
       const c = anneCantasi(), u = yumusak(k.u / .55);
       k.kx += (c.x - k.kx) * u; k.ky += (c.y - k.ky) * u;
-      k.olc = .4 * (1 - .75 * u); k.alfa = 1 - u;
+      k.olc = .4 * (1 - .75 * u); k.alfa = 1 - u; k.ipGor = 1 - u;
       if (k.u >= .55) { k.durum = 'bitti'; k.alfa = 1; burst(c.x, c.y, 8, RENK, 60, .6, 4); }
     }
+    // gövde açısı da yayla: savrulunca biraz taşar, sonra oturur
+    k.aw += ((hedefAci - k.aci) * 42 - k.aw * 7.5) * dt; k.aci += k.aw * dt;
     // çizim konumu (takla döngüsü eklenmiş) ve kurdeleler
     const lu = k.takla > 0 ? yumusak(k.takla) : 0, R = 46;
     k.cx = k.kx + (k.takla > 0 ? -k.yonY * Math.sin(lu * TAM) * R : 0);
     k.cy = k.ky - (k.takla > 0 ? (1 - Math.cos(lu * TAM)) * R : 0);
     k.aciCiz = k.aci - (k.takla > 0 ? k.yonY * lu * TAM : 0);
-    // kurdeleler rüzgârda geriye uzanır; Feza hızlandıkça daha yatay, yavaşken daha sarkık
-    const rx = -k.yonY * (.55 + Math.min(k.hiz, 1.2)), ry = .75 - .3 * Math.min(k.hiz, 1);
-    const alt = ucNokta(k, 0, 72); zincirAdim(k.kuyruk, alt.x, alt.y, rx, ry, dt, .45, 0);
-    const sl = ucNokta(k, -50, -8); zincirAdim(k.solK, sl.x, sl.y, rx, ry + .35, dt, .6, 1.3);
-    const sg = ucNokta(k, 50, -8); zincirAdim(k.sagK, sg.x, sg.y, rx, ry + .35, dt, .6, 2.6);
+    // kurdeleler rüzgârda geriye uzanır; Feza hızlandıkça daha yatay, yavaşken daha sarkık; annenin elindeyken aşağı sarkar
+    const ucuyor = k.durum !== 'ver' || k.u > VER_TUT;
+    const rx = ucuyor ? -k.yonY * (.55 + Math.min(k.hiz, 1.2)) : -k.yonY * .25, ry = ucuyor ? .75 - .3 * Math.min(k.hiz, 1) : 1.6;
+    const ko = Math.min(1, k.olc / .62);
+    const alt = ucNokta(k, 0, 72); zincirAdim(k.kuyruk, alt.x, alt.y, rx, ry, dt, .45, 0, ko);
+    const sl = ucNokta(k, -50, -8); zincirAdim(k.solK, sl.x, sl.y, rx, ry + .35, dt, .6, 1.3, ko);
+    const sg = ucNokta(k, 50, -8); zincirAdim(k.sagK, sg.x, sg.y, rx, ry + .35, dt, .6, 2.6, ko);
     const baglanti = ucNokta(k, 0, 10);
-    ipAdim(k.ip, el.x, el.y, baglanti.x, baglanti.y, k.ipSerbest, dt);
+    if (k.durum === 'ver' && k.ipGor <= 0) ipKoy(k, el.x, el.y, baglanti.x, baglanti.y);
+    else ipAdim(k, el.x, el.y, baglanti.x, baglanti.y, dt);
     if (k.takla > 0 && Math.random() < .7) {   // takla atarken kurdeleler renk saçar
       const z = Math.random() < .5 ? k.kuyruk : (Math.random() < .5 ? k.solK : k.sagK), j = 2 + Math.floor(Math.random() * (z.n - 2));
       parca(z.x[j], z.y[j], (Math.random() - .5) * 60, -20 - Math.random() * 40, .9, RENK[Math.floor(Math.random() * RENK.length)], 4 + Math.random() * 4);
@@ -740,9 +773,12 @@
   const UC_OPT = { yonX: 0, yonY: -1, cek: 0 };
   function ucurtmaVer(o) {
     const k = o.k, a = anneEli();
-    k.durum = 'ver'; k.u = 0; k.alfa = 1; k.takla = 0; k.taklaSira = 0; k.taklaSay = 0; k.boy = 140; k.hiz = 0;
-    k.yonY = P.vx < -30 ? -1 : 1; k.kx = a.x; k.ky = a.y;
-    anneKisaPoz('ucurtma_ver', 1, P.x);
+    k.durum = 'ver'; k.u = 0; k.alfa = 1; k.takla = 0; k.taklaSira = 0; k.taklaSay = 0; k.boy = 140; k.hiz = 0; k.ipGor = 0;
+    k.yonY = P.vx < -30 ? -1 : 1; k.kx = a.x; k.ky = a.y - 22; k.olc = .34; k.aci = k.aw = 0; k.ipSerbest = false;
+    k.cx = k.kx; k.cy = k.ky; k.aciCiz = 0;
+    zincirKoy(k.kuyruk, k.kx, k.ky + 20); zincirKoy(k.solK, k.kx - 14, k.ky); zincirKoy(k.sagK, k.kx + 14, k.ky);
+    VER_OPT.u = 0; VER_OPT.hedefX = P.x;
+    anneYuruyerekPoz('ucurtma_ver', VER_TUT + VER_UZAT + .2, VER_OPT);
     if (typeof V12 !== 'undefined' && V12) V12.ucurtma = true;
     olay('k12UcurtmaVer', { o, x: P.x });
   }
@@ -756,7 +792,8 @@
     const k = o.k;
     if (k.durum !== 'uc' && k.durum !== 'don') return;
     if (k.takla > 0) { if (k.taklaSira < 2) k.taklaSira++; return; }
-    k.takla = .0001; k.taklaSay++; k.kurdeleT = 0;
+    k.takla = .0001; k.taklaSay++;
+    k.ipVy -= 160; k.ipVx += k.yonY * 120;   // ip de taklayla birlikte dalgalanır
     burst(k.cx, k.cy, 14, RENK, 150, 1, 6);
     olay('k12UcurtmaTakla', { o, x: k.cx, y: k.cy, oto: !!oto });
   }
@@ -766,39 +803,53 @@
     if (once < .5 && k.takla >= .5) { olay('k12UcurtmaKurdele', { o, x: k.cx, y: k.cy }); burst(k.cx, k.cy + 30, 10, RENK, 110, 1.1, 5); }
     if (k.takla >= 1) { k.takla = 0; if (k.taklaSira > 0) { k.taklaSira--; k.takla = .0001; k.taklaSay++; olay('k12UcurtmaTakla', { o, x: k.cx, y: k.cy, oto: false }); } }
   }
-  // kurdele zincirini kalınlığı azalan şerit olarak çiz
+  // kurdeleyi kalınlığı uca doğru azalan, yumuşak eğrili şerit olarak çiz
   function kurdeleCiz(z, renk, kalin) {
-    g.strokeStyle = renk; g.lineCap = 'round';
-    for (let i = 1; i < z.n; i++) {
+    g.strokeStyle = renk; g.lineCap = 'round'; g.lineJoin = 'round';
+    for (let i = 1; i < z.n - 1; i++) {
       g.lineWidth = kalin * (1 - i / (z.n + 1));
-      g.beginPath(); g.moveTo(z.x[i - 1], z.y[i - 1]); g.lineTo(z.x[i], z.y[i]); g.stroke();
+      g.beginPath();
+      g.moveTo((z.x[i - 1] + z.x[i]) * .5, (z.y[i - 1] + z.y[i]) * .5);
+      g.quadraticCurveTo(z.x[i], z.y[i], (z.x[i] + z.x[i + 1]) * .5, (z.y[i] + z.y[i + 1]) * .5);
+      g.stroke();
     }
   }
   function ucurtmaCiz(o, tm) {
     const k = o.k;
     if (k.durum === 'bekle' || k.durum === 'bitti') return;
     g.globalAlpha = k.alfa;
-    if (k.durum !== 'ver') {
-      // ip: önce ince koyu gölge, sonra krem çizgi (gökte de çimende de okunsun)
-      const ip = k.ip;
-      if (!k.ipSerbest) { const el = fezaEli(); ip.x[0] = el.x; ip.y[0] = el.y; }   // çizim anındaki el (fezaUpdate güncelledi)
-      g.beginPath(); g.moveTo(ip.x[0], ip.y[0]);
-      for (let i = 1; i < IPN - 1; i++) g.quadraticCurveTo(ip.x[i], ip.y[i], (ip.x[i] + ip.x[i + 1]) * .5, (ip.y[i] + ip.y[i + 1]) * .5);
-      g.lineTo(ip.x[IPN - 1], ip.y[IPN - 1]);
+    if (k.ipGor > .01) {
+      // ip: çizim anındaki elden (fezaUpdate güncelledi) yaylı sarkma noktasından uçurtmaya; ince koyu gölge + krem çizgi
+      let hx = k.ipEx, hy = k.ipEy;
+      if (!k.ipSerbest) { const el = fezaEli(); hx = el.x; hy = el.y; }
+      const b = ucNokta(k, 0, 10);
+      g.globalAlpha = k.alfa * k.ipGor;
+      g.beginPath(); g.moveTo(hx, hy); g.quadraticCurveTo(k.ipCx, k.ipCy, b.x, b.y);
       cizgiGenis(g, 'rgba(110,90,80,.35)', 2.6); cizgiGenis(g, '#fffaf0', 1.3);
-      // kuyruk ve yan kurdeleler
-      kurdeleCiz(k.solK, '#ffd25e', 4.5); kurdeleCiz(k.sagK, '#3fc2b4', 4.5);
-      const kz = k.kuyruk;
-      g.beginPath(); g.moveTo(kz.x[0], kz.y[0]); for (let i = 1; i < kz.n; i++) g.lineTo(kz.x[i], kz.y[i]);
-      cizgiGenis(g, '#ff8fb5', 2);
-      for (let i = 3; i < kz.n; i += 3) {
-        const aci = Math.atan2(kz.y[i] - kz.y[i - 1], kz.x[i] - kz.x[i - 1]) - Math.PI / 2, fs = fiyonkSpr(i / 3 | 0);
-        yerlestir(kz.x[i], kz.y[i], aci, .85, .85); koy(fs, .5, .5);
-      }
-      dunyaya();
+      g.globalAlpha = k.alfa;
     }
+    // kuyruk ve yan kurdeleler
+    kurdeleCiz(k.solK, '#ffd25e', 4.5 * k.olc / .62); kurdeleCiz(k.sagK, '#3fc2b4', 4.5 * k.olc / .62);
+    const kz = k.kuyruk;
+    g.beginPath(); g.moveTo(kz.x[0], kz.y[0]);
+    for (let i = 1; i < kz.n - 1; i++) g.quadraticCurveTo(kz.x[i], kz.y[i], (kz.x[i] + kz.x[i + 1]) * .5, (kz.y[i] + kz.y[i + 1]) * .5);
+    cizgiGenis(g, '#ff8fb5', 2);
+    const fb = .85 * Math.min(1, k.olc / .5);
+    for (let i = 3; i < kz.n; i += 3) {
+      const aci = Math.atan2(kz.y[i] - kz.y[i - 1], kz.x[i] - kz.x[i - 1]) - Math.PI / 2, fs = fiyonkSpr(i / 3 | 0);
+      yerlestir(kz.x[i], kz.y[i], aci, fb, fb); koy(fs, .5, .5);
+    }
+    dunyaya();
     if (k.takla > 0) dglow('#fff3b0', k.cx, k.cy, 70 * k.olc / .62, .5 * Math.sin(Math.PI * k.takla));
-    g.globalAlpha = k.alfa;
+    if (k.durum === 'ver') {   // veriliş: sıcak bir ışıltı ve anneden Feza'ya süzülen kalpler
+      dglow('#ffe7b0', k.cx, k.cy, 60, .35 + .25 * k.sevgi);
+      for (let j = 0; j < 3; j++) {
+        const v = sinir(k.u * 1.3 - .5 - j * .22, 0, 1); if (v <= 0 || v >= 1) continue;
+        g.globalAlpha = Math.sin(Math.PI * v) * .85;
+        kalpCiz(k.kx + k.yonY * (j - 1) * 14 + Math.sin(v * 8 + j) * 5, k.ky + 20 - v * 40, 2.6 + j * .5, j === 1 ? '#ffb3c8' : '#ff8fb1');
+      }
+      g.globalAlpha = k.alfa;
+    }
     const s = ucurtmaSpr();
     yerlestir(k.cx, k.cy, k.aciCiz, k.olc, k.olc); koy(s, s.ax, s.ay);
     dunyaya(); g.globalAlpha = 1;
@@ -921,37 +972,74 @@
     return SPR_RESIM[i];
   }
 
+  // Kâğıt gemi (açılan sayfa katlanıp havuza iner): krem kâğıt, sayfanın resimciğine uygun renkli kenar
+  const SPR_GEMI = [];
+  function gemiSpr(v) {
+    if (SPR_GEMI[v]) return SPR_GEMI[v];
+    const renk = ['#ffd25e', '#74c0fc', '#8fd07a', '#ff8fb5'][v % 4];
+    SPR_GEMI[v] = onbellek(40, 26, c => {
+      // yelken (ortadaki üçgen kat)
+      c.beginPath(); c.moveTo(20, 1.5); c.lineTo(29, 15); c.lineTo(11, 15); c.closePath();
+      const gr = c.createLinearGradient(11, 0, 29, 0); gr.addColorStop(0, '#fffaf0'); gr.addColorStop(.5, '#f4ead4'); gr.addColorStop(1, '#fffdf6');
+      c.fillStyle = gr; c.fill(); c.strokeStyle = '#d4c29e'; c.lineWidth = .8; c.stroke();
+      c.beginPath(); c.moveTo(20, 2.5); c.lineTo(20, 15); cizgiGenis(c, 'rgba(200,180,140,.7)', .6);
+      // gövde (iki yana açılan katlar)
+      c.beginPath(); c.moveTo(1.5, 13); c.lineTo(38.5, 13); c.lineTo(31, 23); c.lineTo(9, 23); c.closePath();
+      const gr2 = c.createLinearGradient(0, 13, 0, 23); gr2.addColorStop(0, '#fffaf0'); gr2.addColorStop(1, '#e6d7b8');
+      c.fillStyle = gr2; c.fill(); c.strokeStyle = '#cdb88e'; c.lineWidth = .8; c.stroke();
+      c.beginPath(); c.moveTo(4, 14.5); c.lineTo(36, 14.5); cizgiGenis(c, renk, 1.6);
+      c.beginPath(); c.moveTo(9, 23); c.lineTo(14, 13); c.moveTo(31, 23); c.lineTo(26, 13); cizgiGenis(c, 'rgba(190,170,130,.55)', .6);
+    });
+    return SPR_GEMI[v];
+  }
+
+  const YAY_ARA = 150;          // sekerek akan su yaylarının memeleri arası
+  const GEMI_EN = 3;            // havuzda en çok kaç kâğıt gemi yüzer
   function bilgiKur(o) {
     o.x0 = Number.isFinite(o.x0) ? o.x0 : o.x - 48 * T; o.x1 = Number.isFinite(o.x1) ? o.x1 : o.x + 48 * T; o.merkez = o.x;
     const k = o.k = {
       hx0: o.x0 + 320, hx1: o.x1 - 280,                         // havuzun uçları (sütun ~468..548)
-      fiskiye: [], sayfa: [], gok: 0, gokX: o.x, gokParla: 0, icerdeT: 0, otoT: 0, otoSay: 0, sonDokunus: -99
+      yU: o.y - 64, yA: o.y - 14, yJ: o.y - 36,                 // su yüzeyinin arkası, ön bordür, fıskiye memeleri
+      fiskiye: [], sayfa: [], meme: [], yay: [], gok: 0, gokX: o.x, gokParla: 0, icerdeT: 0, otoT: 0, otoSay: 0, sonDokunus: -99,
+      cagriX: 0, cagriT: 0, gemiSay: 0
     };
     let i = 0;
     for (let x = k.hx0 + 130; x < k.hx1 - 100; x += 250) { k.fiskiye.push({ x, i, h: 50, hv: 0, sicra: 0, coskun: false }); i++; }
+    for (let x = k.hx0 + 70; x < k.hx1 - 60; x += YAY_ARA) k.meme.push(x);
+    // iki su yayı: biri Feza'nın önünden koşar (onu bekler), biri arkasından gelir
+    for (let r = 0; r < 2; r++) k.yay.push({ rol: r === 0 ? 'on' : 'arka', i: r * 3, j: r * 3 + 1, u: 0, sure: .55, pi: -1, pj: -1, pu: 2 });
     for (let j = 0; j < 7; j++) {
       const r = karma(j * 4.3 + 7);
       k.sayfa.push({
         x: o.x0 + 380 + j * ((o.x1 - o.x0 - 760) / 6), y: o.y - 300 - r * 90, vx: 0, vy: 0,
         ev: o.x0 + 380 + j * ((o.x1 - o.x0 - 760) / 6), ofX: -360 + j * 125 + r * 40, ofY: 210 + karma(j * 2.1) * 150,
         kanat: r * TAM, faz: karma(j * 9.7) * TAM, olc: .9 + karma(j * 5.9) * .25, v: j % 3, resim: j % RESIMLER.length,
-        durum: 'uc', acik: 0, acT: 0, ekX: 0, hedefY: 0, egim: 0
+        durum: 'uc', acik: 0, acT: 0, ekX: 0, hedefY: 0, egim: 0,
+        kx: 0, ky: 0, gx: 0, gy: 0, ku: 0, gyon: 1, hop: 0, serit: 0     // katlanma ve gemi
       });
     }
+  }
+  // Fıskiyelerin kendi koreografisi (Feza uzaktayken de): akan dalga → hep birlikte nabız → tek-çift karşılıklı; yumuşak geçişli
+  function desen(m, j, t) {
+    if (m === 0) return 40 + 34 * Math.sin(t * 2.2 - j.i * .9);
+    if (m === 1) return 30 + 46 * Math.max(0, Math.sin(t * 2.6));
+    return 40 + 34 * (j.i % 2 ? Math.sin(t * 2.4) : -Math.sin(t * 2.4));
   }
   function bilgiGuncelle(o, dt) {
     if (!(dt > 0)) return; dt = Math.min(dt, 1 / 30);
     ortakGuncelle(dt); kameraIzle(o);
     const k = o.k, t = now, icerde = P.x > o.x0 && P.x < o.x1 && !P.ucus;
     k.icerdeT = icerde ? k.icerdeT + dt : 0;
-    // fıskiyeler: kendi yavaş danslarını yapar; Feza yaklaşınca sırayla coşar
+    k.cagriT = Math.max(0, k.cagriT - dt);
+    // dikey fıskiyeler: koreografi + Feza yaklaşınca sırayla coşar
+    const fz = (t / 6) % 3, m = Math.floor(fz), gecis = yumusak((fz - m - .8) / .2);
     let enYakin = null, enD = 1e9, gokHedef = 0;
     for (let i = 0; i < k.fiskiye.length; i++) {
       const j = k.fiskiye[i], d = Math.abs(P.x - j.x);
-      let hedef = 46 + 24 * Math.sin(t * 1.2 + j.i * .75) + 14 * Math.sin(t * 2.3 + j.i * 1.9);
+      let hedef = desen(m, j, t) * (1 - gecis) + desen((m + 1) % 3, j, t) * gecis;
       if (d < 330 && icerde) {
         const w = 1 - d / 330;
-        hedef += 135 * w * (.78 + .22 * Math.sin(t * 5 + j.i));
+        hedef += 130 * w * (.78 + .22 * Math.sin(t * 5 + j.i));
         if (!j.coskun && w > .35) { j.coskun = true; olay('k12Fiskiye', { o, x: j.x, guc: .6 }); }
       } else if (d > 420) j.coskun = false;
       if (j.sicra > 0) { j.sicra -= dt; hedef = Math.max(hedef, 250); }
@@ -963,7 +1051,11 @@
     gokHedef = Math.max(gokHedef, k.gokParla);
     k.gok += (gokHedef - k.gok) * (1 - Math.exp(-dt * 2.2));
     if (enYakin) k.gokX += (enYakin.x - k.gokX) * (1 - Math.exp(-dt * 1.6));
-    // kitap sayfaları
+    // sekerek akan su yayları
+    for (let i = 0; i < k.yay.length; i++) yayGuncelle(o, k.yay[i], dt, icerde);
+    // kitap sayfaları ve kâğıt gemiler
+    k.gemiSay = 0;
+    for (let i = 0; i < k.sayfa.length; i++) { const s = k.sayfa[i]; if (s.durum === 'katla' || s.durum === 'gemi') k.gemiSay++; }
     for (let i = 0; i < k.sayfa.length; i++) sayfaGuncelle(o, k.sayfa[i], dt, icerde);
     // kendiliğinden: Feza bölgede yürüyorsa ara sıra bir sayfa önünde açılır (en çok iki kez)
     k.otoT = Math.max(0, k.otoT - dt);
@@ -977,8 +1069,36 @@
       if (en) { sayfaAc(o, en, true); k.otoSay++; k.otoT = 9; }
     }
   }
+  // Su yayı bir memeden komşusuna seker. Öndeki yay Feza'nın biraz önüne koşup orada ileri-geri sekerek onu bekler,
+  // arkadaki onu izler. Dokunulan yere ikisi de koşar. Feza bölgede değilse kendi kendine oynar.
+  function yayGuncelle(o, h, dt, icerde) {
+    const k = o.k, n = k.meme.length; if (n < 2) return;
+    if (h.pu < 1.5) h.pu += dt / h.sure;
+    h.u += dt / h.sure;
+    if (h.u < 1) return;
+    // indi: küçük halka, birkaç damla
+    const xb = k.meme[h.j];
+    if (xb > cam.x - 60 && xb < cam.x + VW + 60) {
+      halkaAt(xb, k.yA - 10, '#ffffff', 70, .6);
+      for (let d = 0; d < 3; d++) yaprakAt(xb + (Math.random() - .5) * 10, k.yA - 14, (Math.random() - .5) * 90, -70 - Math.random() * 60, d ? '#e8f7ff' : GOK7[(Math.random() * 7) | 0], .65, false);
+      olay('k12SuYayi', { o, x: xb });
+    }
+    h.pi = h.i; h.pj = h.j; h.pu = 1;          // eski yayın kuyruğu süzülerek biter
+    h.i = h.j; h.u = 0;
+    let hedef;
+    const fi = (P.x - k.meme[0]) / YAY_ARA;
+    if (k.cagriT > 0) hedef = (k.cagriX - k.meme[0]) / YAY_ARA + (h.rol === 'on' ? .3 : -.3);
+    else if (icerde) hedef = fi + (h.rol === 'on' ? 1.8 : -1.4);
+    else hedef = h.i + (karma(now * 3.1 + h.i) < .5 ? -1 : 1);
+    const fark = hedef - h.i;
+    let yon = Math.abs(fark) > .7 ? Math.sign(fark) : (karma(now * 7.3 + h.i) < .5 ? -1 : 1);   // hedefteyse ileri-geri oynar
+    let j = h.i + yon;
+    if (j < 0 || j >= n) j = h.i - yon;
+    h.j = sinir(j, 0, n - 1);
+    h.sure = Math.abs(fark) > 2.5 ? .42 : .58;   // uzaktaysa daha çabuk seker
+  }
   function sayfaGuncelle(o, s, dt, icerde) {
-    const t = now;
+    const t = now, k = o.k;
     if (s.durum === 'uc') {
       let tx, ty;
       if (icerde) {   // Feza'ya kuş sürüsü gibi eşlik eder
@@ -992,7 +1112,7 @@
       s.kanat += dt * (8.5 + 4 * sinir(-s.vy / 120, 0, 1));
       s.egim += (sinir(s.vx * .0016, -.3, .3) - s.egim) * (1 - Math.exp(-dt * 3));
       s.acik += (0 - s.acik) * (1 - Math.exp(-dt * 7));
-    } else {
+    } else if (s.durum === 'ac') {
       s.acT += dt;
       const kapan = s.acT > 2.8;
       // açıkken ekranın aynı yerinde süzülür (Feza yürüse de kaçmaz)
@@ -1001,10 +1121,39 @@
       s.acik += ((kapan ? 0 : 1) - s.acik) * (1 - Math.exp(-dt * (kapan ? 9 : 7)));
       s.egim += (0 - s.egim) * (1 - Math.exp(-dt * 6));
       s.kanat = Math.PI / 2;   // kanatlar düz (açık kitap)
-      if (kapan && s.acik < .05) { s.durum = 'uc'; s.vy = -170; s.vx = (Math.random() - .5) * 80; s.kanat = 0; }
+      if (kapan && s.acik < .3 && k.gemiSay < GEMI_EN && s.x > k.hx0 + 60 && s.x < k.hx1 - 60) {
+        // kapanırken kâğıt gemi gibi katlanıp havuza süzülür
+        s.durum = 'katla'; s.ku = 0; s.kx = s.x; s.ky = s.y; k.gemiSay++;
+        s.gx = sinir(s.x, k.hx0 + 60, k.hx1 - 60); s.gy = k.yU + 14 + (k.gemiSay % 3) * 11; s.gyon = karma(s.faz) < .5 ? -1 : 1;
+      } else if (kapan && s.acik < .05) { s.durum = 'uc'; s.vy = -170; s.vx = (Math.random() - .5) * 80; s.kanat = 0; }
+    } else if (s.durum === 'katla') {
+      s.ku += dt / 1.3;
+      const u = yumusak(s.ku);
+      s.x = s.kx + (s.gx - s.kx) * u; s.y = s.ky + (s.gy - s.ky) * u - Math.sin(Math.PI * u) * 50;
+      s.acik += (0 - s.acik) * (1 - Math.exp(-dt * 9));
+      if (s.ku >= 1) {
+        s.durum = 'gemi'; s.x = s.gx; s.y = s.gy; s.vx = 0; s.hop = 0;
+        halkaAt(s.x, s.y + 6, '#ffffff', 90, .9);
+        olay('k12Damla', { o, x: s.x });
+      }
+    } else if (s.durum === 'gemi') {
+      // havuzda süzülür; fıskiyeler ve su yayları yakından iterse hafifçe sürüklenir; uçlarda döner
+      let it = 0;
+      for (let i = 0; i < k.fiskiye.length; i++) { const j = k.fiskiye[i], d = s.x - j.x; if (Math.abs(d) < 70) it += Math.sign(d || 1) * (70 - Math.abs(d)) * .9 * (j.h / 120); }
+      const hv = 16 * s.gyon + it;
+      s.vx += (hv - s.vx) * (1 - Math.exp(-dt * 1.2));
+      s.x += s.vx * dt;
+      if (s.x < k.hx0 + 40) { s.x = k.hx0 + 40; s.gyon = 1; } else if (s.x > k.hx1 - 40) { s.x = k.hx1 - 40; s.gyon = -1; }
+      s.hop = Math.max(0, s.hop - dt / .7);
+      s.serit += dt;
     }
   }
   function sayfaAc(o, s, oto) {
+    if (s.durum === 'katla') return;
+    if (s.durum === 'gemi') {   // gemiye dokununca hoplar, döner, su sıçratır
+      if (s.hop <= 0) { s.hop = 1; halkaAt(s.x, s.y + 6, '#ffffff', 110, .8); burst(s.x, s.y, 8, ['#e8f7ff', '#bfe6ff', '#ffffff'], 90, .7, 4); olay('k12Damla', { o, x: s.x }); }
+      return;
+    }
     if (s.durum === 'ac') { if (s.acT < 2.6) { s.acT = Math.min(s.acT, 1.2); burst(s.x, s.y, 8, ['#fff6c4', '#ffe066', '#ffffff'], 90, .8, 5); } return; }
     s.durum = 'ac'; s.acT = 0;
     s.ekX = sinir(s.x - cam.x, 150, VW - 150);
@@ -1012,15 +1161,35 @@
     burst(s.x, s.y, 10, ['#fff6c4', '#ffe066', '#ffffff', '#ffd6e4'], 110, .9, 6);
     olay('k12Sayfa', { o, x: s.x, oto: !!oto });
   }
+  // havuzdaki kâğıt gemi (ciz katmanı: suyun üstünde, Feza'nın arkasında)
+  function gemiCiz(s, t) {
+    if (s.x < cam.x - 60 || s.x > cam.x + VW + 60) return;
+    const hu = s.hop > 0 ? Math.sin(Math.PI * (1 - s.hop)) : 0, by = s.y + Math.sin(t * 2.1 + s.faz) * 1.3 - hu * 20;
+    const aci = Math.sin(t * 1.7 + s.faz) * .06 + (s.hop > 0 ? (1 - s.hop) * TAM * .5 * s.gyon : 0);
+    // iz: arkada iki küçük halka
+    for (let r = 0; r < 2; r++) {
+      const u = (t * .8 + r * .5 + s.faz) % 1;
+      g.globalAlpha = (1 - u) * .45; g.strokeStyle = '#ffffff'; g.lineWidth = 1;
+      g.beginPath(); g.ellipse(s.x - s.gyon * (12 + u * 18), s.y + 7, 5 + u * 14, 1.2 + u * 2.4, 0, 0, TAM); g.stroke();
+    }
+    g.globalAlpha = .25; elips(g, s.x, s.y + 8, 21, 3, '#2f6f86');       // suda gölge
+    g.globalAlpha = 1;
+    const gs = gemiSpr(s.v), o = s.olc * 1.35;
+    yerlestir(s.x, by, aci, o * s.gyon, o); koy(gs, .5, .86);
+    dunyaya();
+  }
   function sayfaCiz(s, t) {
-    if (s.x < cam.x - 120 || s.x > cam.x + VW + 120) return;
-    const ac = yumusak(s.acik), olc = s.olc * (1 + 1.15 * ac), spr = sayfaSpr(s.v);
-    // kanat çırpma: iki sayfa sırttan V biçiminde iner kalkar; açılınca düzleşir
-    const cirp = Math.sin(s.kanat) * .62 * (1 - ac), yakin = .72 + .28 * Math.abs(Math.cos(s.kanat)) * (1 - ac) + .28 * ac;
+    if (s.x < cam.x - 120 || s.x > cam.x + VW + 120 || s.durum === 'gemi') return;
+    let ac = yumusak(s.acik), olc = s.olc * (1 + 1.15 * ac);
+    const spr = sayfaSpr(s.v), ga0 = g.globalAlpha;
+    let ku = 0;
+    if (s.durum === 'katla') { ku = yumusak(s.ku); olc *= 1 - .55 * ku; g.globalAlpha = ga0 * (1 - yumusak((s.ku - .2) / .5)); }
+    // kanat çırpma: iki sayfa sırttan V biçiminde iner kalkar; açılınca düzleşir; katlanırken kapanır
+    const cirp = s.durum === 'katla' ? ku * 1.2 : Math.sin(s.kanat) * .62 * (1 - ac), yakin = .72 + .28 * Math.abs(Math.cos(s.kanat)) * (1 - ac) + .28 * ac;
     if (ac > .05) { dunyaya(); dglow('#fff3c4', s.x, s.y, 70 * olc / s.olc * .6, .55 * ac); }
     // kitap kurdelesi (sırtta sarkan küçük ayraç; kitap açılınca toplanır)
     dunyaya();
-    if (ac < .6) {
+    if (ac < .6 && s.durum !== 'katla') {
       const ko = s.olc * (1 - ac);
       g.beginPath(); g.moveTo(s.x, s.y + 16 * ko); g.quadraticCurveTo(s.x + 3 + Math.sin(t * 4 + s.faz) * 3, s.y + 24 * ko, s.x - 1, s.y + 31 * ko);
       cizgiGenis(g, '#ff7fa8', 2.2 * s.olc);
@@ -1042,7 +1211,13 @@
     dunyaya();
     g.globalAlpha = ga * (1 - .75 * ac);
     g.beginPath(); g.moveTo(s.x, s.y - 19 * olc); g.lineTo(s.x, s.y + 19 * olc); cizgiGenis(g, '#c98a5a', 2.4 * s.olc * (1 + .4 * ac));
-    g.globalAlpha = ga;
+    g.globalAlpha = ga0;
+    // katlanırken kâğıt gemi belirir
+    if (s.durum === 'katla') {
+      const ga2 = yumusak((s.ku - .25) / .45);
+      if (ga2 > .01) { g.globalAlpha = ga0 * ga2; const gs = gemiSpr(s.v), b = s.olc * (1.7 - .35 * ku); yerlestir(s.x, s.y + 6, Math.sin(ku * 9) * .25 * (1 - ku), b * s.gyon, b); koy(gs, .5, .86); dunyaya(); }
+      g.globalAlpha = ga0;
+    }
     // açılan sayfanın resmi ışıkla belirir
     if (s.durum === 'ac' && ac > .4) {
       const u = sinir((s.acT - .3) / .6, 0, 1), pop = u < 1 ? 1 + Math.sin(u * Math.PI) * .18 : 1, ra = yumusak(u) * sinir((s.acik - .4) / .4, 0, 1);
@@ -1084,16 +1259,38 @@
     }
     g.globalAlpha = 1;
     dglow('#ffffff', tx, top, 14 + h * .06, .35);
-    // dipteki halkalar
+    // dipteki halkalar ve suda titreyen yansıma
     for (let r = 0; r < 2; r++) {
       const u = (t * .7 + r * .5 + j.i * .21) % 1;
       g.globalAlpha = (1 - u) * .5; g.strokeStyle = '#ffffff'; g.lineWidth = 1.2;
       g.beginPath(); g.ellipse(j.x, yJ + 2, 6 + u * 30, 1.5 + u * 5, 0, 0, TAM); g.stroke();
     }
+    g.globalAlpha = .22 * Math.min(1, h / 80);
+    for (let r = 0; r < 3; r++) { g.fillStyle = '#ffffff'; g.fillRect(j.x - 3 + Math.sin(t * 6 + r * 2 + j.i) * 2.5, yJ + 4 + r * 5, 6, 2); }
     g.globalAlpha = 1;
   }
+  // Su yayının görünen parçası: parabolün s0..s1 arası (baş parlak, kuyruk incelir)
+  function yayParcaCiz(k, i, j, s0, s1, t) {
+    if (s1 <= s0) return;
+    const xa = k.meme[i], xb = k.meme[j], yB = k.yA - 10, hh = 58 + 8 * Math.sin(t * 1.3 + i);
+    if (Math.max(xa, xb) < cam.x - 40 || Math.min(xa, xb) > cam.x + VW + 40) return;
+    g.beginPath();
+    for (let n = 0; n <= 8; n++) {
+      const s = s0 + (s1 - s0) * n / 8, x = xa + (xb - xa) * s, y = yB - 4 * hh * s * (1 - s);
+      if (n === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    cizgiGenis(g, 'rgba(200,236,255,.55)', 8); cizgiGenis(g, 'rgba(255,255,255,.95)', 3.2);
+  }
+  function yayCiz(k, h, t) {
+    if (h.pu < 1.45 && h.pi >= 0) yayParcaCiz(k, h.pi, h.pj, Math.max(0, h.pu - .45), 1, t);   // önceki yayın son kuyruğu
+    const s1 = Math.min(1, h.u), s0 = Math.max(0, h.u - .45);
+    yayParcaCiz(k, h.i, h.j, s0, s1, t);
+    // baş: parlak damla
+    const xa = k.meme[h.i], xb = k.meme[h.j], hh = 58 + 8 * Math.sin(t * 1.3 + h.i), x = xa + (xb - xa) * s1, y = k.yA - 10 - 4 * hh * s1 * (1 - s1);
+    if (x > cam.x - 40 && x < cam.x + VW + 40) { dglow('#ffffff', x, y, 11, .55); elips(g, x, y, 2.6, 2.6, '#ffffff'); }
+  }
   function bilgiCiz(o, tm) {
-    const k = o.k, yU = o.y - 64, yA = o.y - 14, yJ = o.y - 36;
+    const k = o.k, yU = k.yU, yA = k.yA, yJ = k.yJ;
     const vx0 = Math.max(k.hx0, cam.x - 60), vx1 = Math.min(k.hx1, cam.x + VW + 60);
     if (vx1 > vx0) {
       // havuz: arka taş kenar, su, parıltılar
@@ -1109,14 +1306,20 @@
         g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(x, y, 12 + h * 10, 1.4, 0, 0, TAM); g.fill();
       }
       g.globalAlpha = 1;
+      halkaCiz();
+      for (let i = 0; i < k.sayfa.length; i++) if (k.sayfa[i].durum === 'gemi') gemiCiz(k.sayfa[i], tm);
       for (let i = 0; i < k.fiskiye.length; i++) { const j = k.fiskiye[i]; if (j.x > cam.x - 120 && j.x < cam.x + VW + 120) fiskiyeCiz(j, yJ, tm); }
+      for (let i = 0; i < k.yay.length; i++) yayCiz(k, k.yay[i], tm);
+      // memeler: ön bordürün iç kenarında küçük pirinç halkalar
+      for (let i = 0; i < k.meme.length; i++) { const x = k.meme[i]; if (x > vx0 && x < vx1) elips(g, x, yA - 9, 3.2, 1.2, 'rgba(200,170,110,.7)'); }
       // ön taş bordür
       g.fillStyle = '#efe6d3'; g.fillRect(vx0, yA - 2, vx1 - vx0, 11);
       g.fillStyle = '#fffaf0'; g.fillRect(vx0, yA - 2, vx1 - vx0, 2);
       g.fillStyle = 'rgba(95,85,65,.22)'; g.fillRect(vx0, yA + 8, vx1 - vx0, 2);
       for (let xx = Math.ceil(vx0 / 120) * 120; xx < vx1; xx += 120) { g.fillStyle = 'rgba(160,145,115,.35)'; g.fillRect(xx, yA, 1.2, 8); }
       // havuzun iki ucu
-      for (const ux of [k.hx0, k.hx1]) if (ux >= vx0 - 1 && ux <= vx1 + 1) {
+      for (let e = 0; e < 2; e++) {
+        const ux = e ? k.hx1 : k.hx0; if (ux < vx0 - 1 || ux > vx1 + 1) continue;
         g.fillStyle = '#e4d9c2'; g.beginPath(); g.roundRect ? g.roundRect(ux - 7, yU - 6, 14, yA - yU + 16, 5) : g.rect(ux - 7, yU - 6, 14, yA - yU + 16); g.fill();
         g.fillStyle = '#fffaf0'; g.fillRect(ux - 7, yU - 6, 14, 2);
       }
@@ -1130,7 +1333,7 @@
   function bilgiCizOn(o, tm) {
     const k = o.k;
     for (let i = 0; i < k.sayfa.length; i++) { if (k.sayfa[i].durum === 'uc') sayfaCiz(k.sayfa[i], tm); }
-    for (let i = 0; i < k.sayfa.length; i++) { if (k.sayfa[i].durum !== 'uc') sayfaCiz(k.sayfa[i], tm); }   // açık sayfa en önde
+    for (let i = 0; i < k.sayfa.length; i++) { const d = k.sayfa[i].durum; if (d === 'ac' || d === 'katla') sayfaCiz(k.sayfa[i], tm); }   // açık sayfa en önde
     ucusanCiz();
     dunyaya(); g.globalAlpha = 1;
   }
@@ -1139,25 +1342,39 @@
     // önce sayfalar (gökte): açık sayfa büyük, önce o denenir
     let en = null, enD = 1e9;
     for (let i = 0; i < k.sayfa.length; i++) {
-      const s = k.sayfa[i], r = (s.durum === 'ac' ? 70 : 46) * s.olc + 8, d = Math.hypot(p.x - s.x, p.y - s.y);
+      const s = k.sayfa[i]; if (s.durum === 'gemi' || s.durum === 'katla') continue;
+      const r = (s.durum === 'ac' ? 70 : 46) * s.olc + 8, d = Math.hypot(p.x - s.x, p.y - s.y);
       if (d < r && d < enD) { en = s; enD = d; }
     }
     if (en) { k.sonDokunus = now; sayfaAc(o, en, false); return 2; }
-    // sonra fıskiyeler (havuzun üstünde ya da su sütununa)
-    const yJ = o.y - 36;
-    if (p.y < o.y - 4 && p.x > k.hx0 && p.x < k.hx1) {
-      let fj = null, fd = 1e9;
-      for (let i = 0; i < k.fiskiye.length; i++) {
-        const j = k.fiskiye[i], d = Math.abs(p.x - j.x);
-        if (d < 90 && p.y > yJ - j.h - 40 && d < fd) { fj = j; fd = d; }
-      }
-      if (fj) {
-        fj.sicra = 1.3; fj.hv += 600; k.gokParla = 1; k.sonDokunus = now;
-        for (let i = 0; i < 9; i++) yaprakAt(fj.x + (Math.random() - .5) * 20, yJ - fj.h * .7, (Math.random() - .5) * 220, -120 - Math.random() * 120, i % 3 === 0 ? GOK7[i % 7] : '#e8f7ff', .8, false);
-        burst(fj.x, yJ - 10, 10, ['#e8f7ff', '#bfe6ff', '#ffffff'], 140, .8, 5);
-        olay('k12Fiskiye', { o, x: fj.x, guc: 1 }); olay('k12Damla', { o, x: fj.x });
-        return 1;   // olayı yutma: Feza havuz kenarında oraya yürüyebilir
-      }
+    if (p.y > o.y - 4 || p.x < k.hx0 || p.x > k.hx1) return 0;
+    // kâğıt gemiler
+    for (let i = 0; i < k.sayfa.length; i++) {
+      const s = k.sayfa[i]; if (s.durum !== 'gemi') continue;
+      if (Math.hypot(p.x - s.x, (p.y - s.y) * 1.4) < 34) { k.sonDokunus = now; sayfaAc(o, s, false); return 1; }
+    }
+    // fıskiyeler (su sütununa ya da dibine)
+    const yJ = k.yJ;
+    let fj = null, fd = 1e9;
+    for (let i = 0; i < k.fiskiye.length; i++) {
+      const j = k.fiskiye[i], d = Math.abs(p.x - j.x);
+      if (d < 70 && p.y > yJ - j.h - 40 && d < fd) { fj = j; fd = d; }
+    }
+    if (fj) {
+      fj.sicra = 1.3; fj.hv += 600; k.gokParla = 1; k.sonDokunus = now;
+      for (let i = 0; i < 9; i++) yaprakAt(fj.x + (Math.random() - .5) * 20, yJ - fj.h * .7, (Math.random() - .5) * 220, -120 - Math.random() * 120, i % 3 === 0 ? GOK7[i % 7] : '#e8f7ff', .8, false);
+      burst(fj.x, yJ - 10, 10, ['#e8f7ff', '#bfe6ff', '#ffffff'], 140, .8, 5);
+      olay('k12Fiskiye', { o, x: fj.x, guc: 1 }); olay('k12Damla', { o, x: fj.x });
+      return 1;   // olayı yutma: Feza havuz kenarında oraya yürüyebilir
+    }
+    // suya dokunmak: halkalar yayılır, su taç gibi sıçrar, iki su yayı oraya koşar
+    if (p.y > k.yU - 30) {
+      const sx = p.x, sy = sinir(p.y, k.yU + 8, k.yA - 8);
+      halkaAt(sx, sy, '#ffffff', 120, 1); halkaAt(sx, sy, '#bfe6ff', 70, .7);
+      for (let i = 0; i < 8; i++) yaprakAt(sx + (Math.random() - .5) * 14, sy - 4, (Math.random() - .5) * 160, -110 - Math.random() * 90, i % 3 === 0 ? GOK7[(i * 2) % 7] : '#e8f7ff', .75, false);
+      k.cagriX = sx; k.cagriT = 2.5; k.sonDokunus = now;
+      olay('k12Damla', { o, x: sx });
+      return 1;
     }
     return 0;
   }
