@@ -9,6 +9,10 @@
    Yürüyüş: adım uzunluğu hıza bağlı, faz kat edilen yoldan ilerler → yerdeki ayak kaymaz. Topuk-taban-parmak (heel-toe) dönüşü,
    kol salınımı karşıt fazda, kalça iniş-çıkışı (bacak boyu yetmezse kalça kendiliğinden alçalır), hız arttıkça yürüyüş hafif koşuya
    karışır. Durunca ayaklar küçük bir ağırlık aktarma adımıyla yerine oturur; nefes, göz kırpma, ara sıra Feza'ya eğilip gülümseme.
+   Akıcılık (tur 3): yürü ↔ koş tek poz, koşu karışımı (st.kosK) zamanla yumuşar; dur ↔ yürü geçişinde eski poz canlı hesaplanır
+   (donmuş kare yok); kalçanın bacak boyu sınırı ağırlıklı ve köşesiz; salınan ayak Hermite eğrisiyle basma hızından devam eder;
+   bacak IK'sı tam gerilmeye yumuşak yaklaşır; takip hızı kritik sönümlü yay. Dönüş 0.26 sn: gövde en çok %66'ya, baş %94'e
+   daralır, ortada eski/yeni yön kısa çapraz geçişle karışır (çizgiye inmez).
 
    Duruş: anne hep dik ve rahat; Feza'ya bakarken yalnız başı eğilir, gövde en çok ~5°. Beklerken etrafa bakınır, sırayla
    at kuyruğunu düzeltir ya da küçük bir alkış yapar, sonra Feza'ya el sallar; sarılmada ifade verilmezse 'sevgi' (gözler kapalı);
@@ -46,6 +50,7 @@ const ANNE12_BOY = 136;
 const ANNE12_BISIKLET = { sele: [-16, -60], gidon: [26, -82], pedal: [-2, -21], krank: 13, teker: 25, arkaTeker: [-46, -25], onTeker: [46, -25] };
 ANNE12_BISIKLET.salla = true;   // bisiklet pozunda opt.salla / opt.nese / opt.egil desteklenir
 const ANNE12_ELLER = { onX: 0, onY: 0, arkaX: 0, arkaY: 0 };
+let AN_HW = 1;           // dönüş sırasında başın yatay düzeltmesi (anSprite ayarlar)
 let ANNE12_SALLA = 0;   // oturarak sarılırken beşik sallanmasının o anki omuz kayması (çağıranın x birimi)
 
 // ── renkler ──
@@ -95,6 +100,8 @@ const AN_ST = {
   hiz: 0, hizV: 0, faz: 0.1, vx: 0, ivme: 0, kumX: 0,
   poz: 'dur', aile: 'ayakta', gecis: 1, durT: 0, idleT: 0,
   yonG: 1, donU: 1, donEski: 1,
+  kosK: 0,                      // yürüyüş → koşu karışımı (zamanla yumuşar; faz aynı kalır)
+  pozEski: '', canli: false,    // poz geçişi: ayakta/yürü/koş arasında eski poz donmaz, her karede canlı hesaplanıp karışır
   kirpT: 2.2, kirpU: 1,
   dAyak: new Float64Array(6), ilkAyak: 0,
   sac: new Float64Array(6), cnt: new Float64Array(2), etek: new Float64Array(2),
@@ -112,7 +119,11 @@ let anJX = 0, anJY = 0, anEX = 0, anEY = 0;
 function anIK(ax, ay, bx, by, L1, L2, yan) {   // yan +1: diz öne; -1: dirsek arkaya/aşağı. anJ*: orta eklem, anE*: ulaşılan uç
   let dx = bx - ax, dy = by - ay, d = Math.hypot(dx, dy);
   if (d < 1e-4) { dx = 0; dy = 1; d = 1e-4; }
-  const ux = dx / d, uy = dy / d, dd = anSn(d, Math.abs(L1 - L2) + 0.02, L1 + L2 - 0.02);
+  const ux = dx / d, uy = dy / d, Lm = L1 + L2 - 0.02;
+  let dd = anSn(d, Math.abs(L1 - L2) + 0.02, Lm);
+  // yumuşak IK (bacaklar): bacak dimdik olmaya yaklaşınca diz açısı bir karede çok dönüyordu (tam gerilmede tekillik).
+  // Son %7'lik uzunlukta mesafe üstel olarak yumuşatılır: diz hep bir parça bükük, açı kareden kareye düzgün değişir.
+  if (yan > 0) { const ds = 0.93 * Lm; if (d > ds) dd = ds + (Lm - ds) * (1 - Math.exp(-(d - ds) / (Lm - ds))); }
   const a = (L1 * L1 - L2 * L2 + dd * dd) / (2 * dd), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
   const nx = yan > 0 ? uy : -uy, ny = yan > 0 ? -ux : ux;
   anJX = ax + ux * a + nx * h; anJY = ay + uy * a + ny * h;
@@ -243,11 +254,19 @@ function anPozBekle(R, tm, o) {
 }
 // adım uzunluğu (bir tam döngü = iki adım) ve yürüyüş/koşu karışımı
 function anKosuK(v, zorla) { const k = anYm((v - 200) / 80); return zorla ? Math.max(k, 0.8) : k; }   // 250'de (Feza'nın hızı) hafif tempolu koşu
-function anDongu(v, k) { return anKr(anSn(46 + 0.33 * v, 52, 118), anSn(118 + 0.42 * v, 150, 255), k); }
+// yumuşak "tepe" fonksiyonu: max(0, x) gibi ama köşesiz (eklem açıları kareden kareye kırılmadan döner)
+function anYumArti(x, e) { return 0.5 * (x + Math.sqrt(x * x + e * e)); }
+// Bir tam döngünün (iki adım) boyu. Koşuda adım sıklığı artar (≈170 adım/dk), adım boyu bacağa göre makul kalır:
+// eskiden 250 hızda yerdeki ayak kalçanın 41 birim önüne/arkasına gidiyor, kalça her adımda ~19 birim çöküyordu (kukla zıplaması).
+function anDongu(v, k) { return anKr(anSn(46 + 0.33 * v, 52, 100), anSn(100 + 0.3 * v, 140, 200), k); }
+// yerde kalma oranı: yerdeki adımın boyu (Lc × oran) bacak boyunu aşmasın; koşuda kısa basış + kısa uçuş
+function anBasma(Lc, k) { return anKr(Math.min(0.6, 56 / Lc), anSn(54 / Lc, 0.26, 0.45), k); }
 function anPozYuru(R, tm, o, zorla) {
   anTemel(R);
-  const st = AN_ST, v = st.hiz, k = anKosuK(v, zorla), a = anSn(v / 55, 0, 1), f = st.faz;
-  const Lc = anDongu(v, k), bet = anKr(0.6, 0.36, k), s = Lc * bet / 2;
+  // k (yürüyüş → koşu) hızdan ANİ hesaplanmaz: anAdim'de zamanla yumuşatılmış st.kosK kullanılır. Böylece yürü ↔ koş arası
+  // aynı faz üzerinde yumuşak bir karışımdır (eskiden 'kos' pozu k'yı bir karede 0.5 → 0.8'e sıçratıyordu).
+  const st = AN_ST, v = st.hiz, k = st.kosK, a = anSn(v / 55, 0, 1), f = st.faz;
+  const Lc = anDongu(v, k), bet = anBasma(Lc, k), s = Lc * bet / 2;
   const lift = anKr(7.5, 11, k) * a;
   for (let i = 0; i < 2; i++) {
     const p = anKs(f + i * 0.5), j = i ? A_UYX : A_AYX;
@@ -261,21 +280,33 @@ function anPozYuru(R, tm, o, zorla) {
       const w = (p - bet) / (1 - bet), e = anYm(w);
       anAyakYer(R, j, -s, -0.8 * (0.4 + 0.6 * a), 0); const x0 = R[j], y0 = R[j + 1];
       anAyakYer(R, j, s, 0.34 * (1 - k * 0.7) * a, 0); const x1 = R[j], y1 = R[j + 1];
-      const tek = Math.sin(AN_PI * Math.min(1, w * 1.7));
-      R[j] = anKr(x0, x1, e) - (2.5 * a + 10 * k) * tek * (1 - w);
-      R[j + 1] = anKr(y0, y1, e) - lift * Math.sin(AN_PI * w) - (2 * a + 14 * k) * tek * (1 - w);
+      // Ayak yerden kalkınca birden durmasın: salınım Hermite eğrisiyle, basma sonundaki hızla (gövdeye göre geriye) başlar,
+      // öne savrulur ve yere inerken yine geriye doğru yavaşlayarak basar (eskiden kalkış karesinde hız kırılıyordu).
+      const m = -2 * s * Math.min((1 - bet) / bet, 1.6), w2 = w * w, w3 = w2 * w;
+      const hx = (2 * w3 - 3 * w2 + 1) * x0 + (w3 - 2 * w2 + w) * m * 0.7 + (-2 * w3 + 3 * w2) * x1 + (w3 - w2) * m * 0.4;
+      // topuk geriye-yukarı fırlaması: başı ve sonu yumuşak tümsek (salınımın ~%40'ında en yüksek)
+      const sw = Math.sin(AN_PI * w), tek = sw * sw * (1 - w) / 0.545;
+      R[j] = hx - (2.5 * a + 10 * k) * tek;
+      R[j + 1] = anKr(y0, y1, e) - lift * Math.sin(AN_PI * w) - (2 * a + 14 * k) * tek;
       R[j + 2] = anKr(-0.8 * (0.4 + 0.6 * a), 0.34 * (1 - k * 0.7) * a, anYm(w * 1.15)) - 0.35 * k * Math.sin(AN_PI * w);
     }
   }
   // kalça: yürüyüşte basma ortasında en yüksek, koşuda en alçak (yaylanma); bacak yetmezse alçalır
   const ph = Math.cos(4 * AN_PI * (f - bet / 2));
   let hy = anKr(AN_KAL0 + 1.6 * a + 0.4 - 1.3 * a * ph, AN_KAL0 + 5.2 + 2.4 * ph, k);
+  // Bacak boyu sınırı: yerdeki ayağa bacak yetmezse kalça alçalır. Eskiden bu sınır ayak salınıma geçtiği karede birden
+  // kalkıyordu → kalça bir karede ~15 birim sıçrıyordu (kukla etkisi). Şimdi her ayağın sınırı bir ağırlıkla uygulanır:
+  // basarken 1, salınımın başında yumuşakça 0'a iner, sonunda (ayak yere inerken) yumuşakça 1'e döner → kalça yolu kesintisiz.
+  let dus = 0;
   for (let i = 0; i < 2; i++) {
-    const p = anKs(f + i * 0.5); if (p >= bet + 0.04) continue;
-    const j = i ? A_UYX : A_AYX, dx = R[j] - (i ? -1.6 : 1.7), m = AN_BACAK * 0.985;
+    const p = anKs(f + i * 0.5), j = i ? A_UYX : A_AYX;
+    let wg = 1;
+    if (p >= bet) { const w = (p - bet) / (1 - bet); wg = Math.max(1 - anYm(w / 0.2), anYm((w - 0.7) / 0.3)); }
+    const dx = R[j] - (i ? -1.6 : 1.7), m = AN_BACAK * 0.955;   // bacak hiç tam gerilmez (diz hafif bükük, yumuşak)
     const lim = R[j + 1] - Math.sqrt(Math.max(0, m * m - dx * dx));
-    if (hy < lim) hy = lim;
+    dus = Math.max(dus, (lim - hy) * wg);
   }
+  hy += anYumArti(dus, 0.8) - 0.4;   // köşesiz max(0, dus)
   R[A_HX] = 1.2 * k + 0.6 * a; R[A_HY] = hy;
   R[A_GV] = anKr(0.035 + 0.00012 * v, 0.13, k) + 0.014 * Math.sin(4 * AN_PI * f + 0.7) * a + anSn(st.ivme * 0.00015, -0.05, 0.05);   // dik, rahat yürüyüş
   R[A_OMZ] = 0.35 * Math.sin(4 * AN_PI * f - 0.4) * a;
@@ -284,9 +315,11 @@ function anPozYuru(R, tm, o, zorla) {
   const A = anKr(0.46, 0.75, k) * a, c = Math.cos(AN_2PI * f - 0.3);
   const n1 = -A * c + R[A_GV] * 0.4, u1 = A * c + R[A_GV] * 0.4;
   // önkol üst koldan biraz geç gelir (ikincil hareket): kol öne savrulup dönerken dirsek bir an daha bükük kalır
-  const gc = Math.cos(AN_2PI * f - 1.2), gn = 0.22 * a * (1 - k) * Math.max(0, -gc), gu = 0.22 * a * (1 - k) * Math.max(0, gc);
-  anKolAci(R, A_OEX, n1, anKr(0.35 + 0.45 * Math.max(0, n1) / (A + 0.01) * a + gn, 1.6 + 0.25 * Math.max(0, n1), k));
-  anKolAci(R, A_UEX, u1, anKr(0.35 + 0.45 * Math.max(0, u1) / (A + 0.01) * a + gu, 1.6 + 0.25 * Math.max(0, u1), k));
+  // (max(0, …) köşeli olduğundan dirsek bir karede yön değiştiriyordu; köşesiz anYumArti kullanılır)
+  const gc = Math.cos(AN_2PI * f - 1.2), gn = 0.22 * a * (1 - k) * anYumArti(-gc, 0.3), gu = 0.22 * a * (1 - k) * anYumArti(gc, 0.3);
+  const n1p = anYumArti(n1, 0.12), u1p = anYumArti(u1, 0.12);
+  anKolAci(R, A_OEX, n1, anKr(0.35 + 0.45 * n1p / (A + 0.06) * a + gn, 1.6 + 0.25 * n1p, k));
+  anKolAci(R, A_UEX, u1, anKr(0.35 + 0.45 * u1p / (A + 0.06) * a + gu, 1.6 + 0.25 * u1p, k));
   st.cntEk = 0.16 * a * Math.sin(AN_2PI * f - 0.9);   // çanta adımla kalçaya çarpıp sallanır
   R[A_OEK] = anKr(0.2, -0.2, k); R[A_UEK] = R[A_OEK];
   R[A_TW] = -anKr(1.5, 2.1, k) * a * c;   // yakın kol öndeyken yakın omuz da öne gelir, kalça tersine
@@ -760,7 +793,7 @@ function anCanta(R) {   // omuzdan sarkan bez çanta (sarkaç)
 }
 function anKuyrukHesap(R) {   // at kuyruğu noktaları (fizik açılarından)
   anBas(R);
-  const c = Math.cos(anBA), s = Math.sin(anBA), lx = -11.0 * AN_BK, ly = -5.6 * AN_BK;
+  const c = Math.cos(anBA), s = Math.sin(anBA), lx = -11.0 * AN_BK * AN_HW, ly = -5.6 * AN_BK;
   let x = anBX + lx * c - ly * s, y = anBY + lx * s + ly * c;
   AN_SP[0] = x; AN_SP[1] = y;
   const L = [10, 11, 9], ek = AN_ST.sacEk;
@@ -882,7 +915,7 @@ function anAgiz(R) {
 function anBasCiz(R, tm) {
   const g = anG, gr = anGrad();
   anBas(R);
-  g.save(); g.translate(anBX, anBY); g.rotate(anBA); g.scale(AN_BK, AN_BK);
+  g.save(); g.translate(anBX, anBY); g.rotate(anBA); g.scale(AN_BK * AN_HW, AN_BK);   // AN_HW: dönüşte baş daralmasın
   // kafa + yüz (tek dolgu, sıcak ışık geçişi)
   g.fillStyle = gr.yuz; g.beginPath();
   g.moveTo(10.8, -1.2); g.ellipse(-0.6, -1.2, 11.4, 11.8, 0, 0, AN_2PI);
@@ -1029,6 +1062,8 @@ function anKenarIsik(lx, ly, d, col, al) {   // silüetin (lx,ly) yanındaki inc
 }
 
 // ── zaman, faz, karışım ve ikincil hareket ──
+const AN_CANLI = { dur: 1, yuru: 1, kos: 1 };   // aralarında canlı karışım yapılan pozlar
+const AN_DON_SN = 0.26;                        // dönüş süresi (sn)
 function anAdim(x, y, olcek, tm, o, poz, yon) {
   const st = AN_ST;
   let dt = st.tm < 0 ? 0 : tm - st.tm;
@@ -1049,9 +1084,12 @@ function anAdim(x, y, olcek, tm, o, poz, yon) {
     if (poz === 'bisiklet' && hz <= 1.01) hz *= 300;   // YOLCULUK bisiklette hızı 0..1 (v/300) olarak verir
     const vT = Math.abs(dxm) < 1e-3 && Number.isFinite(hz) ? hz / olcek : dxm * yon / dt;
     st.vx = anKr(st.vx, vT, 1 - Math.exp(-dt * 10));
-    if (poz === 'yuru' || poz === 'kos' || poz === 'bisiklet') {
+    // koşu karışımı hedefe ~0.25 sn'de yumuşakça varır (yürü ↔ koş eşiğinde poz sıçramaz)
+    st.kosK = anKr(st.kosK, anKosuK(st.hiz, poz === 'kos'), 1 - Math.exp(-dt * 4));
+    // faz kat edilen yoldan birikir (kare hızından bağımsız); durunca da birden durmaz, son hızla yavaşça söner
+    if (poz === 'yuru' || poz === 'kos' || poz === 'bisiklet' || (st.canli && st.gecis < 1)) {
       const yol = Math.abs(dxm) > 1e-4 ? Math.abs(dxm) : st.hiz * dt;
-      const Lc = poz === 'bisiklet' ? 46 : anDongu(st.hiz, anKosuK(st.hiz, poz === 'kos'));
+      const Lc = poz === 'bisiklet' ? 46 : anDongu(st.hiz, st.kosK);
       st.faz = anKs(st.faz + yol / Lc);
     }
     st.durT += dt;
@@ -1061,11 +1099,17 @@ function anAdim(x, y, olcek, tm, o, poz, yon) {
     if (st.kirpT <= 0) { st.kirpU = 0; st.kirpT = 3 + Math.random() * 2; if (Math.random() < 0.15) st.kirpT = 0.3; }
     st.kirpU = Math.min(1, st.kirpU + dt / 0.17);
     if (st.gecis < 1) st.gecis = Math.min(1, st.gecis + dt / 0.3);
-    if (st.donU < 1) st.donU = Math.min(1, st.donU + dt / 0.22);
+    if (st.donU < 1) st.donU = Math.min(1, st.donU + dt / AN_DON_SN);
   }
   // poz değişimi: eski son pozu dondur, yenisine karış; aile değişince ayaklar yerleşir
   const ai = o.otur && AN_OTURARAK[poz] ? (o.otur === 'kayik' ? 'kayik' : 'otur') : (AN_POZ[poz] || AN_POZ.dur)[1];
+  // yuru ve kos aynı yürüyüş pozudur (yalnız k farklı, o da yumuşar): aralarında geçiş karışımı gerekmez
+  const ayni = (poz === 'yuru' || poz === 'kos') && (st.poz === 'yuru' || st.poz === 'kos');
+  if (ayni) st.poz = poz;
   if (poz !== st.poz) {
+    // dur ↔ yürü: eski poz donmuş bir kare değil, her karede canlı hesaplanır (bacaklar karışım sırasında da akar)
+    st.canli = !st.ilk && AN_CANLI[poz] === 1 && AN_CANLI[st.poz] === 1 && st.gecis >= 1;
+    st.pozEski = st.poz;
     if (!st.ilk) { AN_R0.set(AN_RS); st.gecis = 0; }
     if (ai !== st.aile || st.ilk) {
       st.durT = 0;
@@ -1076,8 +1120,12 @@ function anAdim(x, y, olcek, tm, o, poz, yon) {
     }
     st.poz = poz; st.aile = ai;
   }
-  // yön değişimi: kısa dönüş (genişlik daralıp aynalanır)
-  if (yon !== st.yonG) { st.donEski = st.yonG; st.yonG = yon; st.donU = st.ilk ? 1 : 0; st.vx = 0; st.fizikHazir = false; }
+  // yön değişimi: kısa dönüş (AN_DON_SN). Dönüş yarıdayken geri vazgeçerse kaldığı yerden geri döner (sıçramaz).
+  if (yon !== st.yonG) {
+    if (st.donU < 1 && yon === st.donEski && !st.ilk) { st.donEski = st.yonG; st.yonG = yon; st.donU = 1 - st.donU; }
+    else { st.donEski = st.yonG; st.yonG = yon; st.donU = st.ilk ? 1 : 0; }
+    st.vx = 0; st.fizikHazir = false;
+  }
   if (sicra) st.fizikHazir = false;
   st.ilk = false;
   return dt;
@@ -1120,6 +1168,30 @@ function anFizik(R, dt) {
   }
 }
 
+// tek bir anne çizimi: kendi tuvaline (anC) çiz, ışıkla, iki katlı kontur ile oyun tuvaline bas (al: saydamlık)
+// ctx zaten ayak noktasına taşınmış ve 1/k ölçeklenmiş olmalı. sx: yatay ölçek (yön × genişlik).
+function anSprite(ctx, R, tm, kat, k, sx, kw, ton, guc, al, hw) {
+  const g = anG, ox = AN_KX * k, oy = AN_KY * k;
+  AN_HW = hw > 0 ? hw : 1;   // baş genişliği düzeltmesi (gövde daralsa da baş yuvarlak kalır)
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, anC.width, anC.height);
+  g.setTransform(k * sx, 0, 0, k, ox, oy);
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  AN_CANTA[2] = 0;
+  anVucut(R, tm, kat);
+  // ışık: aşağı doğru hafif koyulaşma + günün rengi + kenar ışıkları
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = anGrad().deger; g.fillRect(-AN_KX, -AN_KY, AN_KW, AN_KH);
+  g.globalAlpha = 0.02 + 0.06 * guc; g.fillStyle = ton; g.fillRect(-AN_KX, -AN_KY, AN_KW, AN_KH);
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  anKenarIsik(0.72, -0.69, 1.0 * kw, '#fff3d6', 0.55 + 0.25 * guc);
+  anKenarIsik(-0.25, 0.97, 0.6 * kw, '#9ccf8a', 0.22);
+  const d1 = Math.max(1.1, 0.3 * kw), d2 = d1 + Math.max(1, 0.28 * kw);
+  anHalka(d2, '#fff4e2'); ctx.globalAlpha = 0.2 * al; ctx.drawImage(anH, -ox, -oy);
+  anHalka(d1, '#3d2129'); ctx.globalAlpha = 0.55 * al; ctx.drawImage(anH, -ox, -oy);
+  ctx.globalAlpha = al; ctx.drawImage(anC, -ox, -oy); ctx.globalAlpha = 1;
+  AN_HW = 1;
+}
+
 // ── ana çizim ──
 let anHataSay = 0;
 function anne12Ciz(ctx, x, y, olcek, tm, opt) {
@@ -1142,7 +1214,10 @@ function anne12Ciz(ctx, x, y, olcek, tm, opt) {
     // poz → dizi; geçişte donmuş eski pozdan karış
     st.sacEk = 0; st.elOnde = 0; st.elArka = 0; st.cntEk = 0;
     anPozUret(R, poz, tm, o);
-    if (st.gecis < 1) { const e = anYm(st.gecis); for (let i = 0; i < AN_N; i++) R[i] = anKr(AN_R0[i], R[i], e); }
+    if (st.gecis < 1) {
+      if (st.canli) anPozUret(AN_R0, st.pozEski, tm, o);   // eski poz bu karede yeniden (canlı) hesaplanır
+      const e = anYm(st.gecis); for (let i = 0; i < AN_N; i++) R[i] = anKr(AN_R0[i], R[i], e);
+    }
     if (typeof o.ust === 'string' && AN_POZ[o.ust] && o.ustW > 0.001) anUstPoz(R, o.ust, anYm(anSn(o.ustW, 0, 1)), tm, o.ustO || o);
     // yüz katmanı: Feza'ya bakma / yukarı bakma, göz kırpma
     const bak = Number.isFinite(o.bak) ? anSn(o.bak, -1, 1) : 0;
@@ -1171,27 +1246,23 @@ function anne12Ciz(ctx, x, y, olcek, tm, opt) {
     if (anC.width < needW || anC.height < needH || anC.width > needW * 1.35 + 64 || anC.height > needH * 1.35 + 64) {
       anC.width = anH.width = Math.ceil(needW * 1.12 / 32) * 32; anC.height = anH.height = Math.ceil(needH * 1.12 / 32) * 32;
     }
-    const ox = AN_KX * k, oy = AN_KY * k;
-    // dönüş: genişlik daralıp ters yöne açılır (hiç çizgi kadar incelmez)
-    let sx = yon;
-    if (st.donU < 1) { const c = Math.cos(AN_PI * st.donU), w = Math.max(0.42, Math.abs(c)); sx = (c >= 0 ? st.donEski : yon) * w; }
-    const g = anG;
-    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, anC.width, anC.height);
-    g.setTransform(k * sx, 0, 0, k, ox, oy);
-    g.lineJoin = 'round'; g.lineCap = 'round';
-    AN_CANTA[2] = 0;
+    // DÖNÜŞ (AN_DON_SN ≈ 0.26 sn): anne hiçbir an çizgiye inmez. Gövde en dar anında %66, baş %94 genişlikte (yumuşak sinüs);
+    // dönüşün ortasında eski yöndeki ve yeni yöndeki çizim kısa bir çapraz geçişle (≈0.04 sn) birbirine karışır:
+    // ortak gövde hep tam opak kalır, yalnız farklı kısımlar (at kuyruğu, kollar) solup belirir. Feza'daki gibi önce
+    // gözler ve baş yeni yöne döner (eski yöndeki çizimde anne omzunun üstünden geriye bakar), kalça hafifçe çöker.
+    let sx = yon, sxE = 0, alE = 0, alY = 1, hw = 1;
+    if (st.donU < 1) {
+      const u = st.donU, b0 = Math.sin(AN_PI * u), w = 1 - 0.34 * b0;
+      sx = yon * w; hw = (1 - 0.06 * b0) / w;   // gövde en çok %66'ya daralır, baş en çok %94'e (yuvarlak kalır)
+      const e = anYm((u - 0.42) / 0.16);   // 0: yalnız eski yön, 1: yalnız yeni yön (çapraz geçiş ≈ 2-3 kare)
+      if (e < 1) { sxE = st.donEski * w; alE = e < 0.5 ? 1 : 2 * (1 - e); alY = e < 0.5 ? 2 * e : 1; }
+      const b = Math.sin(AN_PI * u);
+      R[A_HY] += 1.4 * b; R[A_OMZ] += 0.6 * b;   // dönerken hafif çöküp omuzları toplar
+    }
     const kat = o.katman === 'uzak' ? 3 : o.katman === 'arka' ? 15 : o.katman === 'on' ? 16 : o.katman === 'yakin' ? 28 : 31;
-    anVucut(R, tm, kat);
-    // ışık: aşağı doğru hafif koyulaşma + günün rengi + kenar ışıkları
-    g.globalCompositeOperation = 'source-atop';
-    g.fillStyle = anGrad().deger; g.fillRect(-AN_KX, -AN_KY, AN_KW, AN_KH);
     let ton = '#ffe2b8', guc = 0.3;
     if (typeof dn12Isik === 'function') { try { const L = dn12Isik(); if (L && typeof L.ton === 'string') { ton = L.ton; guc = anSn(+L.guc || 0, 0, 1); } } catch (e) { /* ışık yoksa varsayılan */ } }
-    g.globalAlpha = 0.02 + 0.06 * guc; g.fillStyle = ton; g.fillRect(-AN_KX, -AN_KY, AN_KW, AN_KH);
-    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     const kw = kp0;   // dünya birimi başına piksel (kontur/kenar ışığı kalınlığı Feza ile aynı)
-    anKenarIsik(0.72, -0.69, 1.0 * kw, '#fff3d6', 0.55 + 0.25 * guc);
-    anKenarIsik(-0.25, 0.97, 0.6 * kw, '#9ccf8a', 0.22);
     // oyun tuvaline: yer gölgesi, iki katlı yumuşak kontur, anne
     const ayakta = st.aile === 'ayakta' || st.aile === 'hareket' || st.aile === 'dans' || st.aile === 'otur';
     if (o.golge !== false && ayakta && (kat & 4)) {
@@ -1202,10 +1273,13 @@ function anne12Ciz(ctx, x, y, olcek, tm, opt) {
     const eg = Number.isFinite(o.egim) ? o.egim : 0;
     if (eg) ctx.rotate(eg);
     ctx.scale(olcek / k, olcek / k);
-    const d1 = Math.max(1.1, 0.3 * kw), d2 = d1 + Math.max(1, 0.28 * kw);
-    anHalka(d2, '#fff4e2'); ctx.globalAlpha = 0.2; ctx.drawImage(anH, -ox, -oy);
-    anHalka(d1, '#3d2129'); ctx.globalAlpha = 0.55; ctx.drawImage(anH, -ox, -oy);
-    ctx.globalAlpha = 1; ctx.drawImage(anC, -ox, -oy);
+    if (alE > 0.003) {   // eski yöndeki çizim: gözler ve baş yeni yöne (geriye) dönük
+      const bkx = R[A_BKX], ba = R[A_BA], dn = anYm(st.donU / 0.45);
+      R[A_BKX] = anKr(bkx, -0.9, dn); R[A_BA] = ba - 0.06 * dn;
+      anSprite(ctx, R, tm, kat, k, sxE, kw, ton, guc, alE, hw);
+      R[A_BKX] = bkx; R[A_BA] = ba;
+    }
+    if (alY > 0.003) anSprite(ctx, R, tm, kat, k, sx, kw, ton, guc, alY, hw);
     // ellerin konumu çağıranın koordinatına
     const ce = Math.cos(eg), se = Math.sin(eg);
     const ex1 = ANNE12_ELLER.onX * sx * olcek, ey1 = ANNE12_ELLER.onY * olcek, ex2 = ANNE12_ELLER.arkaX * sx * olcek, ey2 = ANNE12_ELLER.arkaY * olcek;
@@ -1332,31 +1406,45 @@ const ANNE12 = {
         if (yakin) { hedef = this.x; ileri = 0; this.mod = 'kenar'; if (Math.abs(this.vx) < 30) { ks.t -= dt; kisaPoz = ks.poz; } }
         derinH = 0;
       }
-      // hız: hedefe yumuşak yaklaşma + Feza'nın hızı; küçük geri düzeltmeler yok
+      // hız: KRİTİK SÖNÜMLÜ yay. Anne hedef noktaya (Feza'nın arkası) ve Feza'nın hızına birlikte yaklaşır:
+      //   ivme = ω²·(konum farkı) + 2ω·(Feza'nın hızı − annenin hızı)   → salınımsız, titreşimsiz, aşmadan oturur.
+      // (Eskiden ivmesi sınırlı bir oransal denetleyiciydi: hız kesik doğrusal değişiyor, eşiklerde titreşiyordu.)
       const err = hedef - this.x;
-      let vd = this.mod === 'kenar' ? 0 : ileri + anSn(err * 2.3, -280, 280);
-      if (this.mod === 'yanas' && Math.abs(err) < 12) vd = 0;
-      if (this.mod === 'yanas' && vd * this.yon < 0 && Math.abs(err) < 26 && ara > 48) vd = 0;   // küçük geri adım yok
-      if (this.mod === 'takip' && vd * d < 0 && Math.abs(err) < 30) vd = 0;   // geri geri yürümesin
-      if (this.bekleT > 0) { this.bekleT -= dt; vd *= 0.4; }
+      let eY = this.mod === 'kenar' ? 0 : err, vRef = this.mod === 'kenar' ? 0 : ileri;
+      if (this.mod === 'yanas' && Math.abs(err) < 12) eY = 0;
+      if (this.mod === 'yanas' && err * this.yon < 0 && Math.abs(err) < 26 && ara > 48) eY = 0;   // küçük geri adım yok
+      if (this.mod === 'takip' && err * d < 0 && Math.abs(err) < 30) eY = 0;                      // geri geri yürümesin
+      const om = this.mod === 'takip' ? 3.4 : 3.0;
+      const vd = vRef + anSn(eY * om * 0.5, -150, 150);   // yayın hedef hızı (uzaksa koşarak yetişir)
+      let ac = 2 * om * (vd - this.vx);                  // = ω²·fark + 2ω·(vRef − vx)
+      if (this.bekleT > 0) { this.bekleT -= dt; ac *= 0.4; }
+      const hizlan = ac * this.vx >= 0;                  // hızlanıyor mu (yavaşlamak her zaman biraz daha güçlü)
+      ac = anSn(ac, -(hizlan ? 620 : 900), hizlan ? 620 : 900);
+      this.vx += ac * dt;
       const vmax = ara > 520 ? 420 : 360;
-      vd = anSn(vd, -vmax, vmax);
-      const ivme = Math.abs(vd) > Math.abs(this.vx) && vd * this.vx >= 0 ? 470 : 700;
-      this.vx += anSn(vd - this.vx, -ivme * dt, ivme * dt);
+      this.vx = anSn(this.vx, -vmax, vmax);
       let nx = this.x + this.vx * dt;
       if (this.mod === 'takip' && (nx - px) * d > -48) { nx = px - d * 48; this.vx = Math.min(Math.abs(this.vx), Math.abs(fv)) * d; }   // asla Feza'nın önüne geçmez
       if (typeof COLS === 'number' && typeof T === 'number') nx = anSn(nx, 24, COLS * T - 24);
       this.x = nx;
-      // yön: yürürken gittiği yöne, dururken Feza'ya
-      if (Math.abs(this.vx) > 22) this.yon = this.vx > 0 ? 1 : -1;
+      // yön: yürürken gittiği yöne, dururken Feza'ya. Bir dönüşten sonra 0.3 sn yeniden dönmez (ileri-geri titreşim yok).
+      const yonO = this.yon;
+      this.yonT = Math.max(0, (this.yonT || 0) - dt);
+      if (this.yonT > 0) { /* az önce döndü: bekle */ }
+      else if (Math.abs(this.vx) > 22) this.yon = this.vx > 0 ? 1 : -1;
       else if (kisaPoz && Number.isFinite(ks.hx) && Math.abs(ks.hx - this.x) > 4) this.yon = ks.hx > this.x ? 1 : -1;
       else if (Math.abs(this.vx) < 8 && Math.abs(px - this.x) > 10 && (this.mod !== 'takip' || this.durSure > 0.3)) this.yon = px > this.x ? 1 : -1;
+      if (this.yon !== yonO) this.yonT = 0.3;
       // zemin (Feza zıplasa da anne yerde)
       let z = typeof yerY === 'function' ? yerY(this.x) : P.y;
       if (!Number.isFinite(z)) z = this.y;
       this.y = Math.abs(z - this.y) > 200 ? z : anKr(this.y, z, 1 - Math.exp(-dt * 12));
       const v = Math.abs(this.vx);
-      this.poz = kisaPoz || (v > 14 ? (v > 240 ? 'kos' : 'yuru') : 'dur');
+      // dur / yürü / koş: eşiklerde gidip gelmesin diye iki eşik (histerezis); geçişler zaten yumuşak karışır
+      const yurudu = this.poz === 'yuru' || this.poz === 'kos';
+      const hareketli = v > (yurudu ? 9 : 18);
+      const kosuyor = v > (this.poz === 'kos' ? 215 : 255);
+      this.poz = kisaPoz || (hareketli ? (kosuyor ? 'kos' : 'yuru') : 'dur');
       const ustH = ks.t > 0 && yuruyerek ? 1 : 0;
       this.ustW = ustH ? Math.min(1, this.ustW + dt / 0.25) : Math.max(0, this.ustW - dt / 0.3);
       if (ustH) this.ustAd = ks.poz;

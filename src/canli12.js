@@ -16,8 +16,8 @@
                   OLAY 'k12KelebekDokun'.
      k12Sincap    ağacın dibinde cevizini kemirir; Feza yaklaşınca ağaca tırmanır (ZN12_AGAC varsa; yoksa hoplayıp kaçar),
                   sonra iner. OLAY 'k12SincapDokun'.
-     k12Ogrenci   uzakta (arka yolda, küçük ölçek, paralaks .86) yürüyen / bisiklet süren / çimde kitap okuyan öğrenciler;
-                  Feza yaklaşınca el sallar. Feza'nın şeridine hiç girmez. OLAY 'k12OgrenciSelam'.
+     k12Ogrenci   yolun arkasındaki çimende (y = CN_OGR_YER, paralaks yok: ayakları zemine basar, kaymaz) yürüyen /
+                  bisiklet süren / örtü üstünde kitap okuyan küçük öğrenciler; Feza yaklaşınca el sallar. Feza'nın şeridine girmez. OLAY 'k12OgrenciSelam'.
      k12Fiskiye   çim fıskiyesi: kavis kavis su, damlalar, güneşte gökkuşağı parıltısı; dokununca fışkırır. OLAY 'k12FiskiyeDokun'.
    Botanik bahçesi (tur 2; kaplumbağalar BOTANIK'in, ördek/kuğu/kaz GOLET'in):
      k12KelebekBulut  tarhın üstünde 6–7 kelebek; Feza geçerken çevresinde döner. OLAY 'k12KelebekBulut'.
@@ -29,7 +29,7 @@
    Dokunma: pencereye yakalama evresinde tek 'pointerdown' dinleyicisi; dünya koordinatına çevirip yalnız kendi canlılarımıza
    isabet ederse preventDefault + stopPropagation (Feza'nın yürüme girdisi çalınmaz). Binişte (P.ucus) canlı tepki verir ama
    dokunuş araca da gider (basılı tutma = ilerle bozulmasın).
-   Derinlik: Feza'nın şeridi y = 720; yolun arkasındaki çimen y ≈ 704 (biraz küçük çizilir); uzak yol y ≈ 650.
+   Derinlik: Feza'nın şeridi y = 720; yolun arkasındaki çimen y ≈ 676–708 (canlılar 698–704'te, biraz küçük çizilir).
    Performans: gövde/baş/bank/gökkuşağı gibi gölgeli parçalar bir kez önbellek tuvaline çizilir; karede gradient yok, yeni dizi/nesne
    yok; ekran dışındakiler çizilmez, uzaktakiler güncellenmez. Yalnız BOLUM_NO === 12 iken çalışır. */
 'use strict';
@@ -38,7 +38,7 @@ if (typeof BOLUM_NO === 'undefined' || BOLUM_NO !== 12) return;
 
 // ════════════════════ ortak ════════════════════
 const CN_PI2 = Math.PI * 2;
-const CN_YOL = 720, CN_CIM = 704, CN_UZAK = 650;   // Feza'nın şeridi, yolun arkasındaki çimen, uzak yol (dünya y)
+const CN_YOL = 720, CN_CIM = 704;                  // Feza'nın şeridi, yolun arkasındaki çimen (dünya y)
 const CN_RES = 5;                                  // önbellek tuvali: dünya birimi başına piksel
 const CN = { liste: [], takipci: null, spr: Object.create(null), saat: 0 };
 
@@ -1197,8 +1197,12 @@ function cnSincapDokun(o) {
 TUR.kaydet('k12Sincap', { kur: cnSincapKur, guncelle: cnSincapGuncelle, ciz: cnSincapCizO });
 
 // ════════════════════ uzaktaki öğrenciler ════════════════════
-// Arka yolda (y ≈ 650), küçük ölçekli, yumuşak çizgili; yürür, bisiklet sürer ya da çimde kitap okur. Feza yaklaşınca el sallar.
-// Paralaks .86: uzakta oldukları belli olsun. Feza'nın şeridine hiç inmezler.
+// Yolun arkasındaki çimen şeridinde (zemin12: y 676–708), küçük ölçekli, yumuşak çizgili; yürür, bisiklet sürer ya da çimde
+// örtüsünün üstünde oturup kitap okur. Feza yaklaşınca el sallar. Feza'nın şeridine hiç inmezler.
+// Ayakları HER ZAMAN o çimene basar: dünya koordinatında çizilir, paralaks yok (paralakslı figür zeminde kayar ya da
+// çitin/binanın önünde havada görünür — ebeveyn "arkadakiler havada" dedi). Havuz/gölet suyu olan sütunlara yerleştirilmez.
+const CN_OGR_YER = 699;    // ayak tabanı (dünya y): çimen şeridinin içinde, yolun uzak kenarının (708) biraz gerisi
+const CN_OGR_S = .6;       // çizim ölçeği (Feza'dan küçük: bir şerit geride oldukları belli olsun)
 const CN_OGR = [
   { sac: '#3a2a22', stil: 'at', ust: '#f39bb1', alt: '#5b6b9a', canta: '#7ec4cf', cilt: '#f3cfb3', bis: '#79b8e8' },
   { sac: '#6b4a2e', stil: 'kisa', ust: '#8fc7ea', alt: '#3f4f63', canta: '#f5b45e', cilt: '#e9bb94', bis: '#ef8f7a' },
@@ -1299,15 +1303,14 @@ function cnOgrenciCiz(c, x, y, s, yon, v, poz, faz, el, t) {
 function cnOgrenciKur(o) {
   o.bx = o.x; o.poz = o.poz || 'yuru'; o.v = CN_OGR[(o.v === undefined ? Math.floor(o.x / 41) : o.v) % CN_OGR.length];
   o.yay = o.yay || (o.poz === 'bisiklet' ? 700 : 180); o.px = 0; o.yon = o.yon || 1; o.hiz = o.poz === 'bisiklet' ? 80 : 26 + (o.x % 7);
-  o.faz = 0; o.el = 0; o.selamT = -99; o.selamU = 0; o.bekle = 0; o.dx = o.x; o.dy = o.gy || CN_UZAK; o.dokun = false;
+  o.faz = 0; o.el = 0; o.selamT = -99; o.selamU = 0; o.bekle = 0; o.dx = o.x; o.dy = CN_OGR_YER; o.dokun = false;
   o.yakin = o.yakin || 300; o.kalpT = -9;
   cnKayit(o);
 }
 function cnOgrenciGuncelle(o, dt) {
   if (!(dt > 0)) return; dt = Math.min(dt, .05);
   if (Math.abs(P.x - (o.bx + o.px)) > 2400) return;
-  const camc = cam.x + VW / 2, wx = o.bx + o.px;
-  o.dx = wx + (camc - wx) * (1 - .86);
+  o.dx = o.bx + o.px;   // paralaks yok: zeminle birlikte kayar
   const gor = cnGorunur(o.dx, 60);
   // el sallama: Feza yaklaşınca kendiliğinden (seyrek), ya da dokununca
   if (o.selamU <= 0 && Math.abs(P.x - o.dx) < o.yakin && CN.saat - o.selamT > 22 && gor) {
@@ -1328,7 +1331,11 @@ function cnOgrenciGuncelle(o, dt) {
 }
 function cnOgrenciCizO(o, t) {
   if (!cnGorunur(o.dx, 50)) return;
-  const s = .5, poz = o.poz;
+  const s = CN_OGR_S, poz = o.poz;
+  if (poz === 'otur') {   // çimene serilmiş küçük örtü: öğrenci havada değil, yerde oturduğu belli olsun
+    cnElips(g, o.dx + 2 * s, o.dy - .5, 26 * s, 4.2 * s, 0, '#f3e2bf');
+    g.fillStyle = 'rgba(214,96,86,.55)'; g.fillRect(o.dx - 14 * s, o.dy - 2.6 * s, 3 * s, 4.6 * s); g.fillRect(o.dx + 14 * s, o.dy - 2.6 * s, 3 * s, 4.6 * s);
+  }
   cnOgrenciCiz(g, o.dx, o.dy, s, o.yon, o.v, poz, o.faz, o.el, t);
   const du = CN.saat - o.kalpT;
   if (du < 1.8) cnKalpler(g, o.dx + 3, o.dy - 82 * s, du, .8);
@@ -1657,21 +1664,19 @@ function cnYerlestir() {
   yer('k12Kus', 383, { n: 5, x0: nx(360), x1: nx(445) });
   yer('k12Ogrenci', 318, { v: 2, poz: 'otur', yon: 1 });
   yer('k12Ogrenci', 432, { v: 0, poz: 'yuru', yon: -1 });
-  // bilgi 450–560: iri kampüs köpeği, havuz kenarında güneşlenen sarman, öğrenciler, bir kelebek (havuzu ETKINLIK yapıyor)
+  // bilgi 450–560: iri kampüs köpeği, havuz kenarında güneşlenen sarman, bir kelebek (havuzu ETKINLIK yapıyor)
   yer('k12Kopek', 547, { yon: -1 });
   yer('k12Kedi', 489, { kurk: 'sarman', hal: 'gunes', yon: 1 });
-  yer('k12Ogrenci', 468, { v: 4, poz: 'yuru', yon: 1 });
-  yer('k12Ogrenci', 532, { v: 1, poz: 'otur', yon: -1 });
+  // (öğrenci yok: yolun arkası baştan sona havuz; havuzun üstünde havada görünüyorlardı)
   yer('k12Kelebek', 515, { renk: 1 });
   // botanik 560–700 (YENİ; kaplumbağalar ve sera BOTANIK'in): kelebek bulutları, ispinozlar, kırlangıçlar, kirpi, sincap,
-  // taş kabından su içen tekir, uzakta bahçede dolaşan bir öğrenci
+  // taş kabından su içen tekir (öğrenci yok: yolun arkası kaplumbağa göleti)
   yer('k12KelebekBulut', 574, { n: 5 }); yer('k12KelebekBulut', 674, { n: 5 });   // (618: botanik havuzunun üstündeki küme kaldırıldı — balıkları örtüyordu)
   yer('k12Kus', 596, { n: 5, tur: 'ispinoz', x0: nx(565), x1: nx(640) });
   yer('k12Kirlangic', 640, { n: 2, x0: nx(575), x1: nx(698) });
   yer('k12Kirpi', 606, { yon: 1 });
   yer('k12Sincap', 684, { yon: -1 });   // ONPLAN'ın 686'daki ağacına tırmanır
   yer('k12Kedi', 664, { kurk: 'tekir', hal: 'su', yon: 1 });
-  yer('k12Ogrenci', 630, { v: 3, poz: 'yuru', yon: -1, yay: 140 });
   // yol2 700–805 (bisiklet, yokuş): sincap, bisikletli öğrenci, kaçmayan serçeler, uzakta martı
   yer('k12Sincap', 728, { yon: 1 });
   yer('k12Ogrenci', 742, { v: 5, poz: 'bisiklet', yon: -1, yakin: 420 });

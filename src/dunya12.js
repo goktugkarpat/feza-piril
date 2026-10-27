@@ -890,7 +890,6 @@ function dn12BinaKatmani(t) {
       g.globalAlpha = 1;
     }
   }
-  dn12Ogrenciler(t, a, b);
   // ön ağaçlar (aralarda kümeler)
   for (const A of DN12_AGACLAR) if (!A.arka) dn12AgacCizKatman(A, a, b);
 }
@@ -934,29 +933,8 @@ function dn12ResimCiz(r, im, x, y, w, h, pus) {
   if (par > 0.01 && T2.parilti) { g.globalAlpha = par * 0.85; g.drawImage(T2.parilti, x, y, w, h); }
   g.globalAlpha = 1;
 }
-// Binaların önündeki yolda küçük yürüyen öğrenciler (uzak katman: minik siluetler; CANLI'nın öğrencileri ön planda, çakışmaz).
-// Her bina önünde iki kişi, bina önünde gidip gelir; karede yalnız fillRect/arc.
-const DN12_OGRENCI_RENK = [['#e86f5a', '#3d4a6b'], ['#5b8fd6', '#2f3a4f'], ['#f2c14e', '#4a4a5a'], ['#7cc49a', '#33405a'], ['#c77dd1', '#2e3550'], ['#ffffff', '#5a6378']];
-function dn12Ogrenciler(t, a, b) {
-  const y = DN12_TABAN + 12;
-  for (let i = 0; i < DN12_BINALAR.length; i++) {
-    const B = DN12_BINALAR[i];
-    if (B.kiyi || B.ad === 'golet' || B.ad === 'kule-cevre' || B.bina === 'sera') continue;
-    if (B.L + B.w / 2 < a || B.L - B.w / 2 > b) continue;
-    for (let k = 0; k < 2; k++) {
-      const h = dn12Hash(i * 5.3 + k * 1.7), v = 0.05 + h * 0.05, faz = t * v + h * 6.28 + k * 2.1;
-      const x = B.L + Math.sin(faz) * B.w * 0.36, yon = Math.cos(faz) >= 0 ? 1 : -1;
-      const renk = DN12_OGRENCI_RENK[Math.floor(h * DN12_OGRENCI_RENK.length)];
-      const adim = Math.sin(t * 7 + h * 9) * 1.6, s = 0.9 + h * 0.25;
-      g.fillStyle = 'rgba(40,50,40,.18)'; g.fillRect(x - 3 * s, y + 0.3, 6 * s, 1);               // temas gölgesi
-      g.fillStyle = renk[1]; g.fillRect(x - 1.6 * s + adim * 0.5, y - 5 * s, 1.3 * s, 5 * s); g.fillRect(x + 0.3 * s - adim * 0.5, y - 5 * s, 1.3 * s, 5 * s);   // bacaklar
-      g.fillStyle = renk[0]; g.fillRect(x - 2 * s, y - 10.5 * s, 4 * s, 6 * s);                      // gövde
-      g.fillStyle = '#6b8fb8'; if (k === 1) g.fillRect(x - 2 * s - yon * 1.6 * s, y - 10 * s, 1.6 * s, 4 * s);   // sırt çantası
-      g.fillStyle = '#f0c9a4'; g.beginPath(); g.arc(x, y - 12.6 * s, 1.9 * s, 0, Math.PI * 2); g.fill();   // baş
-      g.fillStyle = h > 0.5 ? '#4a3326' : '#2b2220'; g.fillRect(x - 1.9 * s, y - 14.6 * s, 3.8 * s, 1.5 * s);   // saç
-    }
-  }
-}
+// (Binaların önündeki minik yürüyen öğrenciler kaldırıldı: yakın katmanın çalı sırasının arkasında kalıyor, yalnız çit
+//  boşluklarından başları havada görünüyordu. Kampüsteki öğrencileri canli12.js yolun arkasındaki çimende çizer.)
 const DN12_YELKEN = [{ c: 860, v: 2.2, y: 16, s: 1 }, { c: 945, v: -1.6, y: 34, s: 0.8 }, { c: 1050, v: 1.2, y: 10, s: 0.9 }];
 const DN12_ISKELE = [880, 1010];
 function dn12GolHayati(t, xa, xb) {
