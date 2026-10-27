@@ -237,19 +237,22 @@ const ARAYUZ = (() => {
   }
   let basV = 0, basHiz = 0, dugmeA = 0, zipT = 0, uiKilitT = 0;
   let dugmePortreA = 1;
-  // Kampüs portresinde düğme Feza'nın üzerinden geçerse çizimi hafiflet;
-  // konumu ve cömert dokunma alanı değişmez. Ölçüm CSS pikselindedir.
+  // Bölüm 12: zıplama düğmesi Feza'nın ya da arkasından yürüyen annenin üzerine gelirse çizimi hafiflet (ikisi de görünsün);
+  // konumu ve cömert dokunma alanı değişmez. Ölçüm CSS pikselinde; karakterler ayak tabanından yukarı bir kutu sayılır.
   function dugmePortreAyar(dt) {
-    if (BOLUM_NO !== 12 || !(W < H) || typeof P === 'undefined' || typeof cam === 'undefined' ||
+    if (BOLUM_NO !== 12 || typeof P === 'undefined' || typeof cam === 'undefined' ||
         !(S > 0) || !(DPR > 0) || !GIRDI.dugme || !Number.isFinite(dt)) { dugmePortreA = 1; return 1; }
-    const px = Number.isFinite(P.rx) ? P.rx : P.x, py = Number.isFinite(P.ry) ? P.ry : P.y;
     const d = GIRDI.dugme, scale = S / DPR;
-    if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(cam.x) || !Number.isFinite(cam.y) ||
-        !Number.isFinite(d.x) || !Number.isFinite(d.y) || !Number.isFinite(d.r)) { dugmePortreA = 1; return 1; }
-    const x = (px - cam.x) * scale, y = (py - cam.y) * scale;
-    const nx = clamp(d.x, x - 18 * scale, x + 18 * scale), ny = clamp(d.y, y - 70 * scale, y + 5 * scale);
-    const distance = Math.hypot(d.x - nx, d.y - ny);
-    const overlap = clamp((d.r + 18 - distance) / 36, 0, 1), target = 1 - overlap * .62;
+    if (!Number.isFinite(cam.x) || !Number.isFinite(cam.y) || !Number.isFinite(d.x) || !Number.isFinite(d.y) || !Number.isFinite(d.r)) { dugmePortreA = 1; return 1; }
+    const ortu = (wx, wy, yar, boy) => {   // kutu: ayak (wx, wy), yarım genişlik yar, boy (dünya birimi)
+      if (!Number.isFinite(wx) || !Number.isFinite(wy)) return 0;
+      const x = (wx - cam.x) * scale, y = (wy - cam.y) * scale;
+      const nx = clamp(d.x, x - yar * scale, x + yar * scale), ny = clamp(d.y, y - boy * scale, y + 5 * scale);
+      return clamp((d.r + 18 - Math.hypot(d.x - nx, d.y - ny)) / 36, 0, 1);
+    };
+    let overlap = ortu(Number.isFinite(P.rx) ? P.rx : P.x, Number.isFinite(P.ry) ? P.ry : P.y, 20, 95);
+    if (typeof ANNE12 !== 'undefined' && ANNE12 && ANNE12.hazir) overlap = Math.max(overlap, ortu(ANNE12.x, ANNE12.y, 30, 200));
+    const target = 1 - overlap * .68;
     dugmePortreA += (target - dugmePortreA) * (1 - Math.exp(-Math.min(.1, Math.max(0, dt)) * 8));
     return dugmePortreA;
   }

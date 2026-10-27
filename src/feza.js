@@ -156,7 +156,9 @@ function fzLeg(x, j, far, R) {
   const k8 = fzKos ? fz8BacakRenk(far) : null;   // Bölüm 8 kostümü: çorap / tayt / tulum rengi
   const sk = k8 || (far ? FZ.skinF : FZ.skin), pj = far ? FZ.pjF : FZ.pj;
   const [hx, hy, kx, ky, ax, ay, sa] = j;
-  const lift = clamp(-(ay + FZ_FT) / 2.5, 0, 1), swim = BOLUM_NO === 4 && (P.deniz || fzQ.a_suPoz), rot = swim ? -sa + 0.2 + (far ? -0.08 : 0.06) : clamp(-sa * 0.6, -0.55, 1.0) * lerp(lift, 1, R.air);
+  const lift = clamp(-(ay + FZ_FT) / 2.5, 0, 1), swim = BOLUM_NO === 4 && (P.deniz || fzQ.a_suPoz);
+  let rot = swim ? -sa + 0.2 + (far ? -0.08 : 0.06) : clamp(-sa * 0.6, -0.55, 1.0) * lerp(lift, 1, R.air);
+  if (BOLUM_NO === 12 && fzQ.a_ayak12) rot = fzQ.a_ayak12[far ? 1 : 0];   // Bölüm 12: pedalda/tablada ayakkabı açısını poz verir (fezapoz12.js)
   fzTaper(x, kx, ky, ax, ay, 2.45, 1.7, sk);    // baldır
   fzTaper(x, lerp(kx, ax, 0.12), lerp(ky, ay, 0.12), lerp(kx, ax, 0.5), lerp(ky, ay, 0.5), 2.55, 2.1, sk);   // tombul baldır kası
   fzTaper(x, hx, hy, kx, ky, 2.85, 2.5, sk);    // uyluk
@@ -658,6 +660,7 @@ function fzDraw(x, tm) {
   if (fzKos) fz8Yaka(x, by, false);
   x.save(); x.translate(1.9, -14.4 + by); x.rotate(R.head); x.scale(1.03, 1.03); x.translate(1.3, -7.7);
   fzHead(x, R, tm);
+  if (BOLUM_NO === 12 && fzQ.a_kask12 > 0.01) fz12Kask(x, R, tm);   // Bölüm 12: bisiklet/scooter kaskı (fezapoz12.js)
   fzNefesBalonu(x, tm, false);
   x.restore();
   fzArm(x, 1.2, -11.4 + by, R.la1, R.la2, false, R.hOpen, R.arm);
@@ -870,14 +873,16 @@ function fzShadow(bx, by, al) {
 }
 const FZ_KAY_OPT = { aci: 0, isik: 0, hiz: 1 };   // oyun içi kayma pozu seçenekleri (tek nesne)
 function drawFeza(tm) {
-  if (P.ucus) { fzKa = 0; return; }   // Bölüm 3 uçuş: Feza'yı ucus.js çizer (fezaCizPoz 'binis')
+  const p12 = BOLUM_NO === 12 && typeof fz12Tam === 'function' ? fz12Tam() : null;   // Bölüm 12: scooter/bisiklet/kayık/bağdaş/sarılma (fezapoz12.js; binişte P.ucus doluyken de)
+  if (P.ucus && !p12 && !(BOLUM_NO === 12 && P.ucus.fezaCiz)) { fzKa = 0; return; }   // (Bölüm 12: P.ucus.fezaCiz iken normal yürüyüşle çizilir: finalde örtüye yürür)   // Bölüm 3 uçuş: Feza'yı ucus.js çizer (fezaCizPoz 'binis')
   if (P.fade > 0 && !P.respawned) return;
   if (!P.a_R) fezaInit();
   fzQ = P; FZ_SU_BAL_M.valid = false;
   fzKos = fz8V8Kos(); fz8M = FZ8_P; if (fzKos) { fz8IsikN = 0; fz8NkS = fz8NkA = false; }   // Bölüm 8 kostümü (yoksa null)
   const kay = P.poz === 'kayma', deniz = BOLUM_NO === 4 && P.deniz, p9 = BOLUM_NO === 9 && FZ9.poz ? FZ9.poz : null;   // p9: Bölüm 9 oyun içi poz (fezaPoz9)
   const an11 = BOLUM_NO === 11 ? fz11BaloAn() : -1, p11 = an11 >= 0 ? 'dans11' : null;   // Bölüm 11: Ay Balosu valsi
-  if (BOLUM_NO === 9 || BOLUM_NO === 11) fz9Gecis(p9 || p11, tm);   // Bölüm 9: poz değişirken son kareyi sakla (kısa çapraz geçiş; yandan koşudan önden kucağa sıçramasın)
+  if (BOLUM_NO === 9 || BOLUM_NO === 11) fz9Gecis(p9 || p11, tm);
+  else if (BOLUM_NO === 12) fz9Gecis(fz12GecisAnahtar(p12), tm);   // Bölüm 12: yalnız poz içinde yön değişince (otururken anneye dönüş) kısa çapraz geçiş   // Bölüm 9: poz değişirken son kareyi sakla (kısa çapraz geçiş; yandan koşudan önden kucağa sıçramasın)
   const SZ = fzKos ? 140 : 124, OY = fzKos ? SZ - 12 : SZ - 26, need = Math.ceil(SZ * S), x = fzX, R = P.a_R;   // kostümde şapka ucu için üstte daha çok yer
   // kamera yakınlaşırken S her karede biraz değişir: tuvali yalnızca yetmezse ya da çok büyük kalırsa yeniden ayır (32 px adımlarla, %15 pay)
   if (fzC.width < need || fzC.width > need * 1.3 || fzC.height !== fzC.width || fzR.width !== fzC.width || fzR.height !== fzC.width) { /* tuval varsayılanı 300x150: yükseklik de denetlenir, yoksa Feza belden kesilir */ const n = Math.ceil(need * 1.15 / 32) * 32; fzC.width = fzC.height = n; fzR.width = fzR.height = n; }
@@ -892,6 +897,8 @@ function drawFeza(tm) {
   const hb2 = typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 2;
   if (kay) {   // gökkuşağından kayma (Bölüm 3): oturma noktası = P.x,P.y; eğim kendiliğinden (fezaUpdate) ya da P.kaymaAci
     FZ_KAY_OPT.aci = P.a_kAci; fezaCizPoz(x, 0, 0, P.a_kSide, 'kayma', P.a_t, null, FZ_KAY_OPT);
+  } else if (p12) {   // Bölüm 12: fezaPoz12 tüm beden pozu (oyundaki ışık ve konturla; eklemler pozlar arasında karışır)
+    fz12Ciz(x, tm);
   } else if (p9) {   // Bölüm 9: yumurtaya sarılma / meyve uzatma / kucak / dans (oyundaki ışık ve konturla, fizik yerinde)
     fz9OptDoldur(); fezaCizPoz(x, 0, 0, FZ9.yon, p9, FZ9.ilerle ? FZ9.t : P.a_t, null, FZ9.o);
   } else if (p11) {   // Bölüm 11: baloda vals (final saatiyle; oyundaki ışık ve konturla)
@@ -911,13 +918,13 @@ function drawFeza(tm) {
   }
   fzQ = P;
   // çizim yeri: (varsa) ara değerli fizik konumu + animasyon kayması (Pırıl taşırken havada)
-  const bx = (P.rx ?? P.x) + (kay ? 0 : p9 ? FZ9.ox : P.a_ox), by = (P.ry ?? P.y) + (kay || p9 ? 0 : P.a_oy + P.a_lf);
+  const bx = (P.rx ?? P.x) + (kay ? 0 : p9 ? FZ9.ox : p12 ? FZ12.ox : P.a_ox), by = (P.ry ?? P.y) + (kay || p9 ? 0 : p12 ? FZ12.oy : P.a_oy + P.a_lf);
   if (window.fzDbgHook) window.fzDbgHook(fzC, (bx - cam.x - SZ / 2) * S, (by - cam.y - OY) * S);   // yalnız test (renk ölçümü)
   // ışıklandırma: renk tonu değil, değer. Saç kestane, ten sıcak kalsın; sahnenin rengi yalnız ince kenar ışıklarında.
   // 1) ayaklara doğru koyulaşan, nötre yakın gölge (gece mavisi saçı/teni mora çevirmesin)
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.globalCompositeOperation = 'source-atop';
-  const b3 = typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 3, b9 = BOLUM_NO === 9, Lf = deniz ? Math.max(light, 0.76) : b3 ? Math.max(light, 0.85) : b9 ? Math.max(light, 0.8) : light;   // Bölüm 3 gün doğumu: Feza hep aydınlık (Bölüm 9 altın saat de)
+  const b3 = typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 3, b9 = BOLUM_NO === 9, Lf = deniz ? Math.max(light, 0.76) : b3 ? Math.max(light, 0.85) : b9 ? Math.max(light, 0.8) : BOLUM_NO === 12 ? Math.max(light, 0.9) : light;   // Bölüm 3 gün doğumu: Feza hep aydınlık (Bölüm 9 altın saat de; Bölüm 12 kampüste gündüz)
   const nq = Math.round((1 - Lf) * 200), lk = need * 1000 + nq + (fzKos ? 0.5 : 0);
   if (lk !== fzLgK) {   // yalnız boy ya da ışık (1/200 adım) değişince yeni geçiş
     const nt = nq / 200; fzLgK = lk; fzLg = fzKos ? x.createLinearGradient(0, (OY - 85.6) * S, 0, (OY + 26) * S) : x.createLinearGradient(0, need * 0.1, 0, need);   // kostümde büyük tuval: geçiş ayağa göre aynı yerde
@@ -930,7 +937,7 @@ function drawFeza(tm) {
   //    olduğundan), ekleme sonrası renk doğal kalır. Pırıl'ın ışığından yalnız küçük leylak kenar ışığı (3) kalır.
   //    Hale bir kez çizilmiş küçük bir görüntüden ölçeklenir (kare başına gradyan yok), siluetle maskelenip tek geçişte çıkarılır.
   const dx = (D.x - bx) * S + SZ / 2 * S, dy = (D.y - by) * S + OY * S, pd = Math.hypot(D.x - bx, D.y - (by - 30));
-  if (pd < 190 && !b3 && !deniz) {   // Bölüm 3'te hâle küçük ve çok hafif (oyun.js): çıkarılacak bir şey yok
+  if (pd < 190 && !b3 && !deniz && !(BOLUM_NO === 12 && P.ucus)) {   // Bölüm 3'te hâle küçük ve çok hafif (oyun.js): çıkarılacak bir şey yok (Bölüm 12 binişinde oyun.js hâleyi çizmez: çıkarma da yok)
     const r = fzRX, R1 = 150 * S;
     r.globalCompositeOperation = 'source-over'; r.globalAlpha = 1; r.clearRect(0, 0, px, px);
     r.drawImage(fzHaloSpr(0), dx - R1, dy - R1, R1 * 2, R1 * 2);
@@ -996,8 +1003,8 @@ function drawFeza(tm) {
     if (bf && bs > 0.03) { const dx = bf.x - bx, dy = bf.y - 12 - (by - 30), dl = Math.hypot(dx, dy) || 1; fzRim(dx / dl, dy / dl, 0.8 * S, '#ffd9b0', 0.7 * clamp(bs * 1.4, 0, 1)); }
   }
   let a = 1; if (P.fade > 0) a = 1 - clamp((P.fade - 0.22) / 0.38, 0, 1);
-  const gk = b9 || BOLUM_NO === 11 ? fz9GecisK(tm) : 1;   // Bölüm 9 çapraz geçiş: yeni poz (ve konturu) gk ile belirir, eski kare 1-gk ile söner
-  if (!kay && !deniz) fzShadow(bx, by, a);
+  const gk = b9 || BOLUM_NO === 11 || BOLUM_NO === 12 ? fz9GecisK(tm) : 1;   // Bölüm 9 çapraz geçiş: yeni poz (ve konturu) gk ile belirir, eski kare 1-gk ile söner
+  if (!kay && !deniz && !(p12 && fz12Golgesiz())) fzShadow(bx, by, a);   // (Bölüm 12 kayıkta yer gölgesi yok)
   const gx0 = (bx - cam.x - SZ / 2) * S, gy0 = (by - cam.y - OY) * S;
   // okunurluk: (1) çok hafif sıcak-krem karakter hâlesi (yavaş nefesli), (2) ince açık-krem dış kenar + ince koyu-lacivert iç hat (yumuşak, çıkartma gibi değil)
   if (a > 0.05) {
@@ -1017,7 +1024,7 @@ function drawFeza(tm) {
   }
   g.globalAlpha = gk < 1 ? a * smooth(clamp(gk * 2, 0, 1)) : a;
   g.drawImage(fzC, gx0, gy0);
-  if (b9 || BOLUM_NO === 11) { FZ9G.lbx = bx; FZ9G.lby = by; FZ9G.lsz = SZ; FZ9G.loy = OY; FZ9G.lS = S; FZ9G.lpx = P.rx ?? P.x; FZ9G.lpy = P.ry ?? P.y; FZ9G.lt = tm; FZ9G.la = a; }   // bu karenin yeri (sonraki geçişin eski karesi)
+  if (b9 || BOLUM_NO === 11 || BOLUM_NO === 12) { FZ9G.lbx = bx; FZ9G.lby = by; FZ9G.lsz = SZ; FZ9G.loy = OY; FZ9G.lS = S; FZ9G.lpx = P.rx ?? P.x; FZ9G.lpy = P.ry ?? P.y; FZ9G.lt = tm; FZ9G.la = a; }   // bu karenin yeri (sonraki geçişin eski karesi)
   if (fzKos) fz8Sonra(gx0, gy0, bx, by, SZ, OY, a);   // Bölüm 8: asa/kabak yüzü ışıkları, sepet ağzının dünya konumu
   if (deniz && FZ_SU_BAL_M.valid) { const m = FZ_SU_BAL_M; g.save(); g.setTransform(m.a, m.b, m.c, m.d, m.e + gx0, m.f + gy0); fzNefesZari(g, tm, m.front); g.restore(); }
   g.globalAlpha = 1;
@@ -1183,6 +1190,7 @@ function fzFy(a1, a2) { return FZ_TH * Math.cos(a1) + FZ_SH * Math.cos(a1 + a2) 
 // ayak sesi olayı: tek nesne, her basışta yeniden doldurulur (dinleyici (muzik.js) yalnız o anda okur)
 const FZ_ADIM = { x: 0, y: 0, hiz: 0, inis: false };
 function fzAdim(sp, inis) {
+  if (BOLUM_NO === 12 && typeof fz12Tam === 'function' && fz12Tam()) return;   // Bölüm 12: araçta/kayıkta/otururken adım sesi yok (fizik P.vx'i araç hızıyla taşır)
   FZ_ADIM.x = P.x; FZ_ADIM.y = P.y; FZ_ADIM.hiz = sp; FZ_ADIM.inis = inis; OLAY.emit('adim', FZ_ADIM);
   if (typeof dn7Iz === 'function') { try { dn7Iz(P.x + (P.f || 1) * ((P.a_stepN & 1) ? 3 : -3), P.y, inis ? 'inis' : 'feza'); } catch (e) {} }   // Bölüm 7: karda ayak izi (dunya7.js)
   if (BOLUM_NO === 9 && typeof dn9Iz === 'function') { try { dn9Iz(P.x + (P.f || 1) * ((P.a_stepN & 1) ? 3 : -3), P.y, inis ? 'inis' : 'feza'); } catch (e) {} }   // Bölüm 9: çimende minik çiçek / ışık tozu (dunya9.js)
@@ -2039,6 +2047,7 @@ function fezaUpdate(dt) {
   }
   P.a_spin = spin;
   P.a_kenar = R.la1 - R.lean > 1.6;   // kol yüz hizasına kalkınca ince ten kenarı (ten üstünde ten okunsun)
+  if (BOLUM_NO === 12 && typeof fz12Kol === 'function') fz12Kol(R, dt, t);   // Bölüm 12: uçurtma ipi / el sallama kolu, poz saatleri, tüm beden pozundan yumuşak dönüş (fezapoz12.js)
   // kalça yüksekliği: yerdeyken en alttaki ayak tam yere bassın
   const hipG = -Math.max(fzFy(R.lt1, R.lt2), fzFy(R.bt1, R.bt2));
   P.a_ledgeW += (((st === 'sit' && P.a_ledge && P.a_sit > 0.35) ? 1 : 0) - P.a_ledgeW) * (1 - Math.exp(-dt * 5));
@@ -2154,6 +2163,7 @@ function fezaCizPoz(ctx, x, y, olcek, poz, tm, ara, opt) {
   const Q = fzCS, R = Object.assign(Q.a_R, FZ_REST);
   Q.ik = null; Q.ikUst = false; Q.ara = null; Q.a_hx = Q.a_hy = 0; Q.vy = 0; Q.a_tilt = 0; Q.a_shine = 0; Q.a_pil = 0; Q.a_isik = 0; Q.a_dim = null;
   Q.a_noFar = false; Q.a_cl = 0; Q.a_kenar = false; Q.a_suPoz = false;
+  if (BOLUM_NO === 12) { Q.a_ayak12 = null; Q.a_kask12 = 0; }   // Bölüm 12 poz alanları (fz12Poz doldurur)
   Q.a_lidM = ((tm + 1.5) % 3.9) < 0.12 ? 0 : 1;
   let front = true, lie = 0, seated = false, seatT = false, rotA = 0, retX = null, retY = 0, piv = 0;
   const kos8 = fz8PozKos(poz, opt), eKos = fzKos, eM8 = fz8M;   // Bölüm 8 kostümü (yalnız bu çizim için; Bölüm 1–7'de null)
@@ -2397,6 +2407,9 @@ function fezaCizPoz(ctx, x, y, olcek, poz, tm, ara, opt) {
   } else if (poz === 'ucus11' || poz === 'dans11') {   // Bölüm 11: pelerinle süzülme / Ay Balosu valsi (fz11Poz)
     const r11 = fz11Poz(poz, tm, opt, R, Q, olcek, x, y);
     front = r11.front; rotA = r11.rotA; piv = r11.piv;
+  } else if (BOLUM_NO === 12 && typeof fz12Poz === 'function' && FZ12_TAM[poz]) {   // Bölüm 12: scooter, bisiklet, biniş/iniş, kayık, bağdaş, sarılma (fezapoz12.js)
+    const r12 = fz12Poz(poz, tm, opt, R, Q, olcek, x, y);
+    front = r12.front; rotA = r12.rotA;
   } else if (poz === 'sarilYumurta') {   // Bölüm 9: üşüyen yumurtaya sevgiyle sarılma (yandan, yumurtaya dönük; yumurta Feza'dan ÖNCE çizilir)
     // u: 0–.16 diz çöküp uzanır · .16–.84 iki kolla sarar, yanağını yaslar, gözler ^ ^, iki kez sıkar · .84–1 doğrulur, mutlu bakar
     front = false;

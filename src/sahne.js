@@ -1805,7 +1805,7 @@ function shSabahCiz(tm, t, P, sonKirp) {
   const fb = sh.fBolum || 1, b2 = fb === 2, b3 = fb === 3;
   if (fb === 4) shDenizSabah(tm);
   if (fb === 4) shSabahPencere(tm, true);
-  else if (fb === 12) { if(typeof sh12Sabah==='function') sh12Sabah(tm,1); }
+  else if (fb === 12) { if (typeof sh12Sabah === 'function') sh12Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1); }
   else if (fb === 11) { if (typeof sh11Sabah === 'function') sh11Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1); }
   else if (fb === 10) sh10Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1);
   else if (fb === 9) sh9Sabah(tm, P ? shEase(shSeg(t, P.oda - 1.2, P.oda + 1.4)) : 1);
@@ -1820,7 +1820,7 @@ function shSabahCiz(tm, t, P, sonKirp) {
   shLamba(p, 0, tm, false, 0);
   if (fb === 7) { sh7Oda(p, tm, 1, 0); sh7Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // kâğıt kar taneleri gün ışığında; komodinde kar küresi ve buz kristali
   if (fb === 8) { sh8Oda(p, tm, 1, 0, 0); sh8Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.6) : 1); }
-  if (fb === 12 && typeof sh12Hediye === 'function') sh12Hediye(tm,1);
+  if (fb === 12 && typeof sh12Hediye === 'function') sh12Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1);   // komodinde rüyadan kalan kampüs hatırası (sahne12.js)
   if (fb === 11 && typeof sh11Hediye === 'function') { sh11Oda(tm, 1, false); sh11Hediye(tm, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // komodinde lila yarasa peluşu + çilek (sahne11.js)
   if (fb === 10) { sh10Oda(tm, 1, false); sh10Hediye(tm, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }
   if (fb === 9) { sh9Oda(p, tm, 1, 0, 0); sh9Hediye(tm, 1, P ? shSeg(t, P.oda + 1.0, P.oda + 1.9) : 1); }   // süsler gün ışığında; komodinde rüyadan kalan ejderha pulu ve yumurta kabuğu   // gece süsleri gün ışığında; komodinde rüyadan kalan kabak ve şeker

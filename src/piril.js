@@ -2546,7 +2546,7 @@ function pirilCizPoz(ctx, x, y, olcek, poz, tm, u) {
       const uu = (i + 1) / (DR_TAIL_N - 1), ang = Math.PI - 0.75 + uu * 1.7 + Math.sin(tm * 3.2 - uu * 3.2) * 0.32 * (0.4 + uu);
       p = { x: p.x + Math.cos(ang) * DR_TAIL_LEN, y: p.y + Math.sin(ang) * DR_TAIL_LEN };
     }
-  } else if (BOLUM_NO === 9 && (poz === 'goster9' || poz === 'ufle9' || poz === 'tut9' || poz === 'sevinc9')) {   // Bölüm 9 yandan pozlar (uçarken)
+  } else if ((BOLUM_NO === 9 || BOLUM_NO === 12) && (poz === 'goster9' || poz === 'ufle9' || poz === 'tut9' || poz === 'sevinc9')) {   // Bölüm 9 yandan pozlar (uçarken)
     front = false; halo = 1; D.ph = tm * 3.4 * 6.283; D.bob = Math.sin(D.ph - 0.7) * 2.2; D.tilt = -0.05 + Math.sin(tm * 1.3) * 0.04; D.lookX = 1; D.lookY = 0.1; D.expr = 'happy';
     const q = u && typeof u === 'object' ? u : {};
     if (poz === 'goster9') {   // "işte bu!": pençesiyle gösterir, başı eğik, minik sekme
@@ -2569,7 +2569,7 @@ function pirilCizPoz(ctx, x, y, olcek, poz, tm, u) {
       const uu = (i + 1) / (DR_TAIL_N - 1), ang = Math.PI - 0.75 + uu * 1.7 + Math.sin(tm * 3.2 - uu * 3.2) * 0.32 * (0.4 + uu);
       p = { x: p.x + Math.cos(ang) * DR_TAIL_LEN, y: p.y + Math.sin(ang) * DR_TAIL_LEN };
     }
-  } else if (BOLUM_NO === 9 && (poz === 'alkis9' || poz === 'kucak9' || poz === 'dans9')) {   // Bölüm 9 önden pozlar (kanatlar açık, uçuyor)
+  } else if ((BOLUM_NO === 9 || BOLUM_NO === 12) && (poz === 'alkis9' || poz === 'kucak9' || poz === 'dans9')) {   // Bölüm 9 önden pozlar (kanatlar açık, uçuyor)
     halo = 1; D.plush = 0; D.glowA = 1; D.wingA = 1; D.ph = tm * 3 * 6.283; D.expr = 'happy'; D.lookX = 0; D.lookY = 0.2;
     const q = u && typeof u === 'object' ? u : {};
     if (poz === 'alkis9') { D.clap = 1; D.clapPh = tm * 13; D.eyeOv = (tm % 2.2) < 1.3 ? 'happy' : null; D.headRoll = 0.08 * Math.sin(tm * 4); D.bob = -Math.abs(Math.sin(tm * 6.5)) * 2; }

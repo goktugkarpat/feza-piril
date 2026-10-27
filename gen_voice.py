@@ -4,6 +4,7 @@
 Needs:  python3 -m pip install edge-tts   (internet while recording)   and ffmpeg
 Run:    python3 gen_voice.py            only new/changed lines are recorded; the rest come from .ses_onbellek/
         python3 gen_voice.py --hepsi    record everything again
+        python3 gen_voice.py --bolum12  only Bölüm 12 lines (p_q_ / an_q_ / a_q_) -> sesler12.js (sesler.js is not touched)
 
 Voice: tr-TR-EmelNeural (natural Turkish female). Key prefix chooses the delivery:
   a_  narrator – slower, slightly lower, tender bedtime-story tone
@@ -17,7 +18,9 @@ Voice: tr-TR-EmelNeural (natural Turkish female). Key prefix chooses the deliver
   ea_ Pırıl's mum (warm, gentle), eb_ Pırıl's dad (lower, cheerful), fs_ little cousin Fıstık (a tiny dragon: high, soft and shy).
   Bölüm 11 the cute vampire family: vk_ Vela (a girl Feza's age: high, cheerful), vd_ Vampir Dede (round grandpa: slow, deep), vn_ Vampir Nine
   (warm grandma, a little low), vb_ baby Pıtır (one or two words, very high and sweet).
-Output: sesler.js  →  window.VOICE_MP3 = {key: base64 mp3}  and  window.VOICE_DUR = {key: seconds}.
+  Bölüm 12 (Annemle Sabancı'da Bir Gün): an_ Feza's mum (same voice, a touch lower and calmer than Pırıl, livelier than the narrator:
+  warm and natural). Lines with _q_ (p_q_, an_q_, a_q_) are written to sesler12.js; all other lines to sesler.js.
+Output: sesler.js / sesler12.js  →  window.VOICE_MP3 = {key: base64 mp3}  and  window.VOICE_DUR = {key: seconds}.
 """
 import asyncio
 import base64
@@ -71,6 +74,7 @@ STYLE = {            # prefix → (rate, pitch, volume)
     "vd_": ("-10%", "-22Hz", "+0%"),   # Vampir Dede (tombul, neşeli: tok ve ağır)
     "vn_": ("-9%", "-10Hz", "+0%"),    # Vampir Nine (sıcak, yumuşak: anlatıcıdan biraz pes, şefkatli)
     "vb_": ("-4%", "+40Hz", "+0%"),    # Pıtır (bebek; çok kısa sözler: ince, tatlı)
+    "an_": ("-6%", "-7Hz", "+0%"),     # Bölüm 12 Feza'nın annesi (sıcak, sakin, doğal: anlatıcıdan canlı, Pırıl'dan pes)
 }
 # Second take mixed under the first one (same rate → same timing): two children saying it together.
 CHORUS = {"k2_": ("+6%", "+38Hz", "+0%")}
@@ -95,6 +99,11 @@ PRONOUNCE = [
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(ROOT, ".ses_onbellek")
 OUT = os.path.join(ROOT, "sesler.js")
+OUT12 = os.path.join(ROOT, "sesler12.js")   # Bölüm 12 cümleleri (p_q_ an_q_ a_q_): index.html sesler.js'ten sonra yükler
+
+
+def bolum12(key):
+    return re.match(r"^(p|an|a)_q_", key) is not None
 SRC = os.path.join(ROOT, "src", "ses.js")
 
 
@@ -232,7 +241,9 @@ async def record(key, text, sem):
 
 async def main():
     os.makedirs(CACHE, exist_ok=True)
-    lines = load_lines()
+    all_lines = load_lines()
+    only12 = "--bolum12" in sys.argv
+    lines = {k: t for k, t in all_lines.items() if bolum12(k)} if only12 else all_lines
     if "--hepsi" in sys.argv:
         for k, t in lines.items():
             if os.path.exists(cache_path(k, t)):
@@ -260,29 +271,44 @@ async def main():
     if missing:
         print("MISSING (existing voice bank preserved):", ", ".join(missing))
         sys.exit(1)
-    temp_out = OUT + ".tmp"
+    k12 = [k for k in mp3 if bolum12(k)]
+    write_out(OUT12, {k: mp3[k] for k in k12}, {k: dur[k] for k in k12}, True)
+    if not only12:
+        rest = [k for k in mp3 if not bolum12(k)]
+        write_out(OUT, {k: mp3[k] for k in rest}, {k: dur[k] for k in rest}, False)
+        keep = {os.path.basename(cache_path(k, t)) for k, t in all_lines.items()}
+        for f in os.listdir(CACHE):  # drop recordings of lines that no longer exist and temp leftovers
+            if f.endswith(".mp3") and f not in keep:
+                remove_temp(os.path.join(CACHE, f))
+
+
+def write_out(path, mp3, dur, part12):
+    temp_out = path + ".tmp"
     with open(temp_out, "w", encoding="utf-8", newline="\n") as f:   # LF also on Windows (the Mac commits it)
-        f.write("// Feza ve Pırıl: Işıklı Rüyalar – voice lines (tr-TR-EmelNeural; a_ narrator, p_ Pırıl), trimmed mono mp3 as base64.\n"
-                "// Bu dosya gen_voice.py ile üretildi; elle değiştirmeyin. Cümleler: src/ses.js › LINES.\n")
-        f.write("window.VOICE_MP3 = {\n")
-        f.write(",\n".join(f" {json.dumps(k)}: \"{v}\"" for k, v in mp3.items()))
-        f.write("\n};\n")
-        f.write("window.VOICE_DUR = " + json.dumps(dur, ensure_ascii=False) + ";\n")
+        if part12:   # loaded after sesler.js: adds to the same tables
+            f.write("// Feza ve Pırıl – Bölüm 12 (Annemle Sabancı'da Bir Gün) ses kayıtları (tr-TR-EmelNeural; p_q_ Pırıl, an_q_ anne, a_q_ anlatıcı).\n"
+                    "// Bu dosya gen_voice.py ile üretildi (python3 gen_voice.py --bolum12); elle değiştirmeyin. Cümleler: src/ses.js › LINES.\n")
+            f.write("window.VOICE_MP3 = window.VOICE_MP3 || {};\nObject.assign(window.VOICE_MP3, {\n")
+            f.write(",\n".join(f" {json.dumps(k)}: \"{v}\"" for k, v in mp3.items()))
+            f.write("\n});\n")
+            f.write("window.VOICE_DUR = window.VOICE_DUR || {};\nObject.assign(window.VOICE_DUR, " + json.dumps(dur, ensure_ascii=False) + ");\n")
+        else:
+            f.write("// Feza ve Pırıl: Işıklı Rüyalar – voice lines (tr-TR-EmelNeural; a_ narrator, p_ Pırıl), trimmed mono mp3 as base64.\n"
+                    "// Bu dosya gen_voice.py ile üretildi; elle değiştirmeyin. Cümleler: src/ses.js › LINES.\n")
+            f.write("window.VOICE_MP3 = {\n")
+            f.write(",\n".join(f" {json.dumps(k)}: \"{v}\"" for k, v in mp3.items()))
+            f.write("\n};\n")
+            f.write("window.VOICE_DUR = " + json.dumps(dur, ensure_ascii=False) + ";\n")
     for attempt in range(10):   # Windows/Dropbox may briefly lock the old file
         try:
-            os.replace(temp_out, OUT)
+            os.replace(temp_out, path)
             break
         except PermissionError:
             if attempt == 9:
                 raise
             time.sleep(0.5)
-    keep = {os.path.basename(cache_path(k, t)) for k, t in lines.items()}
-    for f in os.listdir(CACHE):  # drop recordings of lines that no longer exist and temp leftovers
-        if f.endswith(".mp3") and f not in keep:
-            remove_temp(os.path.join(CACHE, f))
-
-    size = os.path.getsize(OUT) / 1024
-    print(f"wrote sesler.js: {len(mp3)} lines, {sum(dur.values()):.1f} s audio, {size:.0f} KB")
+    size = os.path.getsize(path) / 1024
+    print(f"wrote {os.path.basename(path)}: {len(mp3)} lines, {sum(dur.values()):.1f} s audio, {size:.0f} KB")
 
 
 asyncio.run(main())

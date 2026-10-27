@@ -71,7 +71,7 @@
   var V9 = { pul: 0, pulTop: 10, yavru: 0, yavruTop: 6, meyve: false, kanat: false, kolye: false, binis: false, final: false };   // Bölüm 9 (Pırıl'ın Ejderha Vadisi) genel durumu
   var V10 = { damla: 0, tilki: 0, bahce: 0, kure: 0, sandal: false, sandalAktif: false, sandalAsama: 0, final: false };   // Zamanın Uyuduğu Vadi
   var V11 = { pelerin: null, ayna: 0, aynaTop: 12, salon: false, org: false, pasta: false, ucus: false, final: false };   // Bölüm 11 (Ay Işığı Şatosu) genel durumu
-  var V12 = {final:false};
+  var V12 = { final: false, binis: null, cicek: 0, ucurtma: false, kayik: false, ordek: 0 };   // Bölüm 12 (Annemle Sabancı'da Bir Gün) genel durumu
   try {
     var bq = /[?&]bolum=(\d+)(?:&|$)/.exec(location.search);
     var bs = bq ? +bq[1] : +(sessionStorage.getItem('fezaIsikSec') || 1);   // başlık sayfası her zaman Bölüm 1; Bölüm 2-11 seçim ekranından (oturum bayrağı + yenileme)
@@ -118,7 +118,7 @@
   if (BOLUM_NO === 10) ['dunya10', 'zaman10', 'zamanyol10'].forEach(function(n) {
     document.write('<script src="src/' + n + '.js"><\/script>');
   });
-  if (BOLUM_NO === 12) ['dunya12','anne12','durak12','etkinlik12','kayik12','kampusmacera12','yolculuk12','kampuskesif12','kampustiyatro12','kampusbahce12','kampuskule12','kampusgolet12','kampuskelebek12','final12'].forEach(function(n) { document.write('<script src="src/' + n + '.js"><\/script>'); });
+  if (BOLUM_NO === 12) ['dunya12', 'zemin12', 'canli12', 'anne12', 'fezapoz12', 'yolculuk12', 'etkinlik12', 'golet12', 'final12'].forEach(function(n) { document.write('<script src="src/' + n + '.js"><\/script>'); });
   if (BOLUM_NO === 11) ['dunya11', 'vampir11', 'ayna11', 'pelerin11', 'aynasalon11', 'org11', 'pasta11', 'ucus11', 'balo11'].forEach(function(n) {   // Ay Işığı Şatosu
     document.write('<script src="src/' + n + '.js"><\/script>');
   });

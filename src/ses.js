@@ -424,25 +424,35 @@ const SES = (() => {
     "p_s_ayna_feza": "Feza, upuzun oldun!",
     "vk_gidik": "Gıdıklandım!",
     "vb_alkis": "Bir daha!",
-    "p_q_uyku": "Hadi Feza, annenle birlikte Sabancı’da güzel bir rüya görelim.",
-    "p_q_giris": "Bak Feza! Sabancı Üniversitesindeyiz. Annen de burada!",
-    "an_q_merhaba": "Hoş geldin canım Feza. Gel, birlikte gezelim!",
-    "p_q_ucurtma": "Kurdelelere dokun, uçurtmamızı birlikte süsleyelim!",
-    "p_q_kayik": "Annenle kayığa bin! Gölette ışıkların arasından geçelim.",
-    "p_q_kitap": "Resimli kitabı açalım. Resimlere dokun, hikâyemiz canlansın!",
-    "p_q_piknik": "Piknik zamanı! Yiyeceklere dokunup sepeti hazırlayalım.",
-    "p_q_muzik": "Haydi birlikte müzik yapalım! Müzik aletlerine dokun.",
+    "p_q_uyku": "Hadi Feza, uyku vakti. Bu gece rüyada annenle kampüse gidiyoruz!",
+    "p_q_giris": "Günaydın Feza! Bak, annenle kampüsteyiz!",
+    "an_q_merhaba": "Günaydın bir tanem! Hadi, birlikte kampüsü gezelim.",
+    "p_q_cicek": "Vay! Sen geçince çiçekler açıyor!",
+    "an_q_kokla": "Mis gibi kokuyor bu çiçek!",
+    "p_q_scooter": "Mavi skuterin burada! Ekrana basılı tut, hızlan!",
+    "an_q_bisiklet": "Ben de bisikletimle hemen arkandayım!",
+    "an_q_ucurtma": "Al bakalım, uçurtman! Koştukça yükselir.",
+    "p_q_ucurtma": "Uçurtmaya dokun, takla atsın!",
+    "p_q_takla": "Ne güzel takla attı!",
+    "p_q_havuz": "Bak, fıskiyeler dans ediyor! Suya dokun.",
+    "p_q_sayfa": "Kitabın sayfaları kuş gibi uçuyor!",
+    "p_q_bisiklet": "Şimdi küçük bisikletine bin! Kaskın da başında.",
+    "an_q_yokus": "Yavaş yavaş süzülelim, ben arkandayım.",
+    "p_q_ordek": "Ördekler peşimize takıldı, vak vak!",
+    "p_q_kayik": "Annenle kayığa binelim! Basılı tut, kürekler hızlansın.",
+    "an_q_kayik": "Sıkı tutun, kürek çekiyorum!",
+    "p_q_gunbatimi": "Bak, güneş batıyor. Gökyüzü pembe oldu!",
+    "an_q_cagir": "Gel bakalım yanıma, bir tanem.",
+    "p_q_dans": "Müzik başladı, hadi dans edelim!",
+    "an_q_saril": "Seni çok seviyorum, Feza.",
+    "p_q_yildiz": "Bak, ilk yıldızlar çıktı!",
+    "p_q_kedi": "Kedicik mırlıyor!",
+    "p_q_kopek": "Köpekçik sana pati verdi!",
+    "an_q_aferin": "Aferin sana, bir tanem!",
+    "an_q_aferin2": "Ne güzel yaptın!",
+    "p_q_aferin": "Harika gidiyorsun Feza!",
     "a_q_final1": "Feza annesine sımsıkı sarıldı. Birlikte geçirdikleri bu güzel günü hep hatırlayacaktı.",
-    "p_q_sabah": "Günaydın Feza! Annenle ne güzel gezdik.",
-    "p_q_bisiklet": "Haydi annenle birlikte bisiklete binelim!",
-    "p_q_scooter": "Mavi skuterine bin, Feza! Birlikte gezelim.",
-    "p_q_fass": "Bak, kampüsün çimenliğindeyiz! Annenle uçurtma uçuralım.",
-    "p_q_sanat": "Hadi annenle rengârenk bir kampüs resmi yapalım!",
-    "p_q_tiyatro": "Kuklayı parmağınla gezdir, hikâyemiz canlansın!",
-    "p_q_top": "Topa dokun, annenle paslaşalım!",
-    "p_q_bahce": "Haydi annenle çiçekler ekelim, sonra birlikte sulayalım!",
-    "p_q_kule": "Kampüsü birlikte keşfedelim. Parlayan yerlere dokun!",
-    "p_q_golet": "Ördeklerle ve göletteki dostlarımızla oynayalım!"
+    "p_q_sabah": "Günaydın Feza! Annenle ne güzel bir gün geçirdik."
 }
   /*SESLER-SON*/;
 
@@ -719,7 +729,7 @@ const SES = (() => {
     if (!sesSert(s)) return 'oyun bitti';
     if (agacYandi() && !ovguMu(s.k)) return 'ağaç yandı';
     const o = s.o, p = gP();
-    if (/^p_q_(ucurtma|kayik|kitap|piknik|muzik|bisiklet|scooter|fass|sanat|tiyatro|top|bahce|kule|golet)$/.test(s.k) && o && (o.done || (o.tk && o.tk.bitti))) return 'etkinlik bitti';
+    if (/^(p|an)_q_(cicek|kokla|scooter|bisiklet|ucurtma|takla|havuz|sayfa|yokus|ordek|kayik)$/.test(s.k) && o && (o.done || (o.tk && o.tk.bitti))) return 'etkinlik bitti';   // Bölüm 12: etkinliği bitti/geçildi
     if (o && p && typeof o.gec === 'number' && p.x > o.gec) return 'yeri geçti (gec)';
     if (o && o.konu && sesKonuBitti(o.konu)) return 'konusu bitti';
     const f = KOSUL[sesTaban(s.k)] || (ses8Komsu(s.k) || /^p_c_sekermi/.test(s.k) ? ses8KapiYakin : null);   // komşu sözü: Feza kapıdan uzaklaştıysa atılır
@@ -1470,19 +1480,53 @@ const SES = (() => {
   // bekler). Tek seferlik cümleler oyun başına bir kez; övgü ara sıra ve çeşitli (aynalarda ~üçte bir, mini oyunlarda yer yer).
   // Kampüs: kısa, önceden kaydedilmiş yönlendirmeler yalnız ilgili etkinlikte.
   const sesB12=()=>typeof BOLUM_NO!=='undefined' && BOLUM_NO===12;
-  Object.assign(SES_TEK,{p_q_uyku:1,p_q_giris:1,an_q_merhaba:1,p_q_ucurtma:1,p_q_kayik:1,p_q_kitap:1,p_q_piknik:1,p_q_muzik:1,p_q_bisiklet:1,p_q_scooter:1,p_q_fass:1,p_q_sanat:1,p_q_tiyatro:1,p_q_top:1,p_q_bahce:1,p_q_kule:1,p_q_golet:1,a_q_final1:1,p_q_sabah:1});
-  Object.assign(SES_SAHNE,{p_q_uyku:1,p_q_giris:1,a_q_final1:1,p_q_sabah:1});
-  OLAY.on('konusma',e=>{if(sesB12()&&e&&e.anahtar==='p_q_giris')soyle('an_q_merhaba');});
-  OLAY.on('sahneAn',e=>{if(sesB12()&&e&&e.mod==='final'&&e.ad==='feza_uyandi')soyle('p_q_sabah',{oncelik:3});});
-  OLAY.on('kampusEtkinlikBasla',e=>{if(sesB12()&&e&&['ucurtma','kitap','piknik','muzik'].includes(e.ad))soyle('p_q_'+e.ad,{o:e.o});});
-  OLAY.on('kampusKayikBasla',e=>{if(sesB12())soyle('p_q_kayik',{o:e&&e.o});});
-  OLAY.on('kampusYolculukBasla',e=>{if(sesB12()&&e&&['bisiklet','scooter'].includes(e.ad))soyle('p_q_'+e.ad,{o:e.o});});
-  OLAY.on('kampusMaceraBasla',e=>{if(sesB12()&&e&&e.o)soyle(e.o.tip==='kampusSakuraAtolye'?'p_q_fass':'p_q_sanat',{o:e.o});});
-  OLAY.on('kampusTiyatroBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_tiyatro',{o:e.o});});
-  OLAY.on('kampusTopBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_top',{o:e.o});});
-  OLAY.on('kampusBahceBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_bahce',{o:e.o});});
-  OLAY.on('kampusKuleBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_kule',{o:e.o});});
-  OLAY.on('kampusGoletBasla',e=>{if(sesB12()&&e&&e.o)soyle('p_q_golet',{o:e.o});});
+  // Az ve yerinde: her etkinliğin başında tek cümle (Pırıl ya da anne), ara sıra ve çeşitli övgü; isteğe bağlı cümleler (kedi, köpek,
+  // takla, sayfa, yıldız) yalnız ortalık sessizken ve son cümleden 8 sn sonra. Cümleler olaylara bağlı (BOLUM12.md › Olaylar).
+  Object.assign(SES_TEK, { p_q_uyku: 1, p_q_giris: 1, an_q_merhaba: 1, p_q_cicek: 1, an_q_kokla: 1, p_q_scooter: 1, an_q_bisiklet: 1, an_q_ucurtma: 1,
+    p_q_ucurtma: 1, p_q_takla: 1, p_q_havuz: 1, p_q_sayfa: 1, p_q_bisiklet: 1, an_q_yokus: 1, p_q_ordek: 1, p_q_kayik: 1, an_q_kayik: 1,
+    p_q_gunbatimi: 1, an_q_cagir: 1, p_q_dans: 1, an_q_saril: 1, p_q_yildiz: 1, p_q_kedi: 1, p_q_kopek: 1, a_q_final1: 1, p_q_sabah: 1 });
+  Object.assign(SES_SAHNE, { p_q_uyku: 1, p_q_giris: 1, a_q_final1: 1, p_q_sabah: 1 });
+  let ses12SonT = -1e9, ses12OvguT = -1e9, ses12OvguSon = '', ses12Takla = 0;
+  OLAY.on('konusma', e => { if (sesB12() && e && e.anahtar) ses12SonT = sesSaat() + (e.sure || 2); });
+  const ses12Bos = (sn) => !sesCalan && !sesSira.length && sesSaat() - ses12SonT > (sn || 8);   // ortalık sessiz mi
+  const ses12 = (k, ops) => { if (sesB12() && typeof DURUM !== 'undefined' && DURUM === 'oyun') soyle(k, ops); };
+  const ses12Istege = (k, ops) => { if (ses12Bos(8)) ses12(k, ops); };
+  const ses12Ovgu = sans => {   // övgü: ara sıra (en az 25 sn arayla), anne ve Pırıl dönüşümlü, aynısı üst üste gelmez
+    if (Math.random() > sans || sesSaat() - ses12OvguT < 25) return;
+    const ad = ['an_q_aferin', 'p_q_aferin', 'an_q_aferin2'].filter(k => k !== ses12OvguSon && !sesSoylendi[k]);
+    const k = ad.length ? ad[Math.floor(Math.random() * ad.length)] : 'p_aferin';   // üçü de söylendiyse Pırıl'ın genel övgüleri
+    setTimeout(() => { if (ses12Bos(3)) { ses12OvguT = sesSaat(); ses12OvguSon = k; ses12(k, { oncelik: 0 }); } }, 700);
+  };
+  // sıralı cümleler: biri başlayınca öbürü sıraya girer (anne cevap verir)
+  const SES12_ZINCIR = { p_q_giris: 'an_q_merhaba', p_q_scooter: 'an_q_bisiklet', p_q_bisiklet: 'an_q_yokus', an_q_ucurtma: 'p_q_ucurtma', p_q_kayik: 'an_q_kayik' };
+  OLAY.on('konusma', e => { if (sesB12() && e && SES12_ZINCIR[e.anahtar]) soyle(SES12_ZINCIR[e.anahtar], e.anahtar === 'p_q_giris' ? undefined : { oncelik: 2 }); });
+  OLAY.on('sahneAn', e => { if (sesB12() && e && e.mod === 'final' && e.ad === 'feza_uyandi') soyle('p_q_sabah', { oncelik: 3 }); });
+  OLAY.on('k12CicekActi', e => { if (e && e.n >= 2) ses12('p_q_cicek', { o: e.o }); });
+  OLAY.on('k12AnneKokla', e => ses12('an_q_kokla', { o: e && e.o }));
+  OLAY.on('k12BinisBasla', e => { if (e && e.ad === 'yol2') ses12('p_q_bisiklet', { o: e.o }); else ses12('p_q_scooter', { o: e && e.o }); });
+  OLAY.on('k12BinisBitti', () => ses12Ovgu(0.5));
+  OLAY.on('k12UcurtmaVer', e => ses12('an_q_ucurtma', { o: e && e.o }));
+  OLAY.on('k12UcurtmaTakla', e => { if (e && e.oto) return; if (++ses12Takla === 2) ses12Istege('p_q_takla', { o: e.o }); else if (ses12Takla > 3) ses12Ovgu(0.2); });
+  OLAY.on('k12Fiskiye', e => ses12('p_q_havuz', { o: e && e.o }));
+  OLAY.on('k12Sayfa', e => ses12Istege('p_q_sayfa', { o: e && e.o }));
+  OLAY.on('k12OrdekKatildi', e => { if (!sesSoylendi.p_q_ordek) ses12('p_q_ordek', { o: e && e.o }); else if (e && e.n === 4) ses12Ovgu(0.5); });
+  OLAY.on('k12KayikBasla', e => ses12('p_q_kayik', { o: e && e.o }));
+  OLAY.on('k12KayikBitti', () => ses12Ovgu(0.6));
+  OLAY.on('k12KediSev', () => ses12Istege('p_q_kedi'));
+  OLAY.on('k12KopekSev', () => ses12Istege('p_q_kopek'));
+  // final: annenin sözleri sahne cümlesi gibi sırada bekler (atılmaz); Pırıl'ınki oyun cümlesi
+  OLAY.on('k12FinalAn', e => {
+    const an = e && (e.an || e.ad);
+    if (an === 'cagir') ses12('an_q_cagir', { oncelik: 3 });
+    else if (an === 'dans') ses12('p_q_dans', { oncelik: 2 });
+    else if (an === 'saril') ses12('an_q_saril', { oncelik: 3 });
+    else if (an === 'yildiz') ses12Istege('p_q_yildiz');
+  });
+  setInterval(() => {   // gün batımı tepesine varınca bir kez
+    if (!sesB12() || sesSoylendi.p_q_gunbatimi || typeof DURUM === 'undefined' || DURUM !== 'oyun' || typeof BOLUM === 'undefined' || !BOLUM.bolgeler) return;
+    const p = gP(), b = BOLUM.bolgeler.find(v => v.ad === 'tepe');
+    if (p && b && p.x >= b.x0 && !p.ucus && !(typeof V12 !== 'undefined' && V12 && V12.final)) ses12('p_q_gunbatimi');
+  }, 1000);
   const sesB11 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 11;
   const sesV11 = ad => typeof V11 !== 'undefined' && !!V11 && !!V11[ad];
   const ses11Ovgu = (sans, ms) => { if (Math.random() < sans) setTimeout(() => { if (!sesCalan && !sesSira.length) soyle('p_aferin'); }, ms || 700); };

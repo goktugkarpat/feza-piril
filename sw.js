@@ -1,11 +1,11 @@
 // İnternetsiz çalışma: ilk açılıştan sonra oyun (kod, gömülü sesler, simgeler) cihazda saklanır.
 // Dosya eklenirse SRC listesine ekle; önemli değişiklikte CACHE sürümünü artır.
-const CACHE = 'feza-piril-v148';
-const SRC = ['ortak', 'kapi', 'bolum', 'dunya', 'feza', 'piril', 'pofuduk', 'sahne', 'arayuz', 'sarki', 'bolum2', 'dunya2', 'yildiz', 'takim', 'dunya3', 'bulut', 'kuzu', 'sekil', 'ucus', 'bolum3', 'bolum4', 'dunya4', 'deniz', 'inci', 'bolum5', 'anka', 'dunya5', 'volkan', 'atesoyun', 'kristal', 'lavsal', 'bolum6', 'dunya6', 'midilli', 'senlik', 'halka', 'bolum7', 'dunya7', 'geyik', 'kar', 'kardan', 'kizak', 'bolum8', 'dunya8', 'kostum', 'kabak', 'seker', 'kabakyuz', 'iskelet', 'kazan', 'supurge', 'muzik', 'ses', 'oyun', 'bolum9', 'dunya9', 'yavru', 'meyve', 'kanat', 'kolye', 'buyukanne', 'yuva', 'bolum10', 'dunya10', 'zaman10', 'zamanyol10', 'sahne11', 'bolum11', 'dunya11', 'vampir11', 'ayna11', 'pelerin11', 'aynasalon11', 'org11', 'pasta11', 'ucus11', 'balo11', 'sahne12', 'bolum12', 'dunya12', 'anne12', 'durak12', 'etkinlik12', 'kayik12', 'final12', 'muzik12'];
-SRC.push('kampusmacera12', 'yolculuk12', 'kampuskesif12', 'kampustiyatro12', 'kampusbahce12', 'kampuskule12', 'kampusgolet12', 'kampuskelebek12');
+const CACHE = 'feza-piril-v149';
+const SRC = ['ortak', 'kapi', 'bolum', 'dunya', 'feza', 'piril', 'pofuduk', 'sahne', 'arayuz', 'sarki', 'bolum2', 'dunya2', 'yildiz', 'takim', 'dunya3', 'bulut', 'kuzu', 'sekil', 'ucus', 'bolum3', 'bolum4', 'dunya4', 'deniz', 'inci', 'bolum5', 'anka', 'dunya5', 'volkan', 'atesoyun', 'kristal', 'lavsal', 'bolum6', 'dunya6', 'midilli', 'senlik', 'halka', 'bolum7', 'dunya7', 'geyik', 'kar', 'kardan', 'kizak', 'bolum8', 'dunya8', 'kostum', 'kabak', 'seker', 'kabakyuz', 'iskelet', 'kazan', 'supurge', 'muzik', 'ses', 'oyun', 'bolum9', 'dunya9', 'yavru', 'meyve', 'kanat', 'kolye', 'buyukanne', 'yuva', 'bolum10', 'dunya10', 'zaman10', 'zamanyol10', 'sahne11', 'bolum11', 'dunya11', 'vampir11', 'ayna11', 'pelerin11', 'aynasalon11', 'org11', 'pasta11', 'ucus11', 'balo11', 'sahne12', 'bolum12', 'dunya12', 'anne12', 'etkinlik12', 'final12', 'muzik12'];
+SRC.push('zemin12', 'canli12', 'fezapoz12', 'yolculuk12', 'golet12');
 const ART = ['./assets/zaman/enchanted-tree-v1.png', './assets/zaman/seasonal-trees-v1.png'];
-// Kampüs çizimleri yüklenmezse bölüm kendi vektör yedeğini kullanır.
-const KAMPUS_ART = ['./assets/kampus/orta-cim-v2.png', './assets/kampus/fass-cim-v1.png', './assets/kampus/universite-merkezi.png', './assets/kampus/lojman.png', './assets/kampus/fens.png', './assets/kampus/bilgi-merkezi.png', './assets/kampus/golet.png', './assets/kampus/kule-cevre.png'];
+// Bölüm 12 kampüs bina katmanları (göğü saydam; dunya12.js). Yüklenmezse o binanın yerinde ağaçlar/tepeler görünür.
+const KAMPUS_ART = ['lojman', 'orta-cim-v2', 'fens', 'universite-merkezi', 'fass-cim-v1', 'bilgi-merkezi', 'kule-cevre', 'golet'].map(n => './assets/kampus/' + n + '-katman.png');
 const CORE = ['./', './index.html', './sesler.js', './sesler12.js', './manifest.webmanifest', ...SRC.map(n => './src/' + n + '.js'), ...ART];
 const ICONS = ['./icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];   // eksik simge kurulumu durdurmasın
 const FRESH = /(\/|index\.html)$/;   // sayfa önce ağ, diğer dosyalar önce önbellek

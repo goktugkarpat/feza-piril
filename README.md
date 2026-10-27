@@ -46,7 +46,7 @@ Korkutucu hiçbir şey yoktur, kaybetmek yoktur. Feza okuma bilmediği için her
 
 11. **Ay Işığı Şatosu** — Feza ile Pırıl, Vela ve ailesiyle şatonun ay ışığını aynalarla geri getirir. Ayna salonu, org ve pasta etkinliklerinden sonra pelerinle uçar ve Ay Balosu'na katılırlar.
 
-12. **Annemle Sabancı’da Bir Gün** — Feza, annesi ve Pırıl kampüste bir gün geçirir. Bahçeyle ilgilenir, Feza annesiyle bisiklete biner; sonra Feza scooter sürer. Uçurtma uçurur, kitaplara bakar ve kukla tiyatrosu oynarlar. Kuleden çevreyi keşfeder, gölette kayıkla gezer, ördeklerle, nilüferlerle ve kuşlarla oynarlar. Piknik, resim ve müzik şenliğiyle günlerini tamamlarlar. Dokunma ve sürüklemeyle oynanır; okuma gerekmez ve Pırıl bekleyen çocuğa yardımcı olur.
+12. **Annemle Sabancı’da Bir Gün** — Feza, annesi ve Pırıl Sabancı Üniversitesi kampüsünde sabahtan gün batımına bir gün geçirir. Lojmanların önünde çiçekler açar; Feza mavi scooter'ına, annesi kendi bisikletine biner ve anne hep arkasından gelir. FASS çimenliğinde uçurtma uçururlar, Bilgi Merkezi'nin havuzunda fıskiyeler dans eder, Feza kendi küçük bisikletiyle göletin yokuşundan iner, anneyle kayığa binip ördek ailesiyle gölette gezerler, tepede gün batımında piknik yapıp sarılırlar. Hiçbir şey yolu kapatmaz: her şey yürürken olur, dokunursa daha güzel olur. Kampüs kedileri, köpekler, sincaplar ve öğrenciler yol boyu eşlik eder.
 
 **Pofuduklar** ormanın ışığını karınlarında taşıyan tüylü orman dostlarıdır. Üstlerine zıplamak onları gıdıklayıp ışıklarını uyandırır:
 hapşırırlar, karınları parlar, çevrelerindeki mantarlar ve bitkiler renklenir, Feza'nın peşine takılırlar. Bazıları çok derin uyur;

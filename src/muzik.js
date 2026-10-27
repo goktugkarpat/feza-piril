@@ -84,6 +84,10 @@
    pelerinPuf pelerinAc aynaDon(0..11) huzmeVar satoCanlan({n, tur}) satoDokun aynaSevin aynaKikir aynaSil aynaBul orgNota(0..5 = La Do Re Mi Sol La') orgDans valsAdim
    pastaSus pastaParla pastaKapak ucusKalk ucusIsik ucusVin ucusInis baloFinal baloDoruk ayCik baloTamam yarasaPir hayaletKikir. AU.nabiz() B11'de de çalışır.
 
+   Bölüm 12 "Annemle Sabancı'da Bir Gün" (BOLUM_NO==12): beste ve efektler muzik12.js'te (MZ12). Bu dosya yalnız köprüdür: tick ölçüleri
+   MZ12.cubuk'a, karışımı MZ12.karisim'e, AU.sfx('k12...') çağrılarını MZ12.sfx'e verir; MZ12.bagla(kit) çalgıları/otobüsleri alır.
+   Sabah sahnesinde MZ12 son kadansı çalıp 'bitti' deyince müzik kutusu ninnisi devralır (m12Devret).
+
    API: AU.start() · AU.sfx(ad, v) · AU.muzik('orman'|'ninni'|'final') (sahne zorlaması, isteğe bağlı)
         AU.baglam() / AU.sesCikis() / AU.kis(acik, kim) (ses.js konuşma için) · AU.akor() (o anki akorun notaları)
    Olaylar kendiliğinden dinlenir (zıplama, iniş, çiçek, tohum, uyandi, aydinlat, dustu, kurtarildi, agac, buyukAsama...);
@@ -1091,6 +1095,7 @@ const AU = (() => {
   // Bölüm 9 (Pırıl'ın Ejderha Vadisi): e9S = ışık oranı (açılan pul çiçeği + çıkan yavru; dunya9 dn9IsikOrani() ya da V9 sayaçları, yumuşatılmış);
   // bölge BOLUM.bolgeler'den (0,9 sn kararlılık). Mini oyunlar, yolculuk ve final olaylardan (src/BOLUM9.md) + V9 bayraklarından + KANAT/MEYVE/KOLYE.aktif.
   const bolum11 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 11;
+  const bolum12 = () => typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 12;   // Bölüm 12: besteyi muzik12.js (MZ12) yazar, motor bu dosyanın
   let b9Deger = null;
   const bolum9 = () => { if (b9Deger === null) b9Deger = typeof BOLUM_NO !== 'undefined' ? BOLUM_NO === 9 : (typeof location !== 'undefined' && /[?&]bolum=9(&|$)/.test(location.search)); return b9Deger; };
   const E9_PROG = { giris9: 1, cayir9: 1, selale9: 1, adalar9: 1, meyve9: 1, kanat9: 1, kolye9: 1, yuva9: 1, binis9: 1, ejderFinal: 1 };
@@ -6436,6 +6441,7 @@ const AU = (() => {
     if (!ad && bolum10() && /^(bolum10Basla|z_don|z_damla|z_uyan|z_geri|z_kure|z_agac|z_final|z_selale|z_tilki_hop|z_tilki_inis|z_mevsim|z_ani_cicek|z_ani_gunes|z_ani_yagmur|z_ani_kus|z_sandal|z_yildiz|z_sandal_doruk|z_sandal_inis|z_kok|z_tac)$/.test(k) && ac) ad = k;
     if (!ad && bolum9() && E9_SFX.test(k) && ac) ad = k;
     if (!ad && bolum11() && S11_SFX.test(k) && ac) ad = k;
+    if (!ad && bolum12() && ac && typeof MZ12 !== 'undefined' && MZ12 && MZ12.sfx) { try { if (MZ12.sfx(k, v)) return; } catch (e) {} }   // Bölüm 12 efektleri (k12Zil ...) muzik12.js'te
     if (bolum11() && S11_NOTA[ad]) {   // notalı efektler: sıra/nota anahtara girer (art arda dönen aynalar, hızlı org dokunuşları birbirini yutmasın)
       const x = Number.isFinite(v) ? v : v && Number.isFinite(v.i) && ad === 'orgNota' ? v.i : v && Number.isFinite(v.n) ? v.n : 0;
       cal(ad, v, 0, ad + Math.round(x)); return;
@@ -6984,7 +6990,8 @@ const AU = (() => {
     return v;
   }
   function karisimGuncelle(t, d) {
-    const ob = mod === 'final' && bolum11() ? 'satoFinal' : mod === 'final' && bolum10() ? 'zamanFinal' : mod === 'final' && bolum9() ? 'ejderFinal' : mod === 'final' && bolum8() ? 'cadiFinal' : mod === 'final' && bolum5() ? 'volkanFinal' : mod === 'final' && bolum6() ? 'senlikFinal' : mod === 'final' && bolum7() ? 'kuzeyFinal' : mod === 'orman' ? ormanAd(d) : mod;
+    if (bolum12() && m12Acik && !m12Hata) { try { MZ12.karisim(t, d); return; } catch (e) { m12Hata = true; } }   // Bölüm 12 katman düzeyleri MZ12'de
+    const ob =mod === 'final' && bolum11() ? 'satoFinal' : mod === 'final' && bolum10() ? 'zamanFinal' : mod === 'final' && bolum9() ? 'ejderFinal' : mod === 'final' && bolum8() ? 'cadiFinal' : mod === 'final' && bolum5() ? 'volkanFinal' : mod === 'final' && bolum6() ? 'senlikFinal' : mod === 'final' && bolum7() ? 'kuzeyFinal' : mod === 'orman' ? ormanAd(d) : mod;
     const k = KARISIM[ob] || KARISIM.patika;
     const r = mod === 'ninni' ? ruya : 0, kr = KARISIM.ruya, kk = (ad) => (k[ad] || 0) * (1 - r) + (kr[ad] || 0) * r;
     // Bölüm 2: yıldız oranı yumuşak izlenir (≈2.5 sn), doruk ayrıca
@@ -7061,8 +7068,13 @@ const AU = (() => {
     if (bolum8()) c8BolgeIzle(t, d.alan8);
     if (bolum9()) e9BolgeIzle(t, d.alan9);
     if (bolum11()) s11BolgeIzle(t, d.alan11);
-    if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 12 && (d.durum === 'oyun' || d.durum === 'final')) sonrakiCubuk = t + .25;
-    else while (sonrakiCubuk < t + ILERI) { cubukPlanla(sonrakiCubuk); sonrakiCubuk += cubukUz; }
+    if (bolum12() && m12Calsin(d)) {   // Bölüm 12: ölçüleri MZ12 planlar (aynı ileri bakış, aynı çalgılar ve ses sınırı)
+      if (!m12Acik) { m12Acik = true; padBirak(sonrakiCubuk); }
+      while (sonrakiCubuk < t + ILERI) { let uz = BAR; try { uz = MZ12.cubuk(sonrakiCubuk, d) || BAR; } catch (e) { m12Hata = true; } sonrakiCubuk += uz; }
+    } else {
+      if (m12Acik) { m12Acik = false; if (d.durum !== 'giris' && d.durum !== 'baslik') m12Devret(sonrakiCubuk); }
+      while (sonrakiCubuk < t + ILERI) { cubukPlanla(sonrakiCubuk); sonrakiCubuk += cubukUz; }
+    }
     if (bolum7() && mod === 'orman' && d.kay7 > 0.15) k7KayIzle(t, d.kay7, false);   // buzlu gölde süzülme
     if (!test && (++tickN % 4 === 0)) karisimGuncelle(t, d);
     if (test && (++tickN % 4 === 0)) karisimGuncelle(t, d);
@@ -7173,6 +7185,7 @@ const AU = (() => {
       });
     }
     kaliciKur();
+    if (bolum12()) { m12Acik = false; m12Hata = false; if (typeof MZ12 !== 'undefined' && MZ12 && MZ12.bagla) { try { MZ12.bagla(m12Kit()); } catch (e) { m12Hata = true; } } }
     const t = zaman();
     cikis.gain.value = 0.0001; cikis.gain.setValueAtTime(0.0001, t); if (!sessizDeneme) cikis.gain.exponentialRampToValueAtTime(1, t + 2.5);
     sonrakiCubuk = t + 0.25;
@@ -7226,6 +7239,32 @@ const AU = (() => {
     addEventListener('pagehide', uyut); addEventListener('pageshow', uyandir);
     if (ac.addEventListener) ac.addEventListener('statechange', sesDurumuBildir);
     uyandir();
+  }
+
+  // ───────────────────────── Bölüm 12 köprüsü (MZ12) ─────────────────────────
+  // Bölüm 12'nin bestesi ve efektleri muzik12.js'te; çalgılar, otobüsler, yankı, ses sınırı ve deneme saati burada kalır.
+  // MZ12.bagla(kit) her kurulumda (gerçek ya da çevrimdışı deneme) bir kez çağrılır; kit yalnız işlev ve okuyucu içerir.
+  let m12Acik = false, m12Hata = false;
+  function m12Calsin(d) {   // oyunda ve sabah finalinin başında (MZ12 "bitti" deyene kadar) besteyi MZ12 planlar
+    if (m12Hata || typeof MZ12 === 'undefined' || !MZ12 || typeof MZ12.cubuk !== 'function') return false;
+    return (d.durum === 'oyun' || d.durum === 'final') && !MZ12.bitti;
+  }
+  function m12Devret(t) {   // sabah oldu: müzik kutusu ninnisi baştan, yumuşakça (bölüm müziğinin son akoru kendi bırakışıyla söner)
+    mod = 'ninni'; progAd = 'ninni'; ninniBas(); pi = 0; bic = 0; dongu = 0; finalIstek = null; oncekiAk = null; padBirak(t);
+    try { if (typeof MZ12 !== 'undefined' && MZ12 && MZ12.birak) MZ12.birak(t); } catch (e) {}
+  }
+  function m12Kit() {
+    return {
+      get ac() { return ac; }, get test() { return !!test; }, zaman, NOTE, cl, rnd, sec, B, TEMEL,
+      get sfxG() { return sfxG; }, get sahneG() { return sahneG; }, get sahneHam() { return sahneHam; }, get muzikG() { return muzikG; },
+      get dlyGiris() { return dlyGiris; }, get dly() { return dly; }, get revMuzik() { return revMuzik; }, get revSfx() { return revSfx; },
+      get revSfxCok() { return revSfxCok; }, get ruzgarG() { return ruzgarG; }, get ruzgarBP() { return ruzgarBP; }, get yalaG() { return yalaG; },
+      get gurBuf() { return gurBuf; }, tel, koro, kForm,
+      calabilir: () => !!ac && (!!test || ac.state === 'running'),
+      oncelikli(fn) { oncelikli = true; try { fn(); } finally { oncelikli = false; } },
+      yerVar, ek, panla, osc, kazanc, zarf, suzgec, hedefle, sesYurut,
+      zil, tus, arp, bas, hop, ksilofon, sopranoCan, ruzgarArp, cam, kase, flut, damla, kabar, gur, ton, agiz, kus, padBirak,
+    };
   }
 
   // çevrimdışı deneme (OfflineAudioContext): AU._dene(ctx, sure, senaryo(t) → {durum, bolge, light, uyku}, olaylar)
