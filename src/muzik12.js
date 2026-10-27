@@ -701,6 +701,14 @@ const MZ12 = (() => {
       for (let i = 0; i < 3; i++) K.damla(1300 + rnd() * 700, t + 0.5 + i * 0.22 + rnd() * 0.08, 0.005 * g, rnd() - 0.5, S());
     },
     k12Kaz(t) { kaz(t, 0.014, 0.3); kaz(t + 0.26, 0.011, 0.3); },
+    // kurbağalar (BOTANIK): yavru kurbağa gibi tatlı, iki heceli yumuşak "vı-rak" (boğaz kesesi iki kez şişer) · yapraktan yaprağa "boing"
+    k12KurbagaVirak(t) {
+      K.ton(t, 'sine', 170, 230, 0.09, 0.009, 0.01, -0.1, 0);                                       // kesenin şişmesi: tok, yumuşak "bu"
+      K.agiz(t + 0.02, 330, 300, 0.1, 0.008, [420, 1500], [460, 1450], 0.012);                        // "vı"
+      K.ton(t + 0.2, 'sine', 190, 260, 0.1, 0.008, 0.01, -0.1, 0);
+      K.agiz(t + 0.22, 360, 280, 0.15, 0.009, [700, 1250], [760, 1200], 0.012);                       // "rak"
+    },
+    k12KurbagaZipla(t) { K.ton(t, 'sine', 300, 720, 0.13, 0.007, 0.004, 0.1, 0); K.ton(t + 0.04, 'triangle', 600, 1100, 0.07, 0.002, 0.003, 0.1, 0); },
     k12Balikcil(t) { for (let i = 0; i < 3; i++) K.gur(t + i * 0.32, 0.26, 'lowpass', 700, 380, 0.7, 0.012 * (1 - i * 0.2), 0.08, 0.3 - i * 0.2, 1, S()); },
     // final
     k12FinalBasla(t) { K.kabar([50, 57, 62, 66, 69], t, 1.6, 1.2, 2.8, 0.014, K.sahneG, false); },
@@ -720,7 +728,7 @@ const MZ12 = (() => {
     k12UcurtmaTakla: 0.8, k12Ucurtma: 0.6, k12Sayfa: 0.15, k12Fiskiye: 0.4, k12FiskiyeDokun: 0.4, k12Damla: 0.06, k12SuDokun: 0.1, k12Nilufer: 0.25,
     k12KaplumbagaPop: 0.3, k12KaplumbagaBak: 2, k12KaplumbagaCik: 0.6, k12KaplumbagaKule: 1, k12KaplumbagaYuru: 3, k12KaplumbagaYoruldu: 2, k12Selale: 0.5,
     k12BotNilufer: 0.25, k12BotSuDokun: 0.1, k12KazUcus: 6, k12GolFiskiye: 0.5, k12Kopru: 3, k12SazanOp: 0.45, k12SazanDokun: 0.4, k12OrdekSuru: 0.8,
-    k12KirpiDokun: 0.5, k12KirlangicDokun: 0.5, k12KelebekBulut: 0.7, k12KediSu: 2,
+    k12KirpiDokun: 0.5, k12KirlangicDokun: 0.5, k12KurbagaVirak: 1.2, k12KurbagaZipla: 0.4, k12KelebekBulut: 0.7, k12KediSu: 2,
     k12FinalBasla: 3, k12KaplumbagaKafa: 0.2, k12KaplumbagaDokun: 0.2, k12KaplumbagaDal: 0.3, k12KaplumbagaAdim: 0.15, k12SeraFiskiye: 1, k12Kaz: 1, k12Balikcil: 1.5, k12Kelebek: 0.3, k12UcurtmaDon: 2, k12SayfaResim: 0.3, k12BinisAdim: 0.2, k12BinisBasla: 2, k12BinisBitti: 2, k12OgrenciSelam: 2, k12Surpriz: 0.3, k12FinalAn: 0.15 };
   let cicekN = 0;
   const sonCal = {};

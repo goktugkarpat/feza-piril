@@ -200,6 +200,22 @@ function gl12SuTuval() {   // su rengi (dünya y 702 → 802); karede gerilerek 
 }
 // Su rengini arka plandaki göle (dunya12.js dn12GolRenk) uydurur: üstte onun rengi, aşağı indikçe derin ton.
 // Renk gün boyu yavaşça değiştiği için tuval en çok 0.4 sn'de bir yeniden boyanır (karede gradyan yok).
+// Güneşin sudaki ışık sütunu (bir kez çizilir): ortası parlak, kenarlara ve aşağıya doğru sönen sıcak beyaz
+let GL12_SUTUN = null;
+function gl12GunesSutun() {
+  if (GL12_SUTUN) return GL12_SUTUN;
+  const c = gl12Tuval(64, 128), x = c.getContext('2d');
+  const yat = x.createLinearGradient(0, 0, 64, 0);
+  yat.addColorStop(0, 'rgba(255,236,190,0)'); yat.addColorStop(0.5, 'rgba(255,246,222,0.9)'); yat.addColorStop(1, 'rgba(255,236,190,0)');
+  x.fillStyle = yat; x.fillRect(0, 0, 64, 128);
+  // aşağı indikçe söner: üstü (uzak su) parlak, alt yakın su soluk
+  x.globalCompositeOperation = 'destination-in';
+  const dik = x.createLinearGradient(0, 0, 0, 128);
+  dik.addColorStop(0, 'rgba(0,0,0,1)'); dik.addColorStop(0.35, 'rgba(0,0,0,0.55)'); dik.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = dik; x.fillRect(0, 0, 64, 128);
+  GL12_SUTUN = c;
+  return c;
+}
 function gl12SuBoya(c, ust, alt) {
   const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 100);
   gr.addColorStop(0, ust); gr.addColorStop(0.25, ust); gr.addColorStop(1, alt);
@@ -1660,16 +1676,34 @@ function gl12SuCiz(tm) {
   if (alt > ust + 100) { c.fillStyle = GL.suAlt || '#3a8fb2'; c.fillRect(xa, ust + 99, xb - xa, alt - ust - 98); }
   // gün batımı yansıması: altın saatte suyun üstüne sıcak ton ve güneşten bir ışık yolu
   const I = typeof dn12Isik === 'function' ? dn12Isik() : null, guc = I && Number.isFinite(I.guc) ? I.guc : 0;
+  // güneşin suya düşen ışık sütunu: gündüz soluk beyaz, altın saatte sıcak ve parlak (önbellekli sütun + kayan ışık çizgileri)
+  const gx = cam.x + VW * (typeof DN12 !== 'undefined' && DN12 && Number.isFinite(DN12.gunesX) ? DN12.gunesX : 0.7);
+  if (gx > xa - 90 && gx < xb + 90) {
+    const sut = gl12GunesSutun(), sg = 0.32 + 0.6 * guc, sw = 80 + 70 * guc;
+    c.globalCompositeOperation = 'lighter';
+    c.globalAlpha = sg * (0.85 + 0.15 * Math.sin(t * 1.7));
+    c.drawImage(sut, gx - sw / 2, ust - 2, sw, Math.min(104, alt - ust + 2));
+    c.globalCompositeOperation = 'source-over';
+  }
   if (guc > 0.03 && I.ton) {
     c.globalAlpha = 0.16 * guc; c.fillStyle = I.ton; c.fillRect(xa, ust, xb - xa, 40);
-    const gx = cam.x + VW * (typeof DN12 !== 'undefined' && DN12 && Number.isFinite(DN12.gunesX) ? DN12.gunesX : 0.7);
     for (let i = 0; i < 12; i++) {
       const y = ust + 4 + i * 6.5, w = (46 - i * 2.2) * (0.7 + 0.3 * Math.sin(t * 2.1 + i * 1.7));
       c.globalAlpha = guc * (0.45 - i * 0.03);
       c.fillRect(gx - w / 2 + Math.sin(t * 1.3 + i * 2.3) * 5, y, w, 1.6);
     }
-    c.globalAlpha = 1;
   }
+  // sütunun içinde yanıp sönen parlak altın pırıltılar (güneşin suda kırılan ışığı)
+  c.fillStyle = guc > 0.3 ? '#fff0c4' : '#ffffff';
+  for (let i = 0; i < 14; i++) {
+    const h = gl12Hash(i * 5.3 + 2), y = ust + 6 + h * 84, yay = 18 + (y - ust) * 0.55;
+    const a = Math.max(0, Math.sin(t * (1.6 + h * 1.8) + i * 2.1));
+    if (a < 0.35) continue;
+    c.globalAlpha = (a - 0.35) * (0.5 + 0.7 * guc);
+    const w = 3 + 9 * a * (0.5 + (y - ust) / 100);
+    c.fillRect(gx + (gl12Hash(i * 9.1) - 0.5) * 2 * yay + Math.sin(t * 0.8 + i) * 4 - w / 2, y, w, 1.4);
+  }
+  c.globalAlpha = 1;
   // üst kenar: uzak su ile birleşen ince ışık çizgisi
   c.fillStyle = 'rgba(255,255,255,.09)'; c.fillRect(xa, ust + 4, xb - xa, 1.2);
   gl12YansimaCiz(c, tm);

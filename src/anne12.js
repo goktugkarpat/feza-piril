@@ -10,6 +10,11 @@
    kol salınımı karşıt fazda, kalça iniş-çıkışı (bacak boyu yetmezse kalça kendiliğinden alçalır), hız arttıkça yürüyüş hafif koşuya
    karışır. Durunca ayaklar küçük bir ağırlık aktarma adımıyla yerine oturur; nefes, göz kırpma, ara sıra Feza'ya eğilip gülümseme.
 
+   Duruş: anne hep dik ve rahat; Feza'ya bakarken yalnız başı eğilir, gövde en çok ~5°. Beklerken etrafa bakınır, sırayla
+   at kuyruğunu düzeltir ya da küçük bir alkış yapar, sonra Feza'ya el sallar; sarılmada ifade verilmezse 'sevgi' (gözler kapalı);
+   bisiklette pedal ritminde başı sallanır, ara sıra gözleriyle gülümser, saç opt.hiz ile rüzgârda; Feza'nın yanında okşayamayacak kadar uzaksa elini kalbine koyup başını ona yatırır.
+   Yüz oyun ölçeğinde (küçük çizimde, AN_ST.uzakU) sadeleşir: gözler iri ve yuvarlak, kirpik tutamı yok, kaşlar yukarıda ve kalın.
+
    Çizim: anne önce kendi küçük tuvaline (anC) Feza ile aynı dilde çizilir (yumuşak gölgeli hacimli uzuvlar, sıcak ten, büyük ifadeli
    gözler), sonra Feza'daki gibi ışık/kenar ışığı ve ince iki katlı kontur (krem dış + lacivert iç) ile oyun tuvaline basılır.
    Gradyanlar bir kez kurulur (kare başına yeni gradyan yok); kare başına dizi/nesne ayrılmaz.
@@ -20,6 +25,8 @@
          opt.egim), bisiklet_bin / bisiklet_in (opt.u 0..1), kayik_kurek (opt.kurek 0..1 kürek fazı; oturur), ucurtma_ver (opt.u:
          0 uçurtmayı yukarı tutar → 1 ipi Feza'ya uzatır), otur, alkis, saril (opt.u 0..1: diz çöküp sarılır; Feza x + 28*yon'da),
          dans. Eski adlar da çalışır: el → el_salla, kayik → kayik_kurek.
+       opt.ifade: 'mutlu' | 'gulen' | 'sasir' (şaşkın-sevinçli) | 'sevgi' (gözler kapalı gülümseme); opt.ifadeW 0..1 karışım.
+         Anne KONUŞMAZ (anne sesi yok): ağız hiçbir pozda konuşur gibi açılıp kapanmaz; duygu yüz, baş ve elle gösterilir.
        opt.yon ±1, opt.hiz (birim/sn; verilmezse x değişiminden), opt.bak (1 Feza'ya bak/gülümse, -1 yukarı bak), opt.egil (0..1
          Feza'ya doğru eğilme), opt.katman ('uzak' uzak kol+bacak, 'arka' yakın kol hariç, 'on' yalnız yakın kol, 'yakin' uzak
          uzuvlar hariç; yoksa hepsi), opt.golge (false: yer gölgesi yok).
@@ -70,8 +77,10 @@ const A_HX = 0, A_HY = 1, A_GV = 2, A_OMZ = 3, A_BA = 4,
   A_OEA = 15, A_UEA = 16,                       // el açıklığı: 0 gevşek, 1 açık (sallama), -1 işaret parmağı
   A_GUL = 17, A_AGZ = 18, A_GOZ = 19, A_BKX = 20, A_BKY = 21, A_KAS = 22,
   A_OEK = 23, A_UEK = 24, A_CNT = 25, A_MUT = 26,   // el bükümü (yakın, uzak), çanta görünür, mutlu kısık göz
-  A_OEL = 27;                                   // yakın kolun boy çarpanı (el sallarken çizgi film esnemesi)
-const AN_N = 28;
+  A_OEL = 27,                                   // yakın kolun boy çarpanı (el sallarken çizgi film esnemesi)
+  A_TW = 28,                                    // omuz-kalça ters dönüşü (yürürken yakın omuz öne/arkaya, kalça tersine)
+  A_SAS = 29;                                   // şaşkın-sevinçli yüz (kaşlar kalkar, gözler açılır, ağız yuvarlak gülümser)
+const AN_N = 30;
 
 // ── küçük yardımcılar ──
 const anSn = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -90,7 +99,8 @@ const AN_ST = {
   dAyak: new Float64Array(6), ilkAyak: 0,
   sac: new Float64Array(6), cnt: new Float64Array(2), etek: new Float64Array(2),
   apx: 0, apy: 0, avx: 0, avy: 0, fizikHazir: false, sacEk: 0,
-  kokX: NaN, kokY: NaN, salla: 0
+  kokX: NaN, kokY: NaN, salla: 0, elOnde: 0, elArka: 0, cntEk: 0, idleSay: 0,
+  uzakU: 0   // oyun ölçeği (küçük çizim) ağırlığı 0..1: yüz detayları sadeleşir, gözler/kaşlar/gülümseme irileşir (okunurluk)
 };
 const AN_R = new Float64Array(AN_N), AN_R0 = new Float64Array(AN_N), AN_RS = new Float64Array(AN_N),
   AN_KA = new Float64Array(AN_N), AN_KB = new Float64Array(AN_N);
@@ -114,9 +124,10 @@ function anGv(R, px, py) {
   const c = Math.cos(R[A_GV]), s = Math.sin(R[A_GV]);
   anPX = R[A_HX] + px * c - py * s; anPY = R[A_HY] + px * s + py * c;
 }
-function anOmuz(R, yakin) { anGv(R, yakin ? 0.7 : -1.5, -28.7 - R[A_OMZ]); }
+function anOmuz(R, yakin) { const tw = R[A_TW]; anGv(R, yakin ? 0.7 + tw : -1.5 - tw * 0.6, -28.7 - R[A_OMZ]); }
 function anKalca(R, yakin) {   // kalça eklemi: leğen gövdenin yarısı kadar eğilir
-  const a = R[A_GV] * 0.45, c = Math.cos(a), s = Math.sin(a), px = yakin ? 1.7 : -1.6, py = yakin ? 0.3 : -0.3;
+  const a = R[A_GV] * 0.45, c = Math.cos(a), s = Math.sin(a), tw = R[A_TW] * 0.55;   // kalça omzun tersine döner
+  const px = yakin ? 1.7 - tw : -1.6 + tw * 0.6, py = yakin ? 0.3 : -0.3;
   anPX = R[A_HX] + px * c - py * s; anPY = R[A_HY] + px * s + py * c;
 }
 // baş merkezi ve açısı
@@ -147,7 +158,7 @@ function anElMutlak(R, i, yakin, x, y) { anOmuz(R, yakin); R[i] = x - anPX; R[i 
 function anTemel(R) {
   R[A_HX] = 0; R[A_HY] = AN_KAL0 + 0.4; R[A_GV] = 0.03; R[A_OMZ] = 0; R[A_BA] = 0;
   R[A_OEA] = 0.15; R[A_UEA] = 0.15; R[A_GUL] = 0.9; R[A_AGZ] = 0; R[A_GOZ] = 1; R[A_BKX] = 0.35; R[A_BKY] = 0.05;
-  R[A_KAS] = 0; R[A_OEK] = 0; R[A_UEK] = 0; R[A_CNT] = 1; R[A_MUT] = 0; R[A_OEL] = 1;
+  R[A_KAS] = 0; R[A_OEK] = 0; R[A_UEK] = 0; R[A_CNT] = 1; R[A_MUT] = 0; R[A_OEL] = 1; R[A_TW] = 0; R[A_SAS] = 0;
 }
 // ayakta duran pozların ayakları: aileye yeni girildiyse önceki yerinden küçük bir adımla yerine oturur
 function anAyakDur(R, tm) {
@@ -173,12 +184,61 @@ function anPozDur(R, tm, o) {
   // eğilip Feza'ya bakma: kalça geri, gövde öne, dizler hafif bükük, eller dizlere
   const e = anYm(o && o.egil > 0 ? o.egil : 0);
   if (e > 0.001) {
-    R[A_HX] += -4.5 * e; R[A_HY] += 2.6 * e; R[A_GV] += 0.4 * e; R[A_BA] += -0.02 * e;
+    R[A_HX] += -0.8 * e; R[A_HY] += 0.3 * e; R[A_GV] += 0.07 * e; R[A_BA] += 0.12 * e;
     R[A_BKY] = anKr(R[A_BKY], 0.7, e); R[A_BKX] = anKr(R[A_BKX], 0.55, e); R[A_GUL] = anKr(R[A_GUL], 0.95, e); R[A_KAS] += 0.25 * e;
     anOmuz(R, true); const ox = R[A_OEX], oy = R[A_OEY];
-    R[A_OEX] = anKr(ox, R[A_HX] + 15 - anPX, e); R[A_OEY] = anKr(oy, R[A_HY] + 25 - anPY, e);
+    R[A_OEX] = anKr(ox, R[A_HX] + 9 - anPX, e); R[A_OEY] = anKr(oy, R[A_HY] - 2 - anPY, e);   // eller karnın önünde birleşir
     anOmuz(R, false); const ux = R[A_UEX], uy = R[A_UEY];
-    R[A_UEX] = anKr(ux, R[A_HX] + 12 - anPX, e); R[A_UEY] = anKr(uy, R[A_HY] + 24 - anPY, e);
+    R[A_UEX] = anKr(ux, R[A_HX] + 7 - anPX, e); R[A_UEY] = anKr(uy, R[A_HY] - 1 - anPY, e);
+    R[A_OEK] = anKr(R[A_OEK], -0.8, e); R[A_UEK] = anKr(R[A_UEK], -0.8, e);
+  }
+}
+// bekleme: dururken kendi küçük hareketleri (idleT bekleme süresi): önce etrafa bakınır (parka, ağaçlara), sonra saçını
+// kulağının arkasına atar. Eğilip Feza'ya bakarken (o.egil) bunlar yapılmaz.
+function anCan(t, a, b) { return t > a && t < b ? Math.sin(AN_PI * (t - a) / (b - a)) : 0; }   // a..b arasında yumuşak çan
+function anPozBekle(R, tm, o) {
+  anPozDur(R, tm, o);
+  const st = AN_ST, t = st.idleT % 14, eg = o && o.egil > 0 ? anYm(o.egil) : 0, s = 1 - eg;
+  // etrafa bakınma: baş biraz yukarı-geriye döner, gözler gezinir, sonra yine önüne/Feza'ya
+  const b = anYm(anCan(t, 0.6, 2.6) * 1.6) * s;
+  if (b > 0.001) {
+    R[A_BA] += -0.1 * b; R[A_BKX] = anKr(R[A_BKX], -0.55 + 0.25 * Math.sin(tm * 2.1), b); R[A_BKY] = anKr(R[A_BKY], -0.55, b);
+    R[A_KAS] += 0.25 * b; R[A_GUL] = Math.max(R[A_GUL], 0.95);
+  }
+  // saç düzeltme: yakın el başın arkasına uzanıp at kuyruğunu tokanın dibinden düzeltir (kol başın arkasından geçer, yüz açık)
+  const tek = st.idleSay % 2 === 1;   // bekleme parçaları sırayla: bir saç düzeltme, bir küçük alkış
+  const h = tek ? 0 : anYm(anCan(t, 3.0, 4.6) * 1.5) * s;
+  const al = tek ? anYm(anCan(t, 3.0, 4.4) * 1.6) * s : 0;
+  if (al > 0.001) {   // Feza'ya küçük, sevinçli alkış (göğüs önünde, gözler güler)
+    const cp = Math.pow(Math.abs(Math.sin(tm * 8.4)), 0.6);
+    anGv(R, 0, -18); const gx = anPX + 13, gy = anPY;
+    anOmuz(R, true); R[A_OEX] = anKr(R[A_OEX], gx + 4 * cp - anPX, al); R[A_OEY] = anKr(R[A_OEY], gy - 1.5 - anPY, al);
+    anOmuz(R, false); R[A_UEX] = anKr(R[A_UEX], gx - 3 * cp - anPX, al); R[A_UEY] = anKr(R[A_UEY], gy - 2.5 - anPY, al);
+    R[A_OEK] = anKr(R[A_OEK], -1.4, al); R[A_UEK] = anKr(R[A_UEK], -1.4, al); R[A_OEA] = anKr(R[A_OEA], 0.7, al); R[A_UEA] = anKr(R[A_UEA], 0.7, al);
+    R[A_GUL] = 1; R[A_MUT] = Math.max(R[A_MUT], 0.7 * al); R[A_GOZ] = anKr(R[A_GOZ], 0.4, al); R[A_KAS] += 0.3 * al;
+    R[A_HY] -= 0.8 * al * Math.abs(Math.sin(tm * 4.2));
+  }
+  // Feza'ya el sallama: el omuz hizasında, yüzün önünde değil; küçük ve sıcak
+  const es = anYm(anCan(t, 6.8, 8.3) * 1.5) * s;
+  if (es > 0.001) {
+    const w = Math.sin(tm * 8.5);
+    anOmuz(R, true); const ox = R[A_OEX], oy = R[A_OEY];
+    anKolAci(R, A_OEX, 1.12 + 0.04 * w, 0.95 + 0.3 * w);   // el omuz hizasında öne uzanır (çenenin altında, yüzü kapatmaz)
+    R[A_OEX] = anKr(ox, R[A_OEX], es); R[A_OEY] = anKr(oy, R[A_OEY], es);
+    R[A_OEA] = anKr(R[A_OEA], 1, es); R[A_OEK] = anKr(R[A_OEK], 0.25 * w, es);
+    R[A_GUL] = 1; R[A_KAS] += 0.35 * es; R[A_BA] += 0.05 * es * Math.sin(tm * 4.25);
+    if (es > 0.3) st.elArka = 1;   // parmaklar yüze değerse başın arkasında kalsın
+  }
+  if (h > 0.001) {
+    anBas(R);
+    const c = Math.cos(anBA), sn = Math.sin(anBA), sv = Math.sin(tm * 9) * 0.6;
+    const lx = (-13.2 + sv * 0.5) * AN_BK, ly = (-2.5 + sv) * AN_BK, hx = anBX + lx * c - ly * sn, hy = anBY + lx * sn + ly * c;
+    anOmuz(R, true);
+    R[A_OEX] = anKr(R[A_OEX], hx - anPX, h); R[A_OEY] = anKr(R[A_OEY], hy - anPY, h);
+    R[A_OEA] = anKr(R[A_OEA], 0.25, h); R[A_OEK] = anKr(R[A_OEK], -0.6, h);
+    R[A_BA] += 0.07 * h; R[A_GV] -= 0.02 * h; R[A_MUT] = Math.max(R[A_MUT], 0.4 * h); R[A_GUL] = 1;
+    st.elArka = h > 0.05 ? 1 : 0;
+    st.sacEk = 0.18 * h * Math.sin(tm * 6);
   }
 }
 // adım uzunluğu (bir tam döngü = iki adım) ve yürüyüş/koşu karışımı
@@ -217,16 +277,20 @@ function anPozYuru(R, tm, o, zorla) {
     if (hy < lim) hy = lim;
   }
   R[A_HX] = 1.2 * k + 0.6 * a; R[A_HY] = hy;
-  R[A_GV] = anKr(0.07 + 0.00025 * v, 0.24, k) + 0.018 * Math.sin(4 * AN_PI * f + 0.7) * a + anSn(st.ivme * 0.00022, -0.07, 0.09);
+  R[A_GV] = anKr(0.035 + 0.00012 * v, 0.13, k) + 0.014 * Math.sin(4 * AN_PI * f + 0.7) * a + anSn(st.ivme * 0.00015, -0.05, 0.05);   // dik, rahat yürüyüş
   R[A_OMZ] = 0.35 * Math.sin(4 * AN_PI * f - 0.4) * a;
   R[A_BA] = -R[A_GV] * 0.5 + 0.06 * Math.sin(4 * AN_PI * f - 1.1) * a + 0.03 * Math.sin(AN_2PI * f) * a;
   // kollar: bacakların karşıt fazında; koşuda dirsekler bükük
   const A = anKr(0.46, 0.75, k) * a, c = Math.cos(AN_2PI * f - 0.3);
   const n1 = -A * c + R[A_GV] * 0.4, u1 = A * c + R[A_GV] * 0.4;
-  anKolAci(R, A_OEX, n1, anKr(0.35 + 0.45 * Math.max(0, n1) / (A + 0.01) * a, 1.6 + 0.25 * Math.max(0, n1), k));
-  anKolAci(R, A_UEX, u1, anKr(0.35 + 0.45 * Math.max(0, u1) / (A + 0.01) * a, 1.6 + 0.25 * Math.max(0, u1), k));
+  // önkol üst koldan biraz geç gelir (ikincil hareket): kol öne savrulup dönerken dirsek bir an daha bükük kalır
+  const gc = Math.cos(AN_2PI * f - 1.2), gn = 0.22 * a * (1 - k) * Math.max(0, -gc), gu = 0.22 * a * (1 - k) * Math.max(0, gc);
+  anKolAci(R, A_OEX, n1, anKr(0.35 + 0.45 * Math.max(0, n1) / (A + 0.01) * a + gn, 1.6 + 0.25 * Math.max(0, n1), k));
+  anKolAci(R, A_UEX, u1, anKr(0.35 + 0.45 * Math.max(0, u1) / (A + 0.01) * a + gu, 1.6 + 0.25 * Math.max(0, u1), k));
+  st.cntEk = 0.16 * a * Math.sin(AN_2PI * f - 0.9);   // çanta adımla kalçaya çarpıp sallanır
   R[A_OEK] = anKr(0.2, -0.2, k); R[A_UEK] = R[A_OEK];
-  R[A_AGZ] = 0.22 * k; R[A_GUL] = 0.9; R[A_BKX] = 0.45; R[A_BKY] = 0;
+  R[A_TW] = -anKr(1.5, 2.1, k) * a * c;   // yakın kol öndeyken yakın omuz da öne gelir, kalça tersine
+  R[A_AGZ] = 0.16 * k; R[A_GUL] = 0.9; R[A_BKX] = 0.45; R[A_BKY] = 0;
   st.sacEk = 0.12 * Math.sin(4 * AN_PI * f - 1.5) * a * (1 + k);
 }
 function anPozElSalla(R, tm, o) {
@@ -250,20 +314,22 @@ function anPozIsaret(R, tm, o) {
 function anPozKokla(R, tm, o) {
   anPozDur(R, tm, null);
   const u = anYm(o && Number.isFinite(o.u) ? o.u : 1), sn = Math.sin(tm * 4.4) * Math.max(0, Math.sin(tm * 0.9));   // ara sıra küçük "koklama"
-  R[A_HX] += -7 * u; R[A_HY] += 12 * u; R[A_GV] += 1.05 * u; R[A_BA] += (-0.35 + 0.05 * sn) * u;
+  R[A_HX] += -5 * u; R[A_HY] += 8 * u; R[A_GV] += 0.75 * u; R[A_BA] += (-0.25 + 0.05 * sn) * u;
   anOmuz(R, true); const ox = R[A_OEX], oy = R[A_OEY];
   anBas(R); const bx = anBX, by = anBY;
   R[A_OEX] = anKr(ox, bx + 9 - anPX, u); R[A_OEY] = anKr(oy, by + 10 - anPY, u);   // çiçeği burnuna doğru tutar
   anOmuz(R, false);
   R[A_UEX] = anKr(R[A_UEX], R[A_HX] + 11 - anPX, u); R[A_UEY] = anKr(R[A_UEY], R[A_HY] + 21 - anPY, u);   // öbür el dizde
   R[A_OEA] = 0.3 * u; R[A_OEK] = -0.6 * u;
-  R[A_GOZ] = anKr(1, 0.05, u); R[A_MUT] = u; R[A_GUL] = 0.95; R[A_AGZ] = 0.05 + 0.08 * sn * u; R[A_KAS] = 0.35 * u;
+  R[A_GOZ] = anKr(1, 0.05, u); R[A_MUT] = u; R[A_GUL] = 0.95; R[A_AGZ] = 0; R[A_KAS] = 0.35 * u + 0.1 * sn * u;
 }
 function anPozBisiklet(R, tm, o) {
   anTemel(R); AN_ST.sacEk = 0;
   const B = ANNE12_BISIKLET, kr = o && Number.isFinite(o.krank) ? o.krank : AN_ST.faz * AN_2PI;
   R[A_HX] = B.sele[0] - 0.5; R[A_HY] = B.sele[1] - 2.4 + 0.35 * Math.sin(2 * kr);
-  R[A_GV] = 0.4; R[A_OMZ] = 0.25 * Math.sin(2 * kr);
+  R[A_GV] = 0.42; R[A_OMZ] = 0.25 * Math.sin(2 * kr);
+  R[A_HX] += 0.35 * Math.sin(kr);   // basan bacağın tarafına hafif kalça kayması
+  R[A_TW] = 0.7 * Math.sin(kr + 0.4);   // pedala basarken omuzlar az da olsa karşı yöne döner
   for (let i = 0; i < 2; i++) {
     const a = kr + (i ? AN_PI : 0), px = B.pedal[0] + Math.cos(a) * B.krank, py = B.pedal[1] + Math.sin(a) * B.krank;
     const p = -0.12 - 0.2 * Math.sin(a + 0.6), c = Math.cos(p), s = Math.sin(p);   // ayağın topu pedalda
@@ -273,7 +339,12 @@ function anPozBisiklet(R, tm, o) {
   anElMutlak(R, A_OEX, true, B.gidon[0], B.gidon[1]);
   anElMutlak(R, A_UEX, false, B.gidon[0] - 2.5, B.gidon[1] - 0.8);
   R[A_OEK] = -0.9; R[A_UEK] = -0.9; R[A_OEA] = 0;
-  R[A_BA] = -0.2; R[A_GUL] = 0.85; R[A_AGZ] = 0.12; R[A_BKX] = 0.6; R[A_BKY] = -0.05;
+  R[A_BA] = -0.2 + 0.035 * Math.sin(2 * kr + 0.5); R[A_GUL] = 0.9; R[A_AGZ] = 0; R[A_BKX] = 0.6; R[A_BKY] = -0.05;
+  { // her ~8 sn'de bir öndeki Feza'ya bakıp gözleriyle gülümser
+    const w = anYm(anCan(tm % 8, 5.0, 6.8) * 1.5);
+    if (w > 0.001) { R[A_GUL] = 1; R[A_MUT] = 0.7 * w; R[A_GOZ] = anKr(1, 0.35, w); R[A_BA] += 0.07 * w; R[A_KAS] += 0.3 * w; R[A_BKY] = anKr(R[A_BKY], 0.3, w); }
+  }
+  AN_ST.sacEk = 0.07 * Math.sin(tm * 10.5) + 0.04 * Math.sin(tm * 6.3);   // saç rüzgârda dalgalanır
   const eg = anYm(o && o.egil > 0 ? o.egil : 0), sl = anYm(o && o.salla > 0 ? o.salla : 0), ne = anYm(o && o.nese > 0 ? o.nese : 0);
   if (eg > 0) { R[A_GV] += 0.16 * eg * (1 - 0.7 * sl); R[A_BA] += 0.12 * eg; R[A_BKX] = 0.8; anElMutlak(R, A_UEX, false, B.gidon[0] - 2.5, B.gidon[1] - 0.8); }
   if (sl > 0) {   // uzak el gidonda kalır, yakın el yukarıda sallanır
@@ -329,25 +400,34 @@ function anPozKayik(R, tm, o) {
   // çekiş (0..0.55): eller göğüsten öne-yukarı iter, gövde öne eğilir; dönüş: eller biraz aşağıdan göğse döner, gövde dikleşir
   let d, alt;
   if (u < 0.55) { d = anYm(u / 0.55); alt = 0; } else { d = 1 - anYm((u - 0.55) / 0.45); alt = Math.sin(AN_PI * (u - 0.55) / 0.45); }
-  R[A_HX] = -10; R[A_HY] = -24; R[A_GV] = anKr(-0.05, 0.4, d); R[A_OMZ] = 0.3 * d;
+  R[A_HX] = -10 + 1.5 * d; R[A_HY] = -24; R[A_GV] = anKr(-0.14, 0.42, d); R[A_OMZ] = 0.5 * d - 0.2 * alt;
   anAyakYer(R, A_AYX, 30, 0.15, 0); anAyakYer(R, A_UYX, 26, 0.1, 0);
   const hx = anKr(10, 34, d), hy = anKr(-44, -48, d) + alt * 6;   // göğüs hizası (küpeşte ayaktan ~30 yukarıda)
   anElMutlak(R, A_OEX, true, hx, hy); anElMutlak(R, A_UEX, false, hx - 2.5, hy - 1.2);
   R[A_OEK] = -1.1; R[A_UEK] = -1.1; R[A_OEA] = 0;
-  R[A_BA] = -R[A_GV] * 0.6; R[A_CNT] = 0;
-  R[A_GUL] = 0.8; R[A_AGZ] = 0.1 + 0.18 * Math.sin(AN_PI * d); R[A_BKX] = 0.5; R[A_BKY] = 0.1;
+  R[A_BA] = -R[A_GV] * 0.6 + 0.05 * Math.sin(AN_2PI * u - 1.2); R[A_CNT] = 0;   // baş gövdeden biraz geç gelir
+  R[A_GUL] = 1; R[A_AGZ] = 0; R[A_BKX] = 0.5; R[A_BKY] = 0.25; R[A_TW] = 1.2 * (d - 0.5); R[A_MUT] = 0.25 * alt;
+  AN_ST.sacEk = 0.14 * Math.sin(AN_2PI * u - 1.6);   // at kuyruğu küreğin ritmiyle sallanır
 }
 function anPozOksa(R, tm, o) {
+  // Feza'ya sevgi: anne dik durur. Feza kolunun yetiştiği kadar yakınsa (okX ≤ ~38) hafifçe eğilip başını okşar;
+  // daha uzaksa eğilmez: elini kalbine koyar, başını Feza'ya doğru yatırıp gözleri gülerek bakar.
   anPozDur(R, tm, AN_OKSA_E);
   const fx = o && Number.isFinite(o.okX) ? anSn(o.okX, 30, 70) : 52, fy = o && Number.isFinite(o.okY) ? o.okY : -72, bas = fy < -62;
   const u = anYm(o && Number.isFinite(o.u) ? o.u : 1), p = bas ? 2.2 * Math.max(0, Math.sin(tm * 7.5)) : 0.5 * Math.sin(tm * 3);
-  R[A_GV] += (0.12 + anSn((fx - 40) * 0.012, 0, 0.25)) * u; R[A_HX] += 2.5 * u;
+  const uz = anYm((fx - 34) / 8);   // 0: okşar, 1: eli kalbinde
+  const ok = u * (1 - uz), kl = u * uz, w = Math.sin(tm * 2.2);
+  R[A_GV] += 0.14 * ok + 0.03 * kl; R[A_HX] += 1.5 * ok;
   anOmuz(R, true); const ox = R[A_OEX], oy = R[A_OEY];
-  R[A_OEX] = anKr(ox, fx - anPX, u); R[A_OEY] = anKr(oy, fy - p - anPY, u);
-  R[A_OEA] = 0.7 * u; R[A_OEK] = anKr(R[A_OEK], -0.9, u);
-  R[A_GUL] = 1; R[A_AGZ] = 0.22 * u; R[A_MUT] = 0.35 * u; R[A_BKY] = 0.75; R[A_BKX] = 0.6; R[A_KAS] = 0.3; R[A_BA] += 0.12 * u;
+  anGv(R, 5.6, -23 + 0.4 * w); const kx = anPX, ky = anPY;   // göğüs önü (kalp)
+  anOmuz(R, true);
+  R[A_OEX] = anKr(anKr(ox, fx - anPX, ok), kx - anPX, kl); R[A_OEY] = anKr(anKr(oy, fy - p - anPY, ok), ky - anPY, kl);
+  R[A_OEA] = 0.7 * ok + 0.6 * kl; R[A_OEK] = anKr(R[A_OEK], -0.9, ok) - 0.6 * kl;
+  R[A_GUL] = 1; R[A_AGZ] = 0.18 * ok; R[A_MUT] = 0.35 * ok + 0.75 * kl; R[A_GOZ] = anKr(1, 0.45, kl);
+  R[A_BKY] = 0.75; R[A_BKX] = 0.6; R[A_KAS] = 0.3 + 0.1 * kl; R[A_BA] += 0.04 * ok + (0.16 + 0.04 * w) * kl;
+  AN_ST.elArka = ok > 0.3 ? 1 : 0;   // uzanan kol başın arkasından çizilir: yüz hep açık
 }
-const AN_OKSA_E = { egil: 0.45 };
+const AN_OKSA_E = { egil: 0.5 };
 function anPozCagir(R, tm, o) {   // ayakta: eliyle "gel gel" (avuç yukarı, parmaklar kıvrılır)
   anPozDur(R, tm, null);
   const w = 0.5 + 0.5 * Math.sin(tm * 7);
@@ -369,6 +449,7 @@ function anPozOturarak(R, ad, tm, o) {
     R[A_UEX] = anKr(AN_KB[A_UEX], R[A_UEX], u); R[A_UEY] = anKr(AN_KB[A_UEY], R[A_UEY], u);
     R[A_OEK] = anKr(0.5, -0.9, u); R[A_UEK] = anKr(-1.3, -0.9, u); R[A_OEA] = 0.5 * u; R[A_UEA] = 0.5 * u;
     R[A_BA] = anKr(R[A_BA], 0.32, u); R[A_GUL] = 1; R[A_GOZ] = anKr(1, 0.05, u); R[A_MUT] = u; R[A_BKY] = 0.6;
+    AN_ST.elArka = u > 0.2 ? 1 : 0;   // sarılan kol yanağın önünden geçmesin: baş kolun önünde, yüz açık
     // yanak yanağa: başını Feza'nın başına doğru eğer (opt.basX/basY model birimi, anne12Ciz doldurur)
     if (Number.isFinite(o.basX) && Number.isFinite(o.basY)) {
       anBas(R); const ex = o.basX - 9 - anBX, ey = o.basY - 6 - anBY;
@@ -399,7 +480,7 @@ function anPozUcurtma(R, tm, o) {
   anPozDur(R, tm, null);
   const u = anYm(o && Number.isFinite(o.u) ? o.u : 1), s = Math.sin(tm * 2.2);
   // 0: uçurtmayı iki eliyle yukarıda tutar; 1: ipi öne eğilip Feza'nın eline uzatır
-  R[A_GV] += anKr(-0.06, 0.32, u); R[A_HX] += anKr(0, -2.5, u); R[A_HY] += anKr(0, 3.5, u);
+  R[A_GV] += anKr(-0.06, 0.15, u); R[A_HX] += anKr(0, -1.2, u); R[A_HY] += anKr(0, 1.2, u);
   anElMutlak(R, A_OEX, true, anKr(15, 34, u) + s * 0.8, anKr(-116, -60, u) + s * 1.2);
   anElMutlak(R, A_UEX, false, anKr(10, 27, u), anKr(-113, -65, u));
   R[A_OEK] = anKr(-1.6, -0.5, u); R[A_UEK] = R[A_OEK]; R[A_OEA] = 0; R[A_UEA] = 0;
@@ -445,15 +526,19 @@ function anPozSaril(R, tm, o) {
   anPozDur(R, tm, null);
   const hx = R[A_HX], hy = R[A_HY], gv = R[A_GV], ax = R[A_AYX], ay = R[A_AYY], ap = R[A_AYP], ux = R[A_UYX], uy = R[A_UYY], up = R[A_UYP];
   // diz çökme: yakın diz yere, uzak ayak önde basar
-  R[A_HX] = anKr(hx, -4, d); R[A_HY] = anKr(hy, -(AN_UY + 3.5) + nf * 0.3, d); R[A_GV] = anKr(gv, 0.24 + 0.06 * s, d);
+  R[A_HX] = anKr(hx, -2, d); R[A_HY] = anKr(hy, -(AN_UY + 5.5) + nf * 0.3, d); R[A_GV] = anKr(gv, 0.08 + 0.05 * s, d);
   R[A_AYX] = anKr(ax, -27, d); R[A_AYY] = anKr(ay, -4.5, d); R[A_AYP] = anKr(ap, -1.25, d);
   R[A_UYX] = anKr(ux, 14, d); R[A_UYY] = anKr(uy, -AN_AB, d); R[A_UYP] = anKr(up, 0, d);
   // kollar Feza'nın sırtına (Feza x+28'de)
   const nx = R[A_OEX], ny = R[A_OEY], fx = R[A_UEX], fy = R[A_UEY];
-  anElMutlak(R, A_OEX, true, 32 + nf * 0.3, -50); anElMutlak(R, A_UEX, false, 29, -57);
+  anElMutlak(R, A_OEX, true, 30 + nf * 0.3, -52); anElMutlak(R, A_UEX, false, 27, -59);
   R[A_OEX] = anKr(nx, R[A_OEX], s); R[A_OEY] = anKr(ny, R[A_OEY], s); R[A_UEX] = anKr(fx, R[A_UEX], s); R[A_UEY] = anKr(fy, R[A_UEY], s);
   R[A_OEK] = anKr(0.15, -0.9, s); R[A_UEK] = R[A_OEK]; R[A_OEA] = 0.5 * s; R[A_UEA] = 0.5 * s;
-  R[A_BA] = anKr(0.03, 0.36, s); R[A_GUL] = 1; R[A_GOZ] = anKr(1, 0.05, s); R[A_MUT] = s; R[A_BKY] = 0.6; R[A_KAS] = 0.3 * s;
+  R[A_BA] = anKr(0.03, 0.3, s); R[A_GUL] = 1; R[A_GOZ] = anKr(1, 0.05, s); R[A_MUT] = s; R[A_BKY] = 0.6; R[A_KAS] = 0.3 * s;
+  // kollar kapanınca bir an "sımsıkı" sıkar (omuzlar kalkar, kollar içe), sonra yavaşça iki yana sallanır
+  const sik = anCan(u, 0.82, 1.0001) * s, w = Math.sin(tm * 2.4);
+  R[A_OMZ] += 1.6 * sik + 0.4 * nf * s; R[A_OEX] -= 2.2 * sik; R[A_UEX] -= 1.6 * sik;
+  R[A_GV] += 0.05 * w * s; R[A_HX] += 1.2 * w * s; R[A_BA] += 0.05 * Math.sin(tm * 2.4 - 0.6) * s;
 }
 function anPozDans(R, tm, o) {
   anTemel(R);
@@ -470,7 +555,7 @@ function anPozDans(R, tm, o) {
 
 // poz adı → üretici ve aile (aile değişince ayaklar yeniden yerleşir)
 const AN_POZ = {
-  dur: [anPozDur, 'ayakta'], el_salla: [anPozElSalla, 'ayakta'], isaret: [anPozIsaret, 'ayakta'], kokla: [anPozKokla, 'ayakta'],
+  dur: [anPozBekle, 'ayakta'], el_salla: [anPozElSalla, 'ayakta'], isaret: [anPozIsaret, 'ayakta'], kokla: [anPozKokla, 'ayakta'],
   ucurtma_ver: [anPozUcurtma, 'ayakta'], alkis: [anPozAlkis, 'ayakta'], saril: [anPozSaril, 'ayakta'],
   yuru: [anPozYuru, 'hareket'], kos: [anPozYuru, 'hareket'], dans: [anPozDans, 'dans'],
   bisiklet: [anPozBisiklet, 'bisiklet'], bisiklet_bin: [anPozBinis, 'bisiklet'], bisiklet_in: [anPozBinis, 'bisiklet'],
@@ -484,7 +569,7 @@ function anUstPoz(R, ad, w, tm, o) {   // yürürken: yalnız gövde eğimi, kol
   const U = AN_KB;
   if (ad === 'kokla') {   // geçerken belden öne eğilip çiçeği koklar, gözler mutlu kapanır, el çiçeğe uzanır
     U.set(R);
-    U[A_GV] = R[A_GV] + 0.42; U[A_BA] = R[A_BA] - 0.12; U[A_GOZ] = 0.05; U[A_MUT] = 1; U[A_GUL] = 1; U[A_AGZ] = 0.08; U[A_KAS] = 0.3;
+    U[A_GV] = R[A_GV] + 0.3; U[A_BA] = R[A_BA] - 0.08; U[A_GOZ] = 0.05; U[A_MUT] = 1; U[A_GUL] = 1; U[A_AGZ] = 0.08; U[A_KAS] = 0.3;
     anKolAci(U, A_OEX, 0.85, 0.55); U[A_OEA] = 0.5; U[A_OEK] = -0.5;
   } else {
     AN_UST_O.u = o && Number.isFinite(o.u) ? o.u : 1; AN_UST_O.aci = o ? o.aci : undefined;
@@ -516,7 +601,7 @@ function anGrad() {   // sabit renk geçişleri (model / parça koordinatında b
   r.sac = x.createLinearGradient(0, -15, 0, 9);
   r.sac.addColorStop(0, 'rgba(255,215,170,0.16)'); r.sac.addColorStop(0.45, 'rgba(255,215,170,0)'); r.sac.addColorStop(1, 'rgba(30,10,5,0.22)');
   r.allik = x.createRadialGradient(0, 0, 0, 0, 0, 1);
-  r.allik.addColorStop(0, 'rgba(242,118,108,0.52)'); r.allik.addColorStop(1, 'rgba(242,124,112,0)');
+  r.allik.addColorStop(0, 'rgba(244,116,108,0.6)'); r.allik.addColorStop(1, 'rgba(242,124,112,0)');
   r.deger = x.createLinearGradient(0, -140, 0, 6);   // aşağı doğru hafif koyulaşma (Feza ile aynı ışık dili)
   r.deger.addColorStop(0, 'rgba(34,18,12,0)'); r.deger.addColorStop(0.55, 'rgba(22,16,24,0.05)'); r.deger.addColorStop(1, 'rgba(14,16,32,0.15)');
   return (anGr = r);
@@ -685,7 +770,7 @@ function anKuyrukHesap(R) {   // at kuyruğu noktaları (fizik açılarından)
     AN_SP[i * 2 + 2] = x; AN_SP[i * 2 + 3] = y;
   }
 }
-const AN_KW_W = [2.6, 3.3, 2.5, 0.7];
+const AN_KW_W = [3.0, 4.1, 3.3, 0.9];   // at kuyruğu kalınlığı (dipten uca; ortası dolgun)
 function anKuyruk() {
   const g = anG, P = AN_SP;
   // her noktada normal ve genişlik: sol kenar → uç → sağ kenar
@@ -707,43 +792,80 @@ function anKuyruk() {
   g.lineCap = 'round';
   g.strokeStyle = 'rgba(40,18,10,0.45)'; g.lineWidth = 0.5; g.beginPath();
   g.moveTo(P[0], P[1]); g.quadraticCurveTo(P[2], P[3], (P[2] + P[4]) / 2, (P[3] + P[5]) / 2); g.quadraticCurveTo(P[4], P[5], P[6], P[7]); g.stroke();
-  g.strokeStyle = 'rgba(215,160,115,0.7)'; g.lineWidth = 0.9; g.beginPath();
-  g.moveTo(P[0] + 1.2, P[1] - 1.2); g.quadraticCurveTo(P[2] + 1.6, P[3] - 0.6, (P[2] + P[4]) / 2 + 1.2, (P[3] + P[5]) / 2); g.stroke();
+  g.strokeStyle = 'rgba(40,18,10,0.3)'; g.lineWidth = 0.4; g.beginPath();   // iki yan tutam çizgisi
+  g.moveTo(P[0] - 1.4, P[1] + 0.6); g.quadraticCurveTo(P[2] - 2.2, P[3] + 0.4, (P[2] + P[4]) / 2 - 1.6, (P[3] + P[5]) / 2 + 0.4);
+  g.moveTo(P[0] + 0.8, P[1] - 0.2); g.quadraticCurveTo(P[2] + 2.0, P[3], P[4] + 1.0, P[5]); g.stroke();
+  g.strokeStyle = 'rgba(215,160,115,0.75)'; g.lineWidth = 1.1; g.beginPath();   // parlak üst tutam
+  g.moveTo(P[0] + 1.2, P[1] - 1.2); g.quadraticCurveTo(P[2] + 1.8, P[3] - 0.6, (P[2] + P[4]) / 2 + 1.4, (P[3] + P[5]) / 2); g.stroke();
+  g.strokeStyle = 'rgba(255,225,190,0.55)'; g.lineWidth = 0.45; g.beginPath();
+  g.moveTo(P[0] + 1.6, P[1] - 1.0); g.quadraticCurveTo(P[2] + 2.0, P[3] - 0.4, P[2] + 1.2, P[3] + 1.5); g.stroke();
 }
-function anGoz(cx, cy, w, h, R, uzak, dis) {   // iri, parlak, yuvarlak göz (beyaz çerçeve yok: gözlük gibi okunmasın); dis: dış köşe yönü
-  const g = anG, ac = anSn(R[A_GOZ], 0, 1), mt = R[A_MUT];
+function anGoz(cx, cy, w, h, R, uzak, dis) {   // iri, sevecen, parlak göz: göz akı, iki tonlu iris, ışıltı, kalın üst kapak ve kirpikler; dis: dış köşe yönü
+  const g = anG, ac = anSn(R[A_GOZ], 0, 1), mt = R[A_MUT], sas = anSn(R[A_SAS], 0, 1), uz = AN_ST.uzakU;
+  w *= 1 + 0.08 * sas + 0.1 * uz; h *= 1 + 0.16 * sas + 0.12 * uz;
   g.lineCap = 'round'; g.lineJoin = 'round';
-  if (ac < 0.2 || (mt > 0.55 && ac < 0.65)) {   // kapalı göz: mutluysa yukarı kavis (^ ^)
-    g.strokeStyle = AN.kirpik; g.lineWidth = uzak ? 0.55 : 0.7; g.beginPath();
-    if (mt > 0.3) { g.moveTo(cx - w, cy + 0.6); g.quadraticCurveTo(cx, cy - h * 0.8, cx + w, cy + 0.6); }
-    else { g.moveTo(cx - w, cy + 0.2); g.quadraticCurveTo(cx, cy + h * 0.55, cx + w, cy + 0.2); }
-    g.stroke(); return;
+  if (ac < 0.2 || (mt > 0.55 && ac < 0.65)) {   // kapalı göz: mutluysa yukarı kavis (^ ^), dış köşede iki minik kirpik
+    g.strokeStyle = AN.kirpik; g.lineWidth = uzak ? 0.75 : 0.95; g.beginPath();
+    if (mt > 0.3) { g.moveTo(cx - w, cy + 0.9); g.quadraticCurveTo(cx, cy - h * 0.75, cx + w, cy + 0.9); }
+    else { g.moveTo(cx - w, cy + 0.3); g.quadraticCurveTo(cx, cy + h * 0.6, cx + w, cy + 0.3); }
+    g.stroke();
+    if (!uzak) {
+      const ex = cx + dis * w, ey = mt > 0.3 ? cy + 0.9 : cy + 0.3;
+      g.lineWidth = 0.42; g.beginPath();
+      g.moveTo(ex, ey); g.lineTo(ex + dis * 0.9, ey - 0.6); g.moveTo(ex - dis * 0.3, ey - 0.5); g.lineTo(ex + dis * 0.55, ey - 1.35); g.stroke();
+    }
+    if (mt > 0.3) {   // gülerken alt kapağın altında yanak kabarır
+      g.strokeStyle = 'rgba(214,140,120,0.45)'; g.lineWidth = 0.4; g.beginPath();
+      g.moveTo(cx - w * 0.6, cy + 2.3); g.quadraticCurveTo(cx, cy + 2.9, cx + w * 0.6, cy + 2.3); g.stroke();
+    }
+    return;
   }
   const a = 0.3 + 0.7 * ac, ry = h * a, cy2 = cy + h * (1 - a) * 0.5;
-  const ix = cx + w * 0.18 + R[A_BKX] * w * 0.22, iy = cy2 + h * 0.06 + R[A_BKY] * h * 0.16;
-  // göz akı belirgin, iris göz akının ~%55'i; alt halka yok, yalnız üstte ince kirpik
+  const ix = cx + w * 0.16 + R[A_BKX] * w * 0.2, iy = cy2 + h * 0.08 + R[A_BKY] * h * 0.15;
+  // göz akı (alt kenarda hafif sıcak gölge), iris koyu halka + açık iç + altta bal rengi ışık, iri göz bebeği
   g.save(); g.beginPath(); g.ellipse(cx, cy2, w, ry, 0, 0, AN_2PI); g.fillStyle = '#fffdf9'; g.fill(); g.clip();
-  anOval(ix, iy, w * 0.62, h * 0.6, 0, AN.goz);
-  anOval(ix, iy + h * 0.3, w * 0.46, h * 0.26, 0, AN.gozA);          // altta sıcak ışık
-  anOval(ix + w * 0.04, iy, w * 0.3, h * 0.32, 0, AN.gozK);          // göz bebeği
-  anOval(cx, cy2 - ry * 1.02, w * 1.15, h * 0.26, 0, 'rgba(150,95,80,0.16)');   // üst kapağın yumuşak gölgesi
+  anOval(cx, cy2 + ry * 0.75, w * 1.1, ry * 0.5, 0, 'rgba(240,200,185,0.35)');
+  const ir = w * (0.84 - 0.1 * sas), irh = h * (0.8 - 0.1 * sas);   // iri iris, az göz akı (sevecen)
+  anOval(ix, iy, ir, irh, 0, '#3a1e10');
+  anOval(ix, iy + h * 0.02, ir * 0.86, irh * 0.88, 0, AN.goz);
+  anOval(ix, iy + irh * 0.42, ir * 0.66, irh * 0.42, 0, AN.gozA);          // altta sıcak bal rengi
+  anOval(ix + w * 0.04, iy - h * 0.02, ir * 0.48, irh * 0.48, 0, AN.gozK);  // göz bebeği
+  anOval(cx, cy2 - ry * 0.98, w * 1.2, h * 0.34, 0, 'rgba(120,70,60,0.22)');   // üst kapağın yumuşak gölgesi
   g.restore();
-  anOval(ix + w * 0.22, iy - h * 0.24, w * 0.24, w * 0.24, 0, '#ffffff');       // iki ışıltı
-  anOval(ix - w * 0.2, iy + h * 0.2, w * 0.11, w * 0.11, 0, 'rgba(255,255,255,0.9)');
-  g.strokeStyle = AN.kirpik; g.lineWidth = uzak ? 0.45 : 0.58; g.beginPath();   // üst kapakta ince kirpik çizgisi
-  g.moveTo(cx - w * 1.0, cy2 - ry * 0.15); g.quadraticCurveTo(cx, cy2 - ry * 1.28, cx + w * 1.0, cy2 - ry * 0.2); g.stroke();
-  if (!uzak) {
-    g.lineWidth = 0.45; g.beginPath(); g.moveTo(cx + dis * w * 0.95, cy2 - ry * 0.3); g.quadraticCurveTo(cx + dis * w * 1.22, cy2 - ry * 0.45, cx + dis * w * 1.28, cy2 - ry * 0.75); g.stroke();
+  // ışıltılar: büyük + küçük (sevecen, canlı bakış)
+  anOval(ix + ir * 0.34, iy - irh * 0.36, w * 0.27, w * 0.27, 0, '#ffffff');
+  anOval(ix - ir * 0.3, iy + irh * 0.34, w * 0.12, w * 0.12, 0, 'rgba(255,255,255,0.9)');
+  // üst kapak: göz akının üst kenarını izleyen kalın, dış köşeye doğru kalınlaşan çizgi
+  const kL = (uzak ? 0.72 : 0.95) * (1 - 0.3 * uz), ust = cy2 - ry;
+  g.fillStyle = AN.kirpik; g.beginPath();
+  g.moveTo(cx - dis * w * 1.02, cy2 - ry * 0.1);
+  g.quadraticCurveTo(cx - dis * w * 0.55, ust - ry * 0.32, cx + dis * w * 0.2, ust - ry * 0.06);
+  g.quadraticCurveTo(cx + dis * w * 0.85, ust + ry * 0.12, cx + dis * w * (1.18 - 0.14 * uz), cy2 - ry * (0.42 - 0.3 * uz));
+  g.quadraticCurveTo(cx + dis * w * 0.8, ust + ry * 0.12 + kL, cx + dis * w * 0.2, ust - ry * 0.06 + kL * 0.75);
+  g.quadraticCurveTo(cx - dis * w * 0.5, ust - ry * 0.28 + kL * 0.6, cx - dis * w * 1.02, cy2 - ry * 0.1);
+  g.closePath(); g.fill();
+  // kirpikler: dış köşede yukarı-dışa kıvrılan üç (uzak gözde iki) ince tutam
+  g.strokeStyle = AN.kirpik; g.lineWidth = uzak ? 0.36 : 0.44;
+  g.beginPath();
+  const n = uz > 0.5 ? 0 : uzak ? 1 : 2;   // oyun ölçeğinde kirpik tutamı yok (çekik/çatık görünmesin)
+  for (let i = 0; i < n; i++) {
+    const bx = cx + dis * w * (1.12 - i * 0.3), by = cy2 - ry * (0.45 + i * 0.35);
+    g.moveTo(bx, by); g.quadraticCurveTo(bx + dis * 0.7, by - 0.15, bx + dis * 1.2, by - 0.75 + i * 0.1);
   }
+  g.stroke();
+  // alt kapak: çok ince, sıcak renk (yumuşak bakış)
+  g.strokeStyle = 'rgba(150,90,70,0.4)'; g.lineWidth = 0.32; g.beginPath();
+  g.moveTo(cx - w * 0.55, cy2 + ry * 0.92); g.quadraticCurveTo(cx, cy2 + ry * 1.12, cx + dis * w * 0.85, cy2 + ry * 0.8); g.stroke();
 }
 function anAgiz(R) {
-  const g = anG, s = anSn(R[A_GUL], 0, 1), o = anSn(R[A_AGZ], 0, 1), cx = 8.8, cy = 7.2, hw = 2.2 + 1.0 * s;
+  const g = anG, sas = anSn(R[A_SAS], 0, 1), s = anSn(R[A_GUL], 0, 1), o = Math.max(anSn(R[A_AGZ], 0, 1), 0.55 * sas), cx = 8.3, cy = 7.5, hw = (1.9 + 0.85 * s) * (1 - 0.28 * sas);
   g.lineCap = 'round';
   if (o < 0.08) {
-    g.strokeStyle = AN.dudakK; g.lineWidth = 0.85; g.beginPath();
-    g.moveTo(cx - hw, cy - 0.3 - 0.5 * s); g.quadraticCurveTo(cx - 0.1, cy + 0.6 + 1.6 * s, cx + hw * 0.88, cy - 0.45 - 0.6 * s); g.stroke();
+    const uz = AN_ST.uzakU, sk = s * (1 + 0.45 * uz);
+    g.strokeStyle = '#b8605a'; g.lineWidth = 0.8 + 0.3 * uz; g.beginPath();
+    g.moveTo(cx - hw, cy - 0.3 - 0.6 * sk); g.quadraticCurveTo(cx - 0.1, cy + 0.6 + 1.7 * sk, cx + hw * 0.88, cy - 0.45 - 0.7 * sk); g.stroke();
     if (s > 0.5) { g.lineWidth = 0.5; g.beginPath(); g.moveTo(cx - hw - 0.35, cy - 0.9 - 0.5 * s); g.lineTo(cx - hw + 0.15, cy - 0.15 - 0.5 * s); g.stroke(); }   // gamze
-    g.strokeStyle = 'rgba(207,125,119,0.55)'; g.lineWidth = 0.55; g.beginPath();   // alt dudak
+    g.strokeStyle = 'rgba(232,140,130,0.45)'; g.lineWidth = 0.55 * (1 - 0.5 * uz); g.beginPath();   // alt dudak (ince, yumuşak mercan)
     g.moveTo(cx - hw * 0.4, cy + 1.2 + 1.0 * s); g.quadraticCurveTo(cx, cy + 1.7 + 1.1 * s, cx + hw * 0.4, cy + 1.1 + 0.9 * s); g.stroke();
     return;
   }
@@ -772,8 +894,7 @@ function anBasCiz(R, tm) {
   g.fill();
   g.save(); g.clip();
   anOval(3.4, 10.6, 6.5, 1.6, 0.15, 'rgba(201,130,105,0.22)');        // çene altı
-  g.save(); g.translate(5.6, 5.4); g.scale(3.5, 2.3); g.fillStyle = gr.allik; g.beginPath(); g.arc(0, 0, 1, 0, AN_2PI); g.fill(); g.restore();   // yanak pembeliği
-  g.save(); g.translate(11.4, 4.6); g.scale(1.3, 1.1); g.fillStyle = gr.allik; g.beginPath(); g.arc(0, 0, 1, 0, AN_2PI); g.fill(); g.restore();
+  g.save(); g.translate(5.4, 5.5); g.scale(3.8, 2.5); g.fillStyle = gr.allik; g.beginPath(); g.arc(0, 0, 1, 0, AN_2PI); g.fill(); g.restore();   // yanak pembeliği
   g.restore();
   // kulak ve minik inci küpe
   anOval(-2.4, 2.7, 2.55, 3.3, 0.12, 'rgba(201,143,118,0.55)'); anOval(-2.3, 2.6, 2.25, 3.0, 0.12, AN.ten);
@@ -783,12 +904,12 @@ function anBasCiz(R, tm) {
   // saç kütlesi (geriye toplanmış)
   g.fillStyle = AN.sac; g.beginPath();
   g.moveTo(9.4, -7.2);
-  g.bezierCurveTo(8.6, -12.4, 3.0, -14.8, -2.0, -14.2);
-  g.bezierCurveTo(-8.2, -13.4, -12.9, -8.2, -12.7, -2.0);
+  g.bezierCurveTo(8.9, -13.2, 3.2, -15.9, -2.0, -15.3);   // tepede biraz daha hacim
+  g.bezierCurveTo(-8.6, -14.5, -13.5, -8.6, -13.2, -2.0);
   g.bezierCurveTo(-12.5, 3.0, -10.2, 6.6, -7.4, 8.4);
   g.bezierCurveTo(-6.3, 6.0, -5.4, 3.4, -5.0, 0.8);
-  g.bezierCurveTo(-4.6, -1.8, -2.6, -3.7, 0.3, -4.5);
-  g.bezierCurveTo(3.6, -5.3, 6.9, -5.3, 9.4, -7.2);
+  g.bezierCurveTo(-4.6, -1.8, -2.6, -4.6, 0.3, -6.0);
+  g.bezierCurveTo(3.6, -7.6, 6.9, -8.1, 9.4, -8.6);
   g.closePath(); g.fill();
   g.save(); g.clip();
   g.fillStyle = gr.sac; g.fillRect(-14, -16, 26, 26);
@@ -798,20 +919,33 @@ function anBasCiz(R, tm) {
   g.moveTo(0.6, -4.6); g.quadraticCurveTo(-4.4, -6.2, -10.4, -4.4);
   g.moveTo(-5.6, 3.6); g.quadraticCurveTo(-7.6, -1.6, -10.6, -4.0);
   g.stroke();
-  g.strokeStyle = 'rgba(225,170,120,0.7)'; g.lineWidth = 0.9; g.beginPath();                       // parlaklık yayı
-  g.moveTo(5.0, -11.4); g.quadraticCurveTo(-0.6, -13.4, -6.6, -10.6); g.stroke();
+  g.strokeStyle = 'rgba(225,170,120,0.55)'; g.lineWidth = 1.6; g.beginPath();                       // geniş parlaklık bandı
+  g.moveTo(5.6, -12.2); g.quadraticCurveTo(-0.6, -14.4, -7.4, -11.0); g.stroke();
+  g.strokeStyle = 'rgba(255,225,190,0.7)'; g.lineWidth = 0.6; g.beginPath();                        // ince parlak çizgi
+  g.moveTo(3.8, -12.9); g.quadraticCurveTo(-0.8, -14.3, -5.4, -12.4); g.stroke();
+  g.strokeStyle = 'rgba(40,18,10,0.3)'; g.lineWidth = 0.35; g.beginPath();                          // ek tutam ayrımları
+  g.moveTo(6.4, -10.0); g.quadraticCurveTo(-1.6, -12.6, -11.2, -3.2);
+  g.moveTo(2.2, -6.8); g.quadraticCurveTo(-5.0, -9.6, -12.0, -1.0); g.stroke();
   g.restore();
   // gözler, kaşlar, burun, ağız
-  anGoz(5.4, 1.0, 1.95, 2.55, R, false, -1);
-  anGoz(10.0, 0.9, 1.1, 2.35, R, true, 1);
-  const k = R[A_KAS] * 0.9;
-  g.strokeStyle = AN.kas; g.lineCap = 'round'; g.lineWidth = 0.4; g.beginPath();
-  g.moveTo(3.4, -4.8 - k * 0.8); g.quadraticCurveTo(5.3, -6.4 - k * 1.1, 7.2, -5.2 - k); g.stroke();
-  g.lineWidth = 0.34; g.beginPath(); g.moveTo(9.1, -5.6 - k); g.quadraticCurveTo(10.1, -5.9 - k, 10.9, -5.2 - k * 0.8); g.stroke();
-  g.strokeStyle = 'rgba(196,128,104,0.7)'; g.lineWidth = 0.5; g.beginPath();
-  g.moveTo(11.5, 1.0); g.quadraticCurveTo(12.9, 3.2, 11.6, 3.9); g.stroke();
-  anOval(11.0, 3.7, 0.5, 0.28, 0.2, 'rgba(190,115,95,0.5)');
-  anOval(12.1, 2.2, 0.35, 0.35, 0, 'rgba(255,246,238,0.7)');
+  // göz çukuru gölgesi (yumuşak AO) sonra iri gözler
+  anGoz(5.3, 1.0, 2.35, 2.95, R, false, -1);
+  anGoz(10.15, 0.9, 1.32, 2.7, R, true, 1);
+  // kaşlar: yumuşak kemerli, uçta incelen dolu şekil; KAS ile kalkar (sevinç/şaşkınlık), iç uçlar hafif yukarı (sevecen)
+  const uz = AN_ST.uzakU, k = R[A_KAS] * 0.9 + 0.5 * uz, ks = anSn(R[A_SAS], 0, 1) * 0.6, kk = 0.25 * uz;   // kk: oyun ölçeğinde kalınlık
+  g.fillStyle = '#6b3b24'; g.beginPath();   // yakın kaş: iki ucu da aşağıda, ortası yukarıda (yumuşak kemer, hiç çatık değil)
+  g.moveTo(3.0, -4.6 - k * 0.8); g.quadraticCurveTo(5.0, -7.0 - k * 1.1 - ks, 7.4, -5.2 - k - ks);
+  g.quadraticCurveTo(7.7, -4.8 - k - ks, 7.2, -4.75 - k - ks + kk);
+  g.quadraticCurveTo(5.0, -6.3 - k * 1.1 - ks + kk, 3.3, -4.15 - k * 0.8 + kk); g.closePath(); g.fill();
+  g.beginPath();   // uzak kaş
+  g.moveTo(9.2, -5.3 - k * 0.9); g.quadraticCurveTo(10.3, -6.4 - k - ks, 11.4, -5.4 - k * 0.9 - ks);
+  g.quadraticCurveTo(10.3, -5.85 - k - ks + kk, 9.3, -4.8 - k * 0.9 + kk); g.closePath(); g.fill();
+  // burun: yumuşak köprü çizgisi, altında gölge, ucunda ışık
+  g.strokeStyle = 'rgba(196,128,104,0.75)'; g.lineWidth = 0.55; g.beginPath();
+  g.moveTo(11.5, 0.6); g.quadraticCurveTo(13.0, 3.2, 11.6, 4.0); g.stroke();
+  anOval(11.0, 4.0, 0.9, 0.35, 0.15, 'rgba(200,135,112,0.25)');   // burun altı: çok hafif ten gölgesi
+  anOval(11.3, 3.7, 0.35, 0.22, 0.2, 'rgba(190,120,100,0.35)');
+  anOval(12.1, 2.1, 0.45, 0.42, 0, 'rgba(255,248,240,0.85)');
   anAgiz(R);
   // yana taranmış perçem ve kulak önünde sallanan ince tutam
   const sw = Math.sin(tm * 1.7) * 0.25 + AN_ST.sac[1] * 0.02;
@@ -865,10 +999,13 @@ function anVucut(R, tm, kat) {
     anKuyrukHesap(R); anKuyruk();
   }
   // kol yukarı kalkıksa (el sallama) başın arkasından geçer: yüz hep tamamen görünür
-  const kolUst = (kat & 16) && (kat & 4) && R[A_OEY] < -12;
+  const kolUst = (kat & 16) && (kat & 4) && (R[A_OEY] < -12 || AN_ST.elArka > 0.5) && AN_ST.elOnde < 0.5;
   if (kolUst) anKol(R, true);
   if (kat & 4) anBasCiz(R, tm);
   if ((kat & 16) && !kolUst) anKol(R, true);
+  if (kat === 16 && AN_ST.elArka > 0.5) {   // yalnız yakın kol katmanı (Feza'nın önü): kolun yüzün önüne düşen kısmı silinir, yüz açık kalır
+    anG.globalCompositeOperation = 'destination-out'; anBasCiz(R, tm); anG.globalCompositeOperation = 'source-over';
+  }
   else { const kl = anSn(R[A_OEL], 0.8, 1.4); anOmuz(R, true); anIK(anPX, anPY, anPX + R[A_OEX], anPY + R[A_OEY], AN_UK * kl, AN_OK * kl, -1); ANNE12_ELLER.onX = anEX; ANNE12_ELLER.onY = anEY; }
   if (!(kat & 1)) { anOmuz(R, false); anIK(anPX, anPY, anPX + R[A_UEX], anPY + R[A_UEY], AN_UK, AN_OK, -1); ANNE12_ELLER.arkaX = anEX; ANNE12_ELLER.arkaY = anEY; }
 }
@@ -907,16 +1044,21 @@ function anAdim(x, y, olcek, tm, o, poz, yon) {
     const vH = o && Number.isFinite(o.hiz) ? Math.abs(o.hiz) / olcek : vOlc;
     st.hiz = anKr(st.hiz, vH, 1 - Math.exp(-dt * (vH > st.hiz ? 9 : 6)));
     st.ivme = anKr(st.ivme, (st.hiz - vo) / dt, 1 - Math.exp(-dt * 6));
-    st.vx = anKr(st.vx, dxm * yon / dt, 1 - Math.exp(-dt * 10));   // yüzün baktığı yöne göre hız
+    // yüzün baktığı yöne göre hız; çağıran anneyi hep aynı noktaya çiziyorsa (bisiklet: tuval kaydırılır) opt.hiz kullanılır → saç rüzgârda
+    let hz = o && Number.isFinite(o.hiz) ? Math.abs(o.hiz) : NaN;
+    if (poz === 'bisiklet' && hz <= 1.01) hz *= 300;   // YOLCULUK bisiklette hızı 0..1 (v/300) olarak verir
+    const vT = Math.abs(dxm) < 1e-3 && Number.isFinite(hz) ? hz / olcek : dxm * yon / dt;
+    st.vx = anKr(st.vx, vT, 1 - Math.exp(-dt * 10));
     if (poz === 'yuru' || poz === 'kos' || poz === 'bisiklet') {
       const yol = Math.abs(dxm) > 1e-4 ? Math.abs(dxm) : st.hiz * dt;
       const Lc = poz === 'bisiklet' ? 46 : anDongu(st.hiz, anKosuK(st.hiz, poz === 'kos'));
       st.faz = anKs(st.faz + yol / Lc);
     }
-    st.durT += dt; st.idleT = poz === 'dur' ? st.idleT + dt : 0;
+    st.durT += dt;
+    if (poz === 'dur') st.idleT += dt; else { if (st.idleT > 0.5) st.idleSay++; st.idleT = 0; }
     // göz kırpma
     st.kirpT -= dt;
-    if (st.kirpT <= 0) { st.kirpU = 0; st.kirpT = 2.4 + Math.random() * 3.2; if (Math.random() < 0.18) st.kirpT = 0.32; }
+    if (st.kirpT <= 0) { st.kirpU = 0; st.kirpT = 3 + Math.random() * 2; if (Math.random() < 0.15) st.kirpT = 0.3; }
     st.kirpU = Math.min(1, st.kirpU + dt / 0.17);
     if (st.gecis < 1) st.gecis = Math.min(1, st.gecis + dt / 0.3);
     if (st.donU < 1) st.donU = Math.min(1, st.donU + dt / 0.22);
@@ -958,7 +1100,8 @@ function anFizik(R, dt) {
   acx = anSn(acx, -2500, 2500); acy = anSn(acy, -2500, 2500);
   st.apx = ax; st.apy = ay; st.avx = vx; st.avy = vy;
   anBas(R);
-  const ruz = anSn(st.vx * 0.003, -0.5, 0.75), n = dt > 0.02 ? 2 : 1, h = dt / n;
+  // rüzgâr: hızla at kuyruğu geriye savrulur ama yatay çubuk gibi kalmaz; koşarken hafif dalgalanır
+  const ruz = anSn(st.vx * 0.002, -0.4, 0.42) + 0.06 * Math.sin(st.tm * 11) * anSn(Math.abs(st.vx) / 300, 0, 1), n = dt > 0.02 ? 2 : 1, h = dt / n;
   for (let s = 0; s < n; s++) {
     for (let i = 0; i < 3; i++) {
       const j = i * 2, th = st.sac[j];
@@ -969,7 +1112,7 @@ function anFizik(R, dt) {
     }
     st.sac[0] = anSn(st.sac[0], -2.1, 0.35); st.sac[2] = anSn(st.sac[2], st.sac[0] - 0.5, st.sac[0] + 1.3); st.sac[4] = anSn(st.sac[4], st.sac[2] - 0.6, st.sac[2] + 1.3);
     // çanta: sarkaç (kalçaya yaslanır)
-    const tc = st.cnt[0], ac = 32 * (-0.16 - ruz * 0.3 - tc) - 4.5 * st.cnt[1] + 0.008 * (-acx * Math.cos(tc) + acy * Math.sin(tc));
+    const tc = st.cnt[0], ac = 32 * (-0.16 - ruz * 0.3 + st.cntEk - tc) - 4.5 * st.cnt[1] + 0.008 * (-acx * Math.cos(tc) + acy * Math.sin(tc));
     st.cnt[1] += ac * h; st.cnt[0] = anSn(st.cnt[0] + st.cnt[1] * h, -0.85, 0.35);
     // hırka eteği: hızla geriye savrulur, durunca yaylanıp döner
     const te = anSn(-st.vx * 0.011, -3.5, 2.5), ae = 70 * (te - st.etek[0]) - 7 * st.etek[1] - acx * 0.0025;
@@ -997,13 +1140,21 @@ function anne12Ciz(ctx, x, y, olcek, tm, opt) {
       else o.basX = o.basY = NaN;
     }
     // poz → dizi; geçişte donmuş eski pozdan karış
+    st.sacEk = 0; st.elOnde = 0; st.elArka = 0; st.cntEk = 0;
     anPozUret(R, poz, tm, o);
     if (st.gecis < 1) { const e = anYm(st.gecis); for (let i = 0; i < AN_N; i++) R[i] = anKr(AN_R0[i], R[i], e); }
     if (typeof o.ust === 'string' && AN_POZ[o.ust] && o.ustW > 0.001) anUstPoz(R, o.ust, anYm(anSn(o.ustW, 0, 1)), tm, o.ustO || o);
     // yüz katmanı: Feza'ya bakma / yukarı bakma, göz kırpma
     const bak = Number.isFinite(o.bak) ? anSn(o.bak, -1, 1) : 0;
-    if (bak > 0) { R[A_BA] += 0.14 * bak; R[A_BKY] = anKr(R[A_BKY], 0.65, bak); R[A_BKX] = anKr(R[A_BKX], 0.6, bak); R[A_GUL] = Math.max(R[A_GUL], 0.6 + 0.4 * bak); R[A_AGZ] += 0.12 * bak; R[A_KAS] += 0.25 * bak; }
+    if (bak > 0) { R[A_BA] += 0.07 * bak; R[A_BKY] = anKr(R[A_BKY], 0.65, bak); R[A_BKX] = anKr(R[A_BKX], 0.6, bak); R[A_GUL] = Math.max(R[A_GUL], 0.6 + 0.4 * bak); R[A_AGZ] += 0.12 * bak; R[A_KAS] += 0.25 * bak; }
     else if (bak < 0) { R[A_BA] += 0.2 * bak; R[A_BKY] = anKr(R[A_BKY], -0.85, -bak); R[A_GUL] = Math.max(R[A_GUL], 0.75); R[A_AGZ] += -0.15 * bak; R[A_GOZ] = Math.max(R[A_GOZ], -bak); R[A_MUT] *= 1 + bak; }
+    // ifade (anne konuşmaz; duygusunu yüzüyle gösterir): mutlu, gulen, sasir (şaşkın-sevinçli), sevgi (gözler kapalı gülümseme)
+    const ifd = o.ifade || (poz === 'saril' ? 'sevgi' : undefined);
+    const iw = Number.isFinite(o.ifadeW) ? anSn(o.ifadeW, 0, 1) : !o.ifade && poz === 'saril' ? anYm(Number.isFinite(o.u) ? anSn(o.u * 1.4, 0, 1) : 1) : 1;
+    if (ifd === 'sasir') { R[A_SAS] = anKr(R[A_SAS], 1, iw); R[A_KAS] += 0.9 * iw; R[A_MUT] *= 1 - iw; R[A_GOZ] = anKr(R[A_GOZ], 1, iw); R[A_BA] -= 0.06 * iw; }
+    else if (ifd === 'gulen') { R[A_MUT] = anKr(R[A_MUT], 1, iw); R[A_GOZ] = anKr(R[A_GOZ], 0.3, iw); R[A_GUL] = 1; R[A_AGZ] = anKr(R[A_AGZ], 0.5, iw); R[A_KAS] += 0.35 * iw; }
+    else if (ifd === 'sevgi') { R[A_MUT] = anKr(R[A_MUT], 1, iw); R[A_GOZ] = anKr(R[A_GOZ], 0.05, iw); R[A_GUL] = 1; R[A_AGZ] *= 1 - iw; R[A_BA] += 0.08 * iw; }
+    else if (ifd === 'mutlu') { R[A_GUL] = 1; R[A_KAS] += 0.2 * iw; R[A_AGZ] = Math.max(R[A_AGZ], 0.2 * iw); }
     const kp = st.kirpU < 1 ? Math.abs(1 - 2 * st.kirpU) : 1;
     R[A_GOZ] *= kp;
     AN_RS.set(R);
@@ -1015,6 +1166,7 @@ function anne12Ciz(ctx, x, y, olcek, tm, opt) {
     // piksel ölçeği ve tuval boyu (çağıranın dönüşümünden)
     const m = ctx.getTransform ? ctx.getTransform() : null;
     const kp0 = m ? Math.hypot(m.a, m.b) : (typeof S === 'number' ? S : 1), k = anSn(kp0 * olcek, 0.2, 6);
+    st.uzakU = anYm((3.2 - k) / 1.4);   // k ≤ 1.8 px/birim: tam oyun ölçeği; k ≥ 3.2: yakın plan
     const needW = Math.ceil(AN_KW * k), needH = Math.ceil(AN_KH * k);
     if (anC.width < needW || anC.height < needH || anC.width > needW * 1.35 + 64 || anC.height > needH * 1.35 + 64) {
       anC.width = anH.width = Math.ceil(needW * 1.12 / 32) * 32; anC.height = anH.height = Math.ceil(needH * 1.12 / 32) * 32;
@@ -1220,7 +1372,7 @@ const ANNE12 = {
       this.an = '';
       if (this.poz === 'dur' && this.durSure > 0.9 && ara < 115) {
         this.egilT += dt; const c = this.egilT % 11, tur = Math.floor(this.egilT / 11);
-        this.egil = anKr(this.egil, c > 0.3 && c < 3.2 ? 1 : 0, 1 - Math.exp(-dt * 3));
+        this.egil = anKr(this.egil, c > 0.3 && c < 1.9 ? 1 : 0, 1 - Math.exp(-dt * 3));
         if (c > 4.2 && c < 6.4 && ara < 115) { this.an = 'oksa'; this.anBas = tur % 2 === 0; }
         else if (c > 8.2 && c < 9.7 && tur % 2 === 1) this.an = 'el_salla';
         if (this.an) this.poz = this.an;

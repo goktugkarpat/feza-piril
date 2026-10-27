@@ -290,7 +290,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
 
   // ════════════════ karakter bağdaştırıcıları ════════════════
   // Anne: ANNE12.devral varsa biz çizeriz; yoksa (eski anne12) anne kendi yürüyüşünde kalır ve burada çizilmez.
-  const AOPT = { poz: 'dur', yon: 1, bak: 0, hiz: 0, u: 1, otur: false, katman: null, salla: 0 };
+  const AOPT = { poz: 'dur', yon: 1, bak: 0, hiz: 0, u: 1, otur: false, katman: null, salla: 0, ifade: 'mutlu', ifadeW: 1 };
   function anneBizde(o) { return !!o.anneBizde && typeof anne12Ciz === 'function'; }
   function anneCiz(o, tm, katman) {
     if (!anneBizde(o)) return;
@@ -390,10 +390,12 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
 
   function an(o, ad) { if (o.anlar[ad]) return; o.anlar[ad] = true; OLAY.emit('k12FinalAn', { an: ad, o }); }
 
-  // Kamera: anne + Feza + Pırıl ve üstlerinde biraz gök (akşam olunca yıldızlar için biraz daha)
+  // Kamera: anne + Feza + Pırıl ve üstlerinde bol gök (gün batımı, ışıktan kalp, ilk yıldızlar). Kutunun üstü yüksek tutulur ki
+  // örtü ekranın alt dörtte birine insin: önceki kadrajda ekranın üçte biri düz çimendi, gök ve kalp sıkışıyordu.
+  // (Kutu yüksekliği ~485 birim: VH 560 ile sarılmadaki ~1.15 yakınlaşmaya hâlâ izin verir.)
   function kameraKutu(o) {
     const x0 = Math.min(o.ax, o.fx), x1 = Math.max(o.ax, o.fx);
-    omDkEkle(x0 - 130, o.fy - 190 - 50 * K12FINAL.aksam, x1 + 130, o.fy + 30);   // gök az, ikisi kadrajın ortasına yakın
+    omDkEkle(x0 - 130, o.fy - 380, x1 + 130, o.fy + 10);
     omDkEkle(o.px - 50, o.py - 62, o.px + 50, o.py + 34);   // Pırıl'ın tamamı (kanat ve ibik dahil)
   }
 
@@ -452,6 +454,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     // ── anne: örtüye yürür, güneşe dönük oturur, yanını eliyle vurup Feza'yı çağırır, müzikte alkışlar, sonra yana eğilip
     //    Feza'ya sımsıkı sarılır ve onu beşik gibi hafifçe sallar; en sonda başını kaldırıp ilk yıldızlara bakar ──
     AOPT.hiz = 0; AOPT.bak = 0; AOPT.u = 1; AOPT.otur = true; AOPT.yon = o.yon; AOPT.salla = 0;
+    AOPT.ifade = 'mutlu'; AOPT.ifadeW = 1;   // anne konuşmaz: duygusunu yüzüyle gösterir (anne12 opt.ifade)
     if (t < o.zOtur) {
       const u = o.zYuru > 0 ? yum(t / o.zYuru) : 1, eski = o.ax;
       o.ax = lerp(o.ax0, o.as, u);
@@ -463,12 +466,16 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     } else if (t < o.zFotur + 0.3) {
       o.ax = o.as; AOPT.poz = 'cagir'; AOPT.bak = 1;   // "Gel bakalım yanıma": yanına, örtüye eliyle hafifçe vurur
       an(o, 'cagir'); K12FINAL.faz = 'cagir';
+      // söz yok: annenin vurduğu yerde (Feza'nın oturacağı yer) her vuruşta minik pembe-altın pırıltı → "buraya otur" okunur
+      o.patT = (o.patT || 0) - dt;
+      if (o.patT <= 0 && t < o.zFotur - 0.2) { o.patT = 0.5; if (typeof burst === 'function') burst(o.fs, o.fy - 3, 5, ['#ffd6e6', '#fff0c0', '#ffffff'], 45, 0.55, 3); }
     } else if (t < o.zSaril) {
-      o.ax = o.as; AOPT.poz = 'alkis'; AOPT.bak = Math.sin(t * 0.9) > 0.3 ? 1 : -0.6;   // alkışlar; bir Feza'ya bir Pırıl'a bakar
+      o.ax = o.as; AOPT.poz = 'alkis'; AOPT.bak = Math.sin(t * 0.9) > 0.3 ? 1 : -0.6; AOPT.ifade = 'gulen';   // alkışlar; bir Feza'ya bir Pırıl'a bakar
       K12FINAL.faz = 'dans';
     } else {
       // anne yanağını Feza'nın başına eğer (FEZA12.bas'ı kendisi okur) ve onu beşik gibi sallar; sonda göğe, ilk yıldızlara bakar
       o.ax = o.as; AOPT.poz = 'saril'; AOPT.u = arasi(t, o.zSaril, o.zSaril + 1.2);
+      AOPT.ifade = 'sevgi'; AOPT.ifadeW = arasi(t, o.zSaril + 0.4, o.zSaril + 1.2);   // sarılınca gözler kapalı, huzurlu gülümseme (sona kadar)
       AOPT.salla = arasi(t, o.zSalla, o.zSalla + 1.2);
       AOPT.bak = t > o.zBitti - 2.2 ? -1 : 1;
       K12FINAL.faz = 'saril';
@@ -595,6 +602,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
         dglow('#ffffff', px, py, 2.4, al);
       }
     }
+    yildizKalp(o, tm, cx);
     g.globalCompositeOperation = 'source-over';
     if (P.ucus === o) pirilCiz(o, tm);
     // müzik notaları
@@ -612,6 +620,39 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
       const pop = 1 + 0.25 * Math.sin(Math.min(1, p.t * 3) * Math.PI), sc = p.s * pop * 0.7;
       g.save(); g.globalAlpha = al; g.translate(p.x + Math.sin(p.t * 2.2 + p.ph) * 8, p.y); g.rotate(Math.sin(p.t * 1.8 + p.ph) * 0.2);
       g.drawImage(S0.c, -S0.w / 2 * sc, -S0.h / 2 * sc, S0.w * sc, S0.h * sc); g.restore();
+    }
+  }
+
+  // Gökte ışıktan bir kalp: sarılmadan ~1.5 sn sonra parlak bir kuyruklu yıldız ikisinin üstünde yavaşça bir kalp çizer;
+  // kalbin noktaları yıldız gibi kalır ve akşam karardıkça daha da parlar. Söz yok: "seni seviyorum"u gök söyler.
+  const KALP_N = 30;
+  const KALP_YOL = (() => {   // kalp eğrisi (alt uçtan başlar, tam tur), birim ölçek: genişlik ~1, yükseklik ~0.9
+    const a = [];
+    for (let i = 0; i < KALP_N; i++) {
+      const u = Math.PI + (i / KALP_N) * PI2;
+      const x = 16 * Math.pow(Math.sin(u), 3), y = -(13 * Math.cos(u) - 5 * Math.cos(2 * u) - 2 * Math.cos(3 * u) - Math.cos(4 * u));
+      a.push([x / 32, y / 32]);
+    }
+    return a;
+  })();
+  function yildizKalp(o, tm, cx) {
+    const t0 = o.zSaril + 1.6, sure = 3.2;
+    if (o.t < t0) return;
+    const ciz = ke((o.t - t0) / sure), n = ciz * KALP_N, kx = cx, ky = o.fy - 168, olc = 92;
+    const parla = 0.55 + 0.45 * K12FINAL.aksam;
+    for (let i = 0; i < KALP_N && i < n; i++) {
+      const q = KALP_YOL[i], yeni = ke(n - i);   // yeni çizilen nokta parlayarak belirir
+      const tw = 0.75 + 0.25 * Math.sin(tm * 2.6 + i * 1.9);
+      const px = kx + q[0] * olc, py = ky + q[1] * olc;
+      dglow(i % 2 ? '#ffd6e6' : '#fff0c0', px, py, 9, 0.45 * parla * tw * yeni);
+      dglow('#ffffff', px, py, 2.6, 0.9 * tw * yeni);
+    }
+    // kuyruklu yıldızın başı (çizerken) ve arkasında kısa ışık izi
+    if (ciz < 1) {
+      const f = n % KALP_N, i0 = Math.floor(f), i1 = (i0 + 1) % KALP_N, w = f - i0;
+      const hx = kx + lerp(KALP_YOL[i0][0], KALP_YOL[i1][0], w) * olc, hy = ky + lerp(KALP_YOL[i0][1], KALP_YOL[i1][1], w) * olc;
+      dglow('#fff4d0', hx, hy, 26, 0.55);
+      dglow('#ffffff', hx, hy, 6, 1);
     }
   }
 

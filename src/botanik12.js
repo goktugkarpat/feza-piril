@@ -12,6 +12,15 @@
    İskelenin arka kenarında bir kaplumbağa Feza'ya eşlik etmeye çalışır: minicik ağır adımlarla peşinden gider, geride kalınca oturup
    "pöf" der ve el sallar; Feza beklerse yetişip sevinçle hoplar.
    Anne, Feza göletin yanına gelince ona kaplumbağaları gösterir (ANNE12.kisaPoz 'isaret'; anne devralınmaz, takip bozulmaz).
+   3. tur (ebeveyn: "havuzda kırmızı balıklar ve kurbağalar olabilir"):
+     · Beş kırmızı/turuncu Japon balığı (göletin solu, şelalenin sağı 24736–24900): su altında yarı saydam yüzer, kuyruk sallar,
+       ara sıra yüzeye çıkıp ağız açar (kabarcık + halka). Feza kenara gelince önüne toplanır, biri zıplayıp suya geri düşer;
+       balığa dokununca o zıplar, yanlarındaki suya dokununca toplanırlar (yürümeyi engellemez).
+     · Üç yeşil kurbağa (göletin sağı, kendi çiçeksiz nilüfer yaprakları): boğaz kesesini şişirip "vırak" der, Feza geçerken ve
+       dokununca yapraktan yaprağa yay çizerek zıplar (konunca yaprak sallanır, halka). Meraklı olanı Feza'nın yanına, iskelenin
+       kenarına zıplar ve ona bakar, sonra yaprağına döner. Dil fırlatma / böcek yok.
+     · Olaylar: k12SazanOp (ağız açma) · k12BalikZipla · k12Sicrama · k12KurbagaVirak {x, n} · k12KurbagaZipla {x, kiyi}
+       (son ikisi SES'e istek: b12/istek/BOTANIK_SES.md; tanımlı değilse sessiz geçer).
    İskelenin altından geçen su kolu (616–648, y 750+): ONPLAN zeminden önce bt12OnSuCiz(tm) çağırırsa çizilir (çağırmazsa hiç).
    Olaylar (ses MUZIK'te): k12KaplumbagaBak {x, n} · k12KaplumbagaDokun {x, y} · k12KaplumbagaKafa {x, y} · k12KaplumbagaPop {x, y, faz}
      · k12KaplumbagaDal {x, y} · k12KaplumbagaYuz {x} · k12KaplumbagaCik {x, y} · k12KaplumbagaKule {x, y, n} · k12KaplumbagaYuru {x}
@@ -39,7 +48,8 @@ const BT_ONSU = { x0: 616 * T, x1: 648 * T, y: 750 };      // iskelenin altında
 const BT_GOSTER = 616 * T;                                // anne kaplumbağaları burada gösterir
 // Nilüferler: [x, y, ölçek, çiçek rengi 0 pembe / 1 beyaz / -1 çiçeksiz]
 const BT_NILUFER = [[24760, 701, 1, 0], [24840, 665, .8, -1], [25120, 703, 1.05, 1], [25190, 668, .78, 0], [25450, 702, .95, -1],
-  [25880, 700, 1.1, 0], [25960, 668, .82, 1], [26010, 699, .9, -1]];
+  [25880, 700, 1.1, 0], [25960, 668, .82, 1], [26010, 699, .9, -1],
+  [25832, 684, .92, -1], [25928, 690, .86, -1], [26046, 680, .8, -1]];   // son üçü kurbağaların zıpladığı yapraklar
 const BT_ONSU_NILUFER = [[24800, 772, 1.1, 0], [25260, 786, 1.25, -1], [25640, 768, 1, 1]];
 
 // Kabuk renkleri (Avrupa tatlısu ve Hazar kaplumbağalarından esinli; sevimli, açık tonlar)
@@ -59,7 +69,8 @@ const BT = {
   nil: [], onNil: [], halka: [], kabarcik: [],
   selaleCos: 0, onSuKare: -1, fezaVx: 0, sonPX: NaN, yakin: false, bakSay: 0,
   goster: false, otoKule: false, otoDal: false, kule: 0, kuleT: 0,
-  sira: [], siraN: 0
+  sira: [], siraN: 0,
+  balik: [], kurb: [], kPed: [], balikTop: 0, topX: 0, topY: 0, ziplaT: -1, balikGeldi: false, otoZiplaT: 9, kurbKiyi: false
 };
 for (let i = 0; i < 24; i++) BT.halka.push({ on: false, x: 0, y: 0, r: 0, t: 0, sure: 1, a: 1 });
 for (let i = 0; i < 18; i++) BT.kabarcik.push({ on: false, x: 0, y: 0, t: 0, r: 1 });
@@ -395,8 +406,9 @@ function btKur() {
   BT.aile = { anne, y1, y2 };
   BT.kp.push(dede, k1, k2, anne, y1, y2, yz, yr);
   BT.yuzucu = yz; BT.yurur = yr;
-  for (const n of BT_NILUFER) BT.nil.push({ x: n[0], y: n[1], s: n[2], renk: n[3], acik: n[3] < 0 ? 0 : .15, acH: n[3] < 0 ? 0 : .15, sal: btHash(n[0]) * 6, dokT: 9 });
-  for (const n of BT_ONSU_NILUFER) BT.onNil.push({ x: n[0], y: n[1], s: n[2], renk: n[3], acik: n[3] < 0 ? 0 : .3, acH: n[3] < 0 ? 0 : .3, sal: btHash(n[0]) * 6, dokT: 9 });
+  for (const n of BT_NILUFER) BT.nil.push({ x: n[0], y: n[1], s: n[2], renk: n[3], acik: n[3] < 0 ? 0 : .15, acH: n[3] < 0 ? 0 : .15, sal: btHash(n[0]) * 6, dokT: 9, kurbT: 9 });
+  for (const n of BT_ONSU_NILUFER) BT.onNil.push({ x: n[0], y: n[1], s: n[2], renk: n[3], acik: n[3] < 0 ? 0 : .3, acH: n[3] < 0 ? 0 : .3, sal: btHash(n[0]) * 6, dokT: 9, kurbT: 9 });
+  btBalikKur(); btKurbKur();
 }
 
 // ════════════════════════ Kaplumbağalar: davranış ════════════════════════
@@ -828,8 +840,10 @@ function btGoletCiz(c, tm) {
   // önbellek döşemeleri
   for (let i = 0; i < 2; i++) { const d = BT.doseme[i]; if (d && btEkranda(d.x0 + d.w / 2, d.w / 2 + 20)) c.drawImage(d, d.x0, d.y0, d.w, d.h); }
   btParilti(c, tm);
+  for (const b of BT.balik) if (b.durum !== 'zipla' && btEkranda(b.x, 30)) btBalikCiz(c, b, false);   // su altındaki balıklar
   if (btEkranda(BT_SELALE.x, 120)) btSelaleCiz(c, tm);
   for (const n of BT.nil) if (btEkranda(n.x, 40)) btNilCiz(c, n, tm);
+  for (const f of BT.kurb) if (f.durum !== 'kiyi' && f.durum !== 'zipla' && btEkranda(f.x, 40)) btKurbCiz(c, f, tm);
   btHalkaCiz(c);
   // taşlar, kütük ve kaplumbağalar derinliğe göre
   BT.siraN = 0;
@@ -857,6 +871,9 @@ function btGoletCiz(c, tm) {
     else if (e.tur === 4 && btEkranda(e.ref.x, 80)) btKpCizSu(c, e.ref, tm, e.ref.y);
   }
   btYaprakCiz(c, tm);
+  // havadaki balık ve kurbağalar, kıyıdaki kurbağa (her şeyin önünde)
+  for (const b of BT.balik) if (b.durum === 'zipla' && btEkranda(b.x, 40)) btBalikCiz(c, b, true);
+  for (const f of BT.kurb) if ((f.durum === 'kiyi' || f.durum === 'zipla') && btEkranda(f.x, 60)) btKurbCiz(c, f, tm);
   // kütük ve dede kalpleri
   btKalpCiz(c, BT.kp[0]); btKalpCiz(c, BT.kp[1]); btKalpCiz(c, BT.kp[2]); btKalpCiz(c, BT.yuzucu);
 }
@@ -897,6 +914,314 @@ function bt12OnSuCiz(tm) {
 globalThis.bt12OnSuCiz = bt12OnSuCiz;
 globalThis.BT12_ONSU = { x0: BT_ONSU.x0, x1: BT_ONSU.x1 };   // ONPLAN iskele döşemesini bu aralıkta kısa keser
 
+// ════════════════════════ Kırmızı balıklar (göletin sol yanı, şelalenin önü) ════════════════════════
+// Beş Japon balığı suyun altında yarı saydam yüzer, kuyruk sallar; ara sıra yüzeye çıkıp ağız açar (kabarcık + halka).
+// Feza kıyıya gelince (ya da suya dokununca) balıklar oraya toplanır ve biri zıplayıp suya geri düşer.
+const BT_BALIK = { x0: 24736, x1: 24900, y0: 674, y1: 699 };   // şelale kayalarının sağı; büyük taşın arkasına da yüzüp kaybolabilirler
+// [gövde, karın/parlak, yüzgeç] — kırmızı, turuncu, beyaz-kırmızı benekli (kohaku), altın
+const BT_BALIK_RENK = [
+  ['#ff6a2b', '#ffc08a', '#e2481c'], ['#ff8a2a', '#ffd79a', '#e6661c'], ['#f2482e', '#ffa48a', '#c8301c'],
+  ['#fff3e6', '#ffffff', '#ff7048'], ['#ff5a3a', '#ffb6a0', '#d43a20']
+];
+function btBalikKur() {
+  BT.balik.length = 0;
+  for (let i = 0; i < BT_BALIK_RENK.length; i++) {
+    const x = BT_BALIK.x0 + 40 + btHash(i * 5.7) * (BT_BALIK.x1 - BT_BALIK.x0 - 80), y = BT_BALIK.y0 + 3 + btHash(i * 2.9) * 18;
+    BT.balik.push({
+      x, y, vx: 0, vy: 0, yon: i % 2 ? 1 : -1, yonS: i % 2 ? 1 : -1, boy: 15 + btHash(i * 3.3) * 3, r: i, faz: i * 1.3,
+      hx: x, hy: y, ht: btHash(i) * 3, derin: 1, durum: 'yuz', t: 0, yuzeyT: 2 + i * 1.7, agiz: 0, agizOldu: false,
+      zx0: 0, zx1: 0, zy: 0, zh: 0, aci: 0
+    });
+  }
+  BT.balikTop = 0; BT.topX = 0; BT.topY = 0; BT.ziplaT = -1; BT.balikGeldi = false; BT.otoZiplaT = 9;
+}
+function btBalikZipla(b) {   // balık sudan yay çizerek çıkar ve biraz ileride suya düşer
+  if (!b || b.durum === 'zipla') return;
+  for (const q of BT.balik) if (q.durum === 'zipla') return;   // aynı anda en çok bir balık havada
+  b.durum = 'zipla'; b.t = 0; b.zx0 = b.x; b.zy = b.y; b.zh = 0;
+  b.zx1 = clamp(b.x + b.yon * 58, BT_BALIK.x0 + 10, BT_BALIK.x1 - 10);
+  if (Math.abs(b.zx1 - b.zx0) < 30) { b.yon = -b.yon; b.yonS = b.yon; b.zx1 = b.x + b.yon * 58; }
+  btHalka(b.x, b.y, 8, 1, 1); btSicrat(b.x, b.y - 3, 5, .4);
+  btOlay('k12BalikZipla', { x: b.x });
+}
+function btBalikTopla(x, y, sure, zipla) {   // balıklar (x, y) çevresine toplanır; zipla > 0 ise o kadar sonra biri zıplar
+  BT.balikTop = sure;
+  BT.topX = clamp(x, BT_BALIK.x0 + 50, BT_BALIK.x1 - 110);   // görünen suda: şelale kayalarının ve büyük taşın arasında
+  BT.topY = clamp(y, BT_BALIK.y0 + 5, BT_BALIK.y1 - 3);
+  if (zipla > 0 && BT.ziplaT < 0) BT.ziplaT = zipla;
+}
+function btBalikAdim(b, dt, i) {
+  b.faz += dt * (7 + 9 * Math.min(1, Math.abs(b.vx) / 45));
+  if (b.durum === 'zipla') {
+    b.t += dt;
+    const u = Math.min(1, b.t / .9);
+    b.x = lerp(b.zx0, b.zx1, u); b.zh = -Math.sin(Math.PI * u) * 40;
+    b.aci = -(1 - 2 * u) * 1.05;   // burnu önce yukarı, sonra aşağı (çizimde yöne göre aynalanır)
+    if (u >= 1) {   // suya geri düştü
+      b.durum = 'yuz'; b.t = 0; b.zh = 0; b.aci = 0; b.derin = .5; b.vx = b.yon * 30; b.x = b.zx1; b.y = b.zy;
+      btHalka(b.x, b.y, 10, 1.3, 1); btHalka(b.x, b.y, 5, .9, .8); btSicrat(b.x, b.y - 4, 9, .7);
+      btOlay('k12Sicrama', { guc: .45, x: b.x });
+    }
+    return;
+  }
+  // hedef: toplanma varsa toplanma noktasının çevresi, yoksa ara sıra seçilen gelişigüzel bir yer
+  let hx = b.hx, hy = b.hy, hiz = 26;
+  if (BT.balikTop > 0) {
+    hx = BT.topX + (i - 2) * 24 + Math.sin(i * 1.9 + BT.saat * .9) * 6; hy = BT.topY + (i % 2 ? 2.5 : -2.5) + Math.sin(i * 2.3 + BT.saat * 1.3) * 1.2; hiz = 110;   // yan yana, yatay dizi
+  } else {
+    b.ht -= dt;
+    if (b.ht <= 0 || Math.abs(hx - b.x) < 8) {
+      b.hx = BT_BALIK.x0 + 20 + Math.random() * (BT_BALIK.x1 - BT_BALIK.x0 - 40);
+      b.hy = BT_BALIK.y0 + 2 + Math.random() * (BT_BALIK.y1 - BT_BALIK.y0 - 4);
+      b.ht = 3 + Math.random() * 4;
+    }
+  }
+  b.vx = btYaklas(b.vx, clamp((hx - b.x) * 1.3, -hiz, hiz), dt * 2.2);
+  b.vy = btYaklas(b.vy, clamp((hy - b.y) * 1.3, -10, 10), dt * 2.2);
+  b.x = clamp(b.x + b.vx * dt, BT_BALIK.x0, BT_BALIK.x1); b.y = clamp(b.y + b.vy * dt, BT_BALIK.y0, BT_BALIK.y1);
+  if (Math.abs(b.vx) > 4) b.yon = b.vx > 0 ? 1 : -1;
+  b.yonS = btYaklas(b.yonS, b.yon, dt * 7);
+  // yüzeye çıkıp ağız açma: "blup blup"
+  if (b.durum === 'yuz') {
+    b.yuzeyT -= dt;
+    b.derin = btYaklas(b.derin, 1, dt * 1.5);
+    if (b.yuzeyT <= 0) { b.durum = 'yuzey'; b.t = 0; b.agizOldu = false; }
+  } else {   // 'yuzey'
+    b.t += dt;
+    b.derin = btYaklas(b.derin, .4, dt * 5);   // gövde yine suyun içinde; yalnız sırtı ve ağzı yüzeye değer
+    b.agiz = b.t > .35 && b.t < 1.35 ? Math.abs(Math.sin((b.t - .35) * Math.PI * 3)) : 0;
+    if (b.t > .4 && !b.agizOldu) {
+      b.agizOldu = true;
+      const ax = b.x + b.yon * b.boy * .62;
+      btHalka(ax, b.y, 5, 1.2, .9); btKabarcik(ax, b.y - 2); btKabarcik(ax + 2, b.y - 4);
+      if (btEkranda(ax, 0)) btOlay('k12SazanOp', { x: ax });
+    }
+    if (b.t > 1.6) { b.durum = 'yuz'; b.agiz = 0; b.yuzeyT = 5 + Math.random() * 7; }
+  }
+}
+function btBalikGuncelle(dt) {
+  if (!BT.balik.length) return;
+  // Feza havuz kenarına gelince balıklar ona doğru toplanır, biri zıplar (her gelişte bir kez)
+  const kenar = P.x > BT_BALIK.x0 - 420 && P.x < BT_BALIK.x1 + 60;
+  if (kenar && !BT.balikGeldi) { BT.balikGeldi = true; btBalikTopla(P.x + 150 + Math.max(0, BT.fezaVx) * .8, BT_BALIK.y0 + 9, 4.5, 1.1); }
+  if (!kenar && P.x < BT_BALIK.x0 - 900) BT.balikGeldi = false;
+  // Feza yakındayken ara sıra kendiliğinden bir zıplama daha
+  if (kenar) { BT.otoZiplaT -= dt; if (BT.otoZiplaT <= 0) { BT.otoZiplaT = 9 + Math.random() * 6; btBalikTopla(P.x + 150, BT_BALIK.y0 + 9, 3, .9); } }
+  if (BT.balikTop > 0) BT.balikTop -= dt;
+  if (BT.ziplaT >= 0) {
+    BT.ziplaT -= dt;
+    if (BT.ziplaT < 0) {   // toplanma noktasına en yakın balık zıplar
+      let en = null, ed = 1e9;
+      for (const b of BT.balik) { if (b.durum === 'zipla') continue; const d = Math.abs(b.x - BT.topX); if (d < ed) { ed = d; en = b; } }
+      btBalikZipla(en);
+    }
+  }
+  for (let i = 0; i < BT.balik.length; i++) btBalikAdim(BT.balik[i], dt, i);
+}
+// Bir balık (yandan): ölçek boy/14, sağa bakar; yonS ile aynalanır (dönerken incelir)
+function btBalikCiz(c, b, havada) {
+  const R = BT_BALIK_RENK[b.r], s = b.boy / 14 * btDerin(b.y + 4);
+  const kuyruk = Math.sin(b.faz) * .45, yuzgec = Math.sin(b.faz * .8 + 1) * .35;
+  if (!havada) {   // su altındaki gölgesi (biraz aşağıda, koyu)
+    c.globalAlpha = .13 * (1 - b.derin * .4); btEl(c, b.x, b.y + 4, 10 * s, 2.4 * s, 0, '#1d4a5a');
+  }
+  c.save();
+  c.translate(b.x, b.y + b.zh); c.rotate(b.aci * b.yon); c.scale(b.yonS * s, s);
+  c.globalAlpha = havada ? 1 : .95 - b.derin * .2;   // suyun içinde yarı saydam
+  // kuyruk (yelpaze, sallanır)
+  c.save(); c.translate(-8, 0); c.rotate(kuyruk);
+  c.fillStyle = R[2]; c.beginPath(); c.moveTo(1, 0);
+  c.quadraticCurveTo(-4, -7, -10, -7); c.quadraticCurveTo(-6.5, 0, -10, 7); c.quadraticCurveTo(-4, 7, 1, 0); c.fill();
+  c.fillStyle = R[1]; c.globalAlpha *= .5; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-4, -4, -8, -5); c.quadraticCurveTo(-5, 0, 0, 0); c.fill();
+  c.restore();
+  c.globalAlpha = havada ? 1 : .95 - b.derin * .2;
+  // sırt yüzgeci
+  c.fillStyle = R[2]; c.beginPath(); c.moveTo(-4, -3.6); c.quadraticCurveTo(-1, -8.5, 3, -4); c.closePath(); c.fill();
+  // gövde, karın, pullu parıltı
+  btEl(c, 0, 0, 9.5, 4.6, 0, R[0]);
+  btEl(c, 1.5, 1.9, 6.5, 1.8, 0, R[1]);
+  btEl(c, -.5, -2.2, 5, 1.1, -.05, 'rgba(255,255,255,.45)');
+  if (b.r === 3) { btEl(c, 1.5, -1.6, 3.6, 2.3, .2, '#ff5a2e'); btEl(c, -5, -.4, 2.4, 2, 0, '#ff6a3a'); }   // beyaz balığın kırmızı benekleri
+  // göğüs yüzgeci (çırpar)
+  c.save(); c.translate(2, 2.6); c.rotate(.6 + yuzgec); btEl(c, -2.4, 0, 3, 1.3, 0, R[2]); c.restore();
+  // göz ve ağız
+  btEl(c, 5.6, -1.1, 1.7, 1.7, 0, '#ffffff'); btEl(c, 6, -1.1, 1, 1, 0, '#222'); btEl(c, 5.6, -1.7, .45, .45, 0, '#fff');
+  if (b.agiz > .05) btEl(c, 9.3, .2, .7 + b.agiz * .6, .5 + b.agiz * 1.1, 0, '#8a2a1c');
+  if (!havada) {
+    // üstündeki su: gövde ve kuyruk su rengine karışır (derinde daha çok)
+    c.globalAlpha = .14 + .12 * b.derin; btEl(c, -3.5, .3, 15.5, 6.6, 0, '#5eabc6');
+    // yüzeye yakınken sırtta ve ağızda ince su çizgisi (yüzey burada)
+    if (b.derin < .8) {
+      c.globalAlpha = (.8 - b.derin) * 1.6; c.strokeStyle = '#ffffff'; c.lineWidth = .9;
+      c.beginPath(); c.moveTo(-7, -4.6); c.quadraticCurveTo(1, -6, 10, -4.4); c.stroke();
+    }
+  }
+  c.restore();
+  c.globalAlpha = 1;
+}
+
+// ════════════════════════ Kurbağalar (göletin sağ yanı, nilüfer yapraklarında) ════════════════════════
+// Üç yeşil kurbağa: iri parlak gözler, gülen ağız, pembe yanak. Boğaz kesesini şişirip "vırak" der; Feza yaklaşınca ya da
+// dokununca yapraktan yaprağa zıplar (yay çizer, konunca yaprak sallanır, suda halka). Biri Feza'nın yanına, kıyıya zıplar ve ona bakar.
+// Dil fırlatma / böcek YOK.
+const BT_KURB_RENK = [['#6cc04a', '#4f9a38', '#e8f6b4'], ['#82cc56', '#5ea83f', '#eef8c0'], ['#5db76a', '#43944f', '#e2f4c4']];
+function btKurbKur() {
+  BT.kPed.length = 0; BT.kurb.length = 0;
+  for (let i = 0; i < BT.nil.length; i++) if (BT.nil[i].renk < 0 && BT.nil[i].x > 25800) BT.kPed.push(i);
+  const ilk = [0, 2, 3];
+  for (let i = 0; i < 3; i++) {
+    const n = BT.nil[BT.kPed[ilk[i]]];
+    BT.kurb.push({
+      ped: BT.kPed[ilk[i]], x: n.x, y: n.y - 1, yon: -1, yonS: -1, r: i, boy: i === 1 ? .85 : 1,
+      durum: 'otur', t: 0, kese: 0, keseT: 9, virakT: 1.5 + i * 2.2, kirpT: 2 + i, kapak: 0, bakX: 0, sevT: 0,
+      zx0: 0, zy0: 0, zx1: 0, zy1: 0, zh: 0, zs: .5, u: 0, kiyiye: false, hedefPed: -1, hx: 0, hy: 0
+    });
+  }
+  BT.kurbKiyi = false;
+}
+function btKurbBosPed(f) {   // başka kurbağanın oturmadığı/gitmediği gelişigüzel bir yaprak
+  let say = 0, sec = -1;
+  for (const p of BT.kPed) {
+    if (p === f.ped) continue;
+    let dolu = false;
+    for (const q of BT.kurb) if (q !== f && ((q.durum !== 'zipla' && q.durum !== 'kiyi' && q.ped === p) || q.hedefPed === p)) dolu = true;
+    if (dolu) continue;
+    say++; if (Math.random() * say < 1) sec = p;
+  }
+  return sec;
+}
+function btKurbZipla(f, x1, y1, ped, kiyiye) {
+  const yapraktan = f.durum === 'otur' && f.ped >= 0;
+  f.durum = 'zipla'; f.t = 0; f.u = 0; f.zx0 = f.x; f.zy0 = f.y; f.zx1 = x1; f.zy1 = y1; f.kiyiye = kiyiye; f.hedefPed = ped;
+  const d = Math.abs(x1 - f.x);
+  f.zh = 18 + d * .16; f.zs = .42 + d * .0013;
+  if (d > 2) { f.yon = x1 > f.x ? 1 : -1; f.yonS = f.yon; }
+  if (yapraktan) { const n = BT.nil[f.ped]; btHalka(n.x, n.y, 7, .8, .7); }
+  btOlay('k12KurbagaZipla', { x: f.x, kiyi: kiyiye });
+}
+function btKurbYaprakla(f) {   // boş bir yaprağa zıpla (yoksa olduğu yerde sevinçle hopla)
+  const p = btKurbBosPed(f);
+  if (p >= 0) { const n = BT.nil[p]; btKurbZipla(f, n.x, n.y - 1, p, false); }
+  else btKurbZipla(f, f.x, f.y, f.ped, f.durum === 'kiyi');
+}
+function btVirak(f) {
+  f.keseT = 0;
+  if (btEkranda(f.x, 0)) btOlay('k12KurbagaVirak', { x: f.x, n: f.r });
+}
+function btKurbAdim(f, dt, i) {
+  f.t += dt; f.sevT -= dt; f.keseT += dt;
+  // kese: 0,9 sn'de iki kez şişer
+  f.kese = f.keseT < .9 ? Math.abs(Math.sin(f.keseT / .9 * BT_PI2)) : 0;
+  // göz kırpma
+  f.kirpT -= dt; if (f.kirpT <= 0) { f.kapak = 1; f.kirpT = 2.5 + Math.random() * 3; }
+  f.kapak = Math.max(0, f.kapak - dt * 7);
+  f.bakX = btYaklas(f.bakX, clamp((P.x - f.x) / 150, -1, 1), dt * 6);
+  if (f.durum === 'zipla') {
+    f.u = Math.min(1, f.t / f.zs);
+    f.x = lerp(f.zx0, f.zx1, f.u); f.y = lerp(f.zy0, f.zy1, f.u) - Math.sin(Math.PI * f.u) * f.zh;
+    if (f.u >= 1) {
+      f.t = 0;
+      if (f.kiyiye) { f.durum = 'kiyi'; f.virakT = .6; f.hedefPed = -1; }
+      else {
+        f.durum = 'otur'; f.ped = f.hedefPed >= 0 ? f.hedefPed : btPedBul(f.zx1); f.hedefPed = -1;
+        const n = BT.nil[f.ped]; n.dokT = 0; n.kurbT = 0;
+        btHalka(n.x, n.y + 1, 12, 1.1, 1); btHalka(n.x, n.y + 1, 6, .8, .7); btSicrat(n.x, n.y - 2, 4, .3);
+        btOlay('k12Sicrama', { guc: .3, x: n.x });
+      }
+    }
+    return;
+  }
+  const dx = P.x - f.x, yakin = Math.abs(dx) < 420;
+  if (yakin && Math.abs(dx) > 12) f.yon = dx > 0 ? 1 : -1;
+  f.yonS = btYaklas(f.yonS, f.yon, dt * 8);
+  // vırak: Feza bölgedeyken ara sıra
+  f.virakT -= dt;
+  if (f.virakT <= 0) { f.virakT = 3.5 + Math.random() * 4.5; if (Math.abs(dx) < 900) btVirak(f); }
+  if (f.durum === 'kiyi') {   // kıyıda Feza'ya bakar; Feza uzaklaşınca ya da bir süre sonra yaprağına döner
+    if (f.t > 2.5 && (Math.abs(dx) > 280 || f.t > 8)) btKurbYaprakla(f);
+    return;
+  }
+  // Feza yaklaşınca bir yapraktan ötekine zıplar
+  if (f.sevT <= 0 && Math.abs(dx) < 130 && BT.fezaVx > 15) { f.sevT = 5 + Math.random() * 3; btKurbYaprakla(f); return; }
+  // meraklı kurbağa (ilk): Feza göletin sağ ucuna gelince onun yanına, kıyıya zıplar
+  if (i === 0 && !BT.kurbKiyi && P.x > 25640 && P.x < BT_GOL.x1 + 60 && Math.abs(dx) < 330) {
+    BT.kurbKiyi = true; f.sevT = 3;
+    const kx = clamp(P.x + (dx > 0 ? -1 : 1) * 46 + BT.fezaVx * .5, BT_GOL.x0 + 60, BT_GOL.x1 + 30);
+    btKurbZipla(f, kx, BT_ISKELE.y - 1, -1, true);
+  }
+}
+function btPedBul(x) { let en = BT.kPed[0], ed = 1e9; for (const p of BT.kPed) { const d = Math.abs(BT.nil[p].x - x); if (d < ed) { ed = d; en = p; } } return en; }
+function btKurbGuncelle(dt) {
+  if (!BT.kurb.length) return;
+  if (P.x < BT_GOL.x0 - 700 || P.x > BT_GOL.x1 + 1400) BT.kurbKiyi = false;
+  for (let i = 0; i < BT.kurb.length; i++) btKurbAdim(BT.kurb[i], dt, i);
+}
+// Kurbağa (yandan, sağa bakar; yonS ile aynalanır). (x, y) ayakların bastığı yer; boy ~22 birim.
+function btKurbCiz(c, f, tm) {
+  const R = BT_KURB_RENK[f.r], s = 1.5 * f.boy * btDerin(f.durum === 'kiyi' || f.kiyiye ? BT_GOL.alt : f.y);
+  let bob = 0;
+  if (f.durum === 'otur' && f.ped >= 0) { const n = BT.nil[f.ped]; bob = Math.sin(tm * 1.1 + n.sal) * .8 + (n.kurbT < .5 ? Math.sin(n.kurbT / .5 * Math.PI) * 2 : 0); }
+  const zip = f.durum === 'zipla' ? Math.sin(Math.PI * f.u) : 0;   // havadayken bacaklar uzar
+  c.save();
+  c.translate(f.x, f.y + bob); c.scale(f.yonS * s, s);
+  if (f.durum === 'zipla') c.rotate(-(1 - 2 * f.u) * .45);
+  // arka bacak: oturunca katlanmış iri but, zıplarken geriye uzanır
+  if (zip > .15) {
+    c.strokeStyle = R[1]; c.lineWidth = 3.4; c.beginPath(); c.moveTo(-5, -6); c.lineTo(-12 - 4 * zip, -2 + 3 * zip); c.lineTo(-19 - 6 * zip, 1 + 4 * zip); c.stroke();
+    btEl(c, -21 - 6 * zip, 1.5 + 4 * zip, 3.6, 1.6, .3, R[1]);
+  } else {
+    btEl(c, -3, -.8, 7, 1.9, 0, R[1]);   // ayak
+    btEl(c, -6, -5.5, 7.5, 5.4, -.25, R[1]);   // but
+    btEl(c, -6.5, -6.6, 5, 3, -.25, R[0]);
+  }
+  // gövde
+  c.fillStyle = R[0]; c.beginPath(); c.ellipse(0, -9, 10.5, 8.2, -.22, 0, BT_PI2); c.fill();
+  btEl(c, 3.6, -5.8, 6.4, 4.6, -.1, R[2]);   // açık renk karın
+  btEl(c, -4, -13.5, 2, 1.4, 0, R[1]); btEl(c, -7.5, -9.5, 1.6, 1.2, 0, R[1]); btEl(c, -1, -15.5, 1.3, 1, 0, R[1]);   // benekler
+  btEl(c, -2, -14.5, 5, 1.6, -.25, 'rgba(255,255,255,.35)');   // parıltı
+  // ön bacak
+  c.strokeStyle = R[0]; c.lineWidth = 2.6;
+  c.beginPath(); c.moveTo(5.5, -6); c.lineTo(zip > .15 ? 10 + 3 * zip : 7.5, zip > .15 ? -3 : -.6); c.stroke();
+  btEl(c, zip > .15 ? 11 + 3 * zip : 8.6, zip > .15 ? -2.6 : -.5, 2.4, 1.1, 0, R[1]);
+  // boğaz kesesi ("vırak")
+  if (f.kese > .03) {
+    const kr = 1.5 + f.kese * 5;
+    btEl(c, 8.2, -6.4 + kr * .2, kr, kr * .85, 0, '#f6f2c4');
+    btEl(c, 7.4 - kr * .2, -7 - kr * .1, kr * .4, kr * .25, 0, 'rgba(255,255,255,.8)');
+  }
+  // ağız: geniş gülümseme, yanak
+  c.strokeStyle = '#2f5a2a'; c.lineWidth = 1.1;
+  c.beginPath(); c.moveTo(3.5, -10.6); c.quadraticCurveTo(8.5, -7.4, 12.2, -10.6); c.stroke();
+  c.globalAlpha = .75; btEl(c, 7, -10.2, 2.1, 1.3, 0, '#ff9ab4'); c.globalAlpha = 1;
+  btEl(c, 11.4, -12.4, .45, .35, 0, '#2f5a2a');   // burun deliği
+  // iri gözler: başın üstünde iki kubbe (arkadaki biraz küçük)
+  for (let k = 0; k < 2; k++) {
+    const ex = k ? 2.4 : 7.8, ey = k ? -17.6 : -16.8, er = k ? 3.6 : 4.3;
+    btEl(c, ex, ey, er + 1, er + .8, 0, R[0]);
+    btEl(c, ex + .3, ey - .2, er * .78, er * .78, 0, '#ffffff');
+    const px = ex + .3 + f.bakX * f.yonS * er * .28 + .4;
+    btEl(c, px, ey, er * .48, er * .52, 0, '#1f2a22');
+    btEl(c, px - er * .18, ey - er * .25, er * .17, er * .17, 0, '#ffffff');
+    if (f.kapak > .05) { c.fillStyle = R[0]; c.beginPath(); c.ellipse(ex + .3, ey - .2, er * .82, er * .82 * f.kapak, 0, Math.PI, BT_PI2); c.fill(); }
+  }
+  c.restore();
+}
+function btKurbIsabet(wx, wy) {
+  for (const f of BT.kurb) {
+    const ux = (wx - f.x) / 32, uy = (wy - (f.y - 14)) / 26;
+    if (ux * ux + uy * uy < 1) return f;
+  }
+  return null;
+}
+function btBalikIsabet(wx, wy) {
+  let en = null, ed = 1;
+  for (const b of BT.balik) {
+    const ux = (wx - b.x) / 22, uy = (wy - (b.y + b.zh)) / 15, d = ux * ux + uy * uy;
+    if (d < ed) { ed = d; en = b; }
+  }
+  return en;
+}
+
 // ════════════════════════ Kare güncellemesi ════════════════════════
 function btKare(dt) {
   BT.saat += dt;
@@ -931,9 +1256,11 @@ function btKare(dt) {
   for (const n of BT.nil) btNilAdim(n, dt);
   for (const n of BT.onNil) btNilAdim(n, dt);
   BT.selaleCos = btYaklas(BT.selaleCos, 0, dt * .9);
+  btBalikGuncelle(dt);
+  btKurbGuncelle(dt);
 }
 function btNilAdim(n, dt) {
-  n.dokT += dt;
+  n.dokT += dt; n.kurbT += dt;
   if (n.renk < 0) return;
   const yakinF = Math.abs(P.x - n.x) < 170;
   n.acik = btYaklas(n.acik, Math.max(n.acH, yakinF ? 1 : .15), dt * 1.6);
@@ -977,6 +1304,12 @@ function btIsabet(wx, wy) {
   return en;
 }
 function btDokun(wx, wy) {
+  // kurbağa: "vırak" + zıplar (kıyıdaysa olduğu yerde sevinçle hoplar)
+  const f = btKurbIsabet(wx, wy);
+  if (f && f.durum !== 'zipla') { btVirak(f); f.sevT = 2; if (f.durum === 'kiyi') { f.t = 0; btKurbZipla(f, f.x, f.y, -1, true); } else btKurbYaprakla(f); return true; }
+  // balık: dokunulan balık zıplar, ötekiler oraya toplanır
+  const b = btBalikIsabet(wx, wy);
+  if (b) { btBalikTopla(wx, wy, 3, -1); btBalikZipla(b); return true; }
   const k = btIsabet(wx, wy);
   if (k) { btTepki(k); return true; }
   // şelale
@@ -1000,6 +1333,8 @@ function btDokun(wx, wy) {
   if (wx > BT_GOL.x0 + 20 && wx < BT_GOL.x1 - 20 && wy > BT_GOL.ust + 4 && wy < BT_GOL.alt) {
     btHalka(wx, wy, 9, 1.2, .9); btHalka(wx, wy, 4, .8, .6);
     btOlay('k12BotSuDokun', { x: wx });
+    // balıkların yanına dokunuş: toplanırlar, biri zıplar (yürümeyi engellemez)
+    if (wx > BT_BALIK.x0 - 40 && wx < BT_BALIK.x1 + 40) btBalikTopla(wx, wy, 3.5, .8);
   }
   return false;
 }
@@ -1043,7 +1378,7 @@ TUR.kaydet('k12Botanik', {
 
 // Test kancası (vlib12 ile): BOTANIK12.BT, BOTANIK12.dokun(i), BOTANIK12.isabet(wx, wy), BOTANIK12.durum()
 globalThis.BOTANIK12 = {
-  BT, dokun: i => btTepki(BT.kp[i]), isabet: btIsabet, dokunXY: btDokun,
+  BT, dokun: i => btTepki(BT.kp[i]), balikZipla: i => btBalikZipla(BT.balik[i]), kurbZipla: i => btKurbYaprakla(BT.kurb[i]), isabet: btIsabet, dokunXY: btDokun,
   durum: () => BT.kp.map(k => k.rol[0] + ':' + k.durum).join(' ') + ' kule' + BT.kule,
   ekran: k => { const r = cv.getBoundingClientRect(); return { x: r.left + (k.hx - cam.x) * S / DPR, y: r.top + (k.hy - cam.y) * S / DPR }; }
 };

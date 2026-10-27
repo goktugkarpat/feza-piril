@@ -1,6 +1,6 @@
 /* etkinlik12.js — Bölüm 12'nin yürürken yaşanan üç etkinliği (sözleşme: src/BOLUM12.md).
    k12Bahce   lojman çiçek tarhı (sütun 12–60): yol kenarındaki uykulu tomurcuklar Feza yanından geçince yaylanarak açılır
-              (renk dalgası, uçuşan minik yapraklar, parıltı). Dokunulan çiçek daha da büyür ve içinden kelebek çıkar.
+              (renk dalgası, uçuşan minik yapraklar, parıltı). Dokunulan çiçek daha da büyür ve içinden bir sabun köpüğü çıkar (böcek yok kuralı).
               Anne yolda açılmış bir çiçeğin başında eğilip onu koklar (ANNE12.kisaPoz 'kokla'; takip bozulmaz).
    k12Ucurtma FASS çimenliği (315–440): anne Pırıl desenli uçurtmayı Feza'ya uzatır (Feza durmaz). Feza yürüdükçe/koştukça
               uçurtma arkasında rüzgârda yükselir; ip ve kuyruk kurdeleleri Verlet zinciri. Dokununca takla atar, kurdeleler
@@ -281,14 +281,17 @@
       if (b.x < cam.x - 40 || b.x > cam.x + VW + 40) continue;
       const a = b.yas > b.omur ? Math.max(0, 1 - (b.yas - b.omur) / 3.5) : Math.min(1, b.yas * 3);
       if (a <= .01) continue;
-      const cirp = .2 + .8 * Math.abs(Math.sin(now * 13 + b.faz)), spr = kanatSpr(b.pal), egim = sinir(b.vx * .002, -.35, .35);
-      g.globalAlpha = a;
-      yerlestir(b.x, b.y, egim, cirp * .95, .95); koy(spr, .05, .52);          // sağ kanat
-      yerlestir(b.x, b.y, egim, -cirp * .95, .95); koy(spr, .05, .52);         // sol kanat
+      // CLAUDE.md "böcek yok": çiçekten artık kelebek değil, gökkuşağı yanardönerli bir SABUN KÖPÜĞÜ çıkar (aynı uçuş yolu)
+      const r = 13 + Math.sin(b.faz * 3) * 2.5, sal = Math.sin(now * 3.1 + b.faz) * .08;   // iri: Feza'nın başının çevresinde okunur
       dunyaya();
-      elips(g, b.x, b.y + 1, 1.5, 5.5, '#5b4560', egim);
-      g.strokeStyle = '#5b4560'; g.lineWidth = .8; g.lineCap = 'round';
-      g.beginPath(); g.moveTo(b.x, b.y - 4); g.quadraticCurveTo(b.x - 2, b.y - 10, b.x - 4.5, b.y - 11); g.moveTo(b.x, b.y - 4); g.quadraticCurveTo(b.x + 2, b.y - 10, b.x + 4.5, b.y - 11); g.stroke();
+      g.globalAlpha = a * .18; g.fillStyle = '#eaf6ff'; g.beginPath(); g.ellipse(b.x, b.y, r * (1 + sal), r * (1 - sal), 0, 0, TAM); g.fill();
+      g.globalAlpha = a * .85; g.lineWidth = 1.4;
+      g.strokeStyle = '#ffffff'; g.beginPath(); g.ellipse(b.x, b.y, r * (1 + sal), r * (1 - sal), 0, 0, TAM); g.stroke();
+      g.lineWidth = 1.6;   // yanardöner kenar: pembe, sarı, mavi yaylar
+      g.strokeStyle = '#ffb3d9'; g.beginPath(); g.ellipse(b.x, b.y, r * (1 + sal) - 1.2, r * (1 - sal) - 1.2, 0, .2, 1.3); g.stroke();
+      g.strokeStyle = '#fff1a0'; g.beginPath(); g.ellipse(b.x, b.y, r * (1 + sal) - 1.2, r * (1 - sal) - 1.2, 0, 1.3, 2.3); g.stroke();
+      g.strokeStyle = '#a8d8ff'; g.beginPath(); g.ellipse(b.x, b.y, r * (1 + sal) - 1.2, r * (1 - sal) - 1.2, 0, 3.6, 4.6); g.stroke();
+      g.globalAlpha = a * .95; g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(b.x - r * .38, b.y - r * .4, r * .22, r * .13, -.6, 0, TAM); g.fill();
     }
     g.globalAlpha = 1;
   }
@@ -795,6 +798,10 @@
     k.takla = .0001; k.taklaSay++;
     k.ipVy -= 160; k.ipVx += k.yonY * 120;   // ip de taklayla birlikte dalgalanır
     burst(k.cx, k.cy, 14, RENK, 150, 1, 6);
+    if (!oto) {   // dokunuşla takla: daha büyük kutlama — gökkuşağı renkli yıldız halkası ve iki ışık dalgası
+      burst(k.cx, k.cy, 22, GOK7, 240, 1.2, 7);
+      halkaAt(k.cx, k.cy, '#ffffff', 170, .8); halkaAt(k.cx, k.cy, RENK[k.taklaSay % RENK.length], 110, 1);
+    }
     olay('k12UcurtmaTakla', { o, x: k.cx, y: k.cy, oto: !!oto });
   }
   function taklaIlerle(o, k, dt) {
@@ -1042,7 +1049,7 @@
         hedef += 130 * w * (.78 + .22 * Math.sin(t * 5 + j.i));
         if (!j.coskun && w > .35) { j.coskun = true; olay('k12Fiskiye', { o, x: j.x, guc: .6 }); }
       } else if (d > 420) j.coskun = false;
-      if (j.sicra > 0) { j.sicra -= dt; hedef = Math.max(hedef, 250); }
+      if (j.sicra > 0) { j.sicra -= dt; hedef = Math.max(hedef, j.sicra > .9 ? 310 : 250); }   // dokunulan fıskiye ilk anda daha yükseğe
       j.hv += ((hedef - j.h) * 30 - j.hv * 6) * dt; j.h += j.hv * dt;
       if (d < enD) { enD = d; enYakin = j; }
       if (d < 330 && j.h > 90) gokHedef = Math.max(gokHedef, sinir((j.h - 90) / 90, 0, 1));
@@ -1361,7 +1368,10 @@
       if (d < 70 && p.y > yJ - j.h - 40 && d < fd) { fj = j; fd = d; }
     }
     if (fj) {
-      fj.sicra = 1.3; fj.hv += 600; k.gokParla = 1; k.sonDokunus = now;
+      fj.sicra = 1.3; fj.hv += 900; k.gokParla = 1; k.sonDokunus = now;
+      // komşu fıskiyeler de sırayla zıplar (küçük bir su dalgası) ve gökkuşağı renkli damlalar saçılır
+      for (let i = 0; i < k.fiskiye.length; i++) { const j = k.fiskiye[i]; if (j !== fj && Math.abs(j.x - fj.x) < 260) { j.hv += 420; j.sicra = Math.max(j.sicra || 0, .8); } }
+      burst(fj.x, yJ - fj.h * .8, 16, GOK7, 200, 1, 5);
       for (let i = 0; i < 9; i++) yaprakAt(fj.x + (Math.random() - .5) * 20, yJ - fj.h * .7, (Math.random() - .5) * 220, -120 - Math.random() * 120, i % 3 === 0 ? GOK7[i % 7] : '#e8f7ff', .8, false);
       burst(fj.x, yJ - 10, 10, ['#e8f7ff', '#bfe6ff', '#ffffff'], 140, .8, 5);
       olay('k12Fiskiye', { o, x: fj.x, guc: 1 }); olay('k12Damla', { o, x: fj.x });

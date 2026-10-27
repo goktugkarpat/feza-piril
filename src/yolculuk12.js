@@ -1033,14 +1033,30 @@ const YOL12 = (() => {
     g.globalAlpha = 1;
   }
   // Hızlıyken arkada ince rüzgâr çizgileri
+  // Hız hissi: Feza'nın arkasında rüzgâr çizgileri (hız arttıkça daha çok, daha uzun, daha belirgin) ve yerde, tekerleklerin
+  // arkasında kısa toz/hız izleri. Önbellek yok ama yalnız birkaç çizgi: karede gradyan/nesne yok.
   function ruzgarCiz(k, tm) {
-    const a = clamp((k.v - 170) / 110, 0, 1) * 0.45;
-    if (a <= 0.01) return;
-    g.strokeStyle = '#ffffff'; g.lineWidth = 1.3; g.lineCap = 'round';
+    const vm = AYAR[k.arac].vMax, h = clamp((k.v - vm * 0.35) / (vm * 0.6), 0, 1);
+    if (h <= 0.01) return;
+    g.globalCompositeOperation = 'source-over'; g.strokeStyle = '#ffffff'; g.lineCap = 'round';
+    const n = 3 + Math.round(h * 4);
+    for (let i = 0; i < n; i++) {
+      const hz = 1.8 + h * 1.6 + (i % 3) * 0.35, f = ((tm * hz + i * 0.37) % 1);
+      const x = P.x - 36 - f * (60 + 50 * h), y = P.y - 22 - ((i * 23) % 100) - Math.sin(i * 2.1) * 6, L = 18 + 22 * h + (i % 2) * 8;
+      const al = (0.35 + 0.5 * h) * Math.sin(f * Math.PI);
+      g.lineWidth = i % 2 ? 1.4 : 2;
+      // önce ince mavi-gri gölge (açık çimen ve gök önünde de okunsun), üstüne beyaz çizgi
+      g.globalAlpha = al * 0.45; g.strokeStyle = '#5d7f99';
+      g.beginPath(); g.moveTo(x, y + 1.2); g.quadraticCurveTo(x - L * 0.5, y - 0.8, x - L, y + 2.2); g.stroke();
+      g.globalAlpha = al; g.strokeStyle = '#ffffff';
+      g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x - L * 0.5, y - 2, x - L, y + 1); g.stroke();
+    }
+    // yerde hız izleri (tekerleklerin arkasında, yolun rengini açan kısa çizgiler)
+    g.lineWidth = 1.2; g.strokeStyle = '#ffffff';
     for (let i = 0; i < 3; i++) {
-      const f = ((tm * 2.2 + i * 0.37) % 1), x = P.x - 40 - f * 70, y = P.y - 30 - i * 18 - Math.sin(i * 2.1) * 6;
-      g.globalAlpha = a * Math.sin(f * Math.PI);
-      g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x - 14, y - 2, x - 28, y + 1); g.stroke();
+      const f = ((tm * (2.6 + h) + i * 0.33) % 1), x = P.x - 26 - f * 90;
+      g.globalAlpha = 0.3 * h * (1 - f);
+      g.beginPath(); g.moveTo(x, k.zemin + 1.5 + i * 1.6); g.lineTo(x - 16 - 10 * h, k.zemin + 1.5 + i * 1.6); g.stroke();
     }
     g.globalAlpha = 1;
   }

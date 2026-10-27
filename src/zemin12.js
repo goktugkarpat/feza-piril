@@ -435,6 +435,21 @@ function zn12Derzler(L, R, cx) {
       for (const y of [713, 728.5, 744]) { const px = zn12PX(x, y, cx); g.moveTo(px + 0.9, y); g.arc(px, y, 0.9, 0, ZN12_PI2); n++; }
     }
     if (n) g.fill();
+    // iskelenin iki ucu: kalın uç tahtası + iki kısa direk (çakıldan tahtaya geçiş "kesik" değil, bilerek yapılmış bir başlangıç gibi okunsun)
+    for (const ex of [604 * T, 658 * T]) {
+      if (ex < L - 40 || ex > R + 40) continue;
+      const x0 = zn12PX(ex, ZN12_YOL0, cx), x1 = zn12PX(ex, ZN12_YOL1, cx), sag = ex > 630 * T ? -1 : 1;
+      g.fillStyle = '#8f6440'; g.beginPath();
+      g.moveTo(x0 - 2.5, ZN12_YOL0 - 1); g.lineTo(x0 + 2.5, ZN12_YOL0 - 1); g.lineTo(x1 + 3, ZN12_YOL1 + 1); g.lineTo(x1 - 3, ZN12_YOL1 + 1); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255,226,180,.45)'; g.fillRect(x0 - 2.5 + (sag > 0 ? 4 : 0), ZN12_YOL0, 1, ZN12_YOL1 - ZN12_YOL0);
+      // direkler: arkada (uzak kenarda) ince, önde (yakın kenarda) kalın; tepeleri ışık alır
+      for (const [px, py, w, h] of [[x0, ZN12_YOL0 + 1, 4.2, 15], [x1, ZN12_YOL1 + 2, 5.6, 12]]) {
+        g.fillStyle = 'rgba(40,30,20,.25)'; g.beginPath(); g.ellipse(px + 3, py + 0.5, w * 1.1, w * 0.3, 0, 0, ZN12_PI2); g.fill();
+        g.fillStyle = '#6e4a2c'; g.fillRect(px - w / 2, py - h, w, h);
+        g.fillStyle = '#9a6c44'; g.fillRect(px - w / 2, py - h, w * 0.45, h);
+        g.fillStyle = '#c9996a'; g.beginPath(); g.ellipse(px, py - h, w / 2, w * 0.22, 0, 0, ZN12_PI2); g.fill();
+      }
+    }
   }
   // bisiklet yolu: yere boyalı beyaz bisiklet işaretleri (yakın şeritte, perspektifle yatık)
   if (zn12Gorunur('bisiklet', L, R)) {
@@ -978,20 +993,20 @@ const ZN12_YERLESIM = [
   ['tabela', 60, { ikon: ['bisiklet', 'kitap'] }], ['park', 64],
   // yol1: ağaçlı uzun yol; FENS (~c125) ve Üniversite Merkezi (~c225) önünde yalnız alçak çit/tarh + fener
   ['fener', 70], ['agac', 76, { v: 0 }], ['fener', 83], ['agac', 90, { v: 1, s: 0.92 }], ['fener', 97], ['agac', 104, { v: 2, s: 0.85 }],
-  ['tabela', 110, { ikon: ['kitap', 'ordek'] }], ['fener', 116], ['cit', 122], ['tarh', 130, { v: 0 }], ['fener', 137], ['agac', 145, { v: 0 }],
-  ['fener', 152], ['agac', 160, { v: 1 }], ['fener', 167], ['kiraz', 175], ['kiraz', 183, { s: 0.85 }], ['fener', 190], ['kiraz', 197],
+  ['tabela', 110, { ikon: ['kitap', 'ordek'] }], ['fener', 116], ['cit', 122], ['tarh', 130, { v: 0 }], ['fener', 137], ['agac', 145, { v: 0, s: 0.8 }],
+  ['fener', 152], ['agac', 160, { v: 1, s: 0.8 }], ['fener', 167], ['tarh', 176, { v: 2 }], ['kiraz', 186, { s: 0.8 }], ['fener', 194],   // FENS + Üniversite Merkezi görünsün (BINA isteği)
   ['agac', 205, { v: 2, s: 0.85 }], ['fener', 211], ['cit', 219], ['tarh', 228, { v: 1 }], ['fener', 235], ['bank', 241], ['agac', 248, { v: 0 }],
   ['fener', 255], ['kiraz', 262], ['fener', 269], ['agac', 276, { v: 1, s: 0.95 }], ['bank', 283], ['fener', 288], ['park', 296],
   // FASS çimenliği (~c375; uçurtma 315–440: yalnız alçak şeyler + fener)
   ['tabela', 302, { ikon: ['ucurtma', 'kitap'] }], ['kiraz', 309], ['fener', 317], ['saksi', 325, { v: 2 }], ['cit', 335], ['bank', 352],
   ['fener', 360], ['tarh', 372, { v: 2 }], ['saksi', 386, { v: 3 }], ['fener', 394], ['agac', 405, { v: 2, s: 0.82 }], ['cit', 416],
-  ['kiraz', 423, { s: 0.8 }], ['fener', 428], ['saksi', 446, { v: 0 }],   // SUNUM (BINA, c441) önü açık
+  ['kiraz', 418, { s: 0.7 }], ['fener', 428], ['saksi', 446, { v: 0 }],   // SUNUM (BINA, c441) önü açık
   // Bilgi Merkezi: ETKINLIK'in havuzu oyun düzleminde 468–548 (y 656–716) → bu aralıkta orta plan yok
   ['tabela', 454, { ikon: ['kitap', 'ordek'] }], ['bank', 460], ['fener', 465], ['fener', 550], ['bank', 553.4],
   // botanik bahçesi (560–700): giriş kemeri, levhalar, tarhlar, dev yapraklı bitkiler; kaplumbağa göleti (BOTANIK) 610–654 boş,
   // arkadaki sera (BINA, c645) görünsün diye 600–690 alçak bitkilerle seyrek
   ['kemer', 563], ['levha', 567, { ikon: 'yaprak' }], ['fener', 571], ['btarh', 576, { v: 0 }], ['bank', 582], ['dev', 588, { v: 1 }],
-  ['kiraz', 593, { v: 1, s: 0.9 }], ['btarh', 598, { v: 1 }], ['levha', 602, { ikon: 'kaplumbaga' }], ['dev', 606, { v: 0 }],
+  ['kiraz', 593, { v: 1, s: 0.75 }], ['btarh', 598, { v: 1 }], ['levha', 602, { ikon: 'kaplumbaga' }], ['dev', 606, { v: 0 }],
   ['dev', 659, { v: 2 }], ['levha', 662, { ikon: 'cicek' }], ['kemer', 668], ['btarh', 672, { v: 2 }], ['bank', 675], ['fener', 680],
   ['agac', 685, { v: 1, s: 0.9 }], ['btarh', 691, { v: 3 }], ['levha', 695, { ikon: 'kaktus' }], ['park', 700, { cati: true }],
   // yol2: göletin yokuşu (kule-çevre önü seyrek)
@@ -1110,9 +1125,13 @@ function zn12OgeCiz(o, tm, gunes, aksamIsik) {
   }
   if (o.tip === 'fener') {
     const spr = zn12FenerSpr(); zn12Koy(spr, o.x, o.y, s, 0);
-    if (aksamIsik > 0.01) {
+    // dokunulan fener (gündüz de) bir an tatlı tatlı yanar: önce parlayıp büyür, sonra yavaşça söner
+    if (o.yan > 0) o.yan = Math.max(0, o.yan - ZN12.dt / 2.4);
+    const yan = o.yan > 0 ? Math.min(1, o.yan * 1.6) : 0, pop = o.yan > 0.85 ? 1 + (o.yan - 0.85) * 2.2 : 1;
+    const guc = Math.max(aksamIsik * 0.9, yan);
+    if (guc > 0.01) {
       const isik = zn12FenerIsik(), tit = 1 + Math.sin(tm * 3 + o.ph) * 0.03;
-      g.globalAlpha = aksamIsik * 0.9; zn12Koy(isik, o.x, o.y - 254 * s, s * 0.7 * tit, 0); g.globalAlpha = 1;
+      g.globalAlpha = guc; zn12Koy(isik, o.x, o.y - 254 * s, s * 0.7 * tit * pop, 0); g.globalAlpha = 1;
     }
     return;
   }
@@ -1305,3 +1324,26 @@ if (typeof BOLUM_NO === 'undefined' || BOLUM_NO === 12) { try { zn12Kur(); } cat
     return zn12Isit(6) && a;
   };
 })();
+
+// ── Dokununca sevindiren küçük sürpriz: fener direğinin küresine (ya da direğine) dokununca fener bir an yanar, ışık zerreleri saçılır.
+//    Yolu kapatmaz; yalnız fenere isabet ederse dokunuşu yutar (Feza o dokunuşla yürümez). Binişte dokunuş araca da gider.
+function zn12Dokun(e) {
+  if (typeof BOLUM_NO === 'undefined' || BOLUM_NO !== 12 || typeof DURUM === 'undefined' || DURUM !== 'oyun') return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const r = cv.getBoundingClientRect(), wx = cam.x + (e.clientX - r.left) * DPR / S, wy = cam.y + (e.clientY - r.top) * DPR / S;
+  if (!Number.isFinite(wx) || !Number.isFinite(wy)) return;
+  for (let i = 0; i < ZN12.ogeler.length; i++) {
+    const o = ZN12.ogeler[i];
+    if (o.tip !== 'fener' || Math.abs(wx - o.x) > 40) continue;
+    const ky = o.y - 254 * o.s, kure = Math.hypot(wx - o.x, wy - ky) < 30, direk = Math.abs(wx - o.x) < 14 && wy > ky && wy < o.y - 40;
+    if (!kure && !direk) continue;
+    if (!(o.yan > 0.6)) {
+      o.yan = 1;
+      if (typeof burst === 'function') burst(o.x, ky, 12, ['#fff6c8', '#ffd98a', '#ffffff', '#ffc4dc'], 90, 0.9, 3);
+      if (typeof OLAY !== 'undefined') OLAY.emit('k12FenerDokun', { o, x: o.x, y: ky });
+    }
+    if (!P.ucus) { e.preventDefault(); e.stopPropagation(); }
+    return;
+  }
+}
+if (typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 12 && typeof cv !== 'undefined' && cv) cv.addEventListener('pointerdown', zn12Dokun, true);

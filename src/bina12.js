@@ -9,10 +9,12 @@
      yurt  — öğrenci yurdu: beyaz cephe, ince kırmızı tuğla kuşaklar, turuncu kiremit kırma çatı, kırmızı bacalar, ortada merdiven kulesi.
      yurt2 — öğrenci yurdu (ikinci çeşit): terracotta oluklu kaplama, beyaz bantlar, beyaz üst kat, kiremit çatıda güneş panelleri.
      spor  — Spor Merkezi: beyaz martı kanadı çatı, cam üst pencere şeridi, sütunlu revak, köşelerde piramit fenerler (gölet kıyısı).
+     fakulte — FENS/FASS tipi fakülte: kırmızı tuğla + beyaz yatay çizgili cephe, bant pencereler, beyaz revak, yarım silindir cam kule.
      pac   — Sabancı Gösteri Merkezi: antrasit dalga çatı, yüksek cam fuaye, çizgili krem cephe, revak (gölet kıyısı).
    Arayüz (ARKA'nın dunya12.js'i çağırır):
      bn12Var(ad) → true/false        bn12Olcu(ad) → {w, h} (olcek 1, katman birimi; tuval kurulmadan da döner)
-     bn12Ciz(ad, ctx, x, y, olcek, tm) → (x, y) = binanın TABAN ORTASI, o anki dönüşümde. Karede yalnız drawImage.
+     bn12Ciz(ad, ctx, x, y, olcek, tm, pus?) → (x, y) = binanın TABAN ORTASI, o anki dönüşümde. Karede yalnız drawImage.
+       Gün ilerledikçe sıcak (turuncu) siluet, pus > 0 ise soluk-mavi uzaklık siluet, akşam yanan pencereler biner.
      bn12Isit() → kareye bir tuval kurar; hepsi bitince true (dn12Isit listesine "bitene kadar" adımı olarak girer).
    Performans: her bina bir kez gündüz + bir kez gece tuvaline çizilir (2 px / birim); gradyanlar yalnız kurulumda. */
 'use strict';
@@ -27,7 +29,8 @@ const BN12_OLCU = {
   yurt:  { w: 350, h: 195 },
   yurt2: { w: 310, h: 182 },
   spor:  { w: 420, h: 125 },
-  pac:   { w: 440, h: 130 }
+  pac:   { w: 440, h: 130 },
+  fakulte: { w: 470, h: 176 }
 };
 const BN12 = { onb: Object.create(null), isit: [], isitAdim: 0, G: false, tohum: 0, tohum2: 0 };
 
@@ -683,7 +686,82 @@ function bn12CizPac(c) {
   bnCali(c, -224, 236, -1, 7, ['#ffffff', '#f7d36b']);
 }
 
-const BN12_CIZIM = { sbs: bn12CizSbs, sunum: bn12CizSunum, sera: bn12CizSera, yurt: bn12CizYurt, yurt2: bn12CizYurt2, spor: bn12CizSpor, pac: bn12CizPac };
+
+// ══════════════ FAKÜLTE — FENS / FASS tipi fakülte binası ══════════════
+// Kampüsün en tanınır cephesi: kırmızı tuğla duvarda ince beyaz yatay çizgiler (her iki-üç tuğla sırasında bir), uzun bant pencereler,
+// derin gölge bırakan ince beyaz saçaklı düz çatı, yarım silindir cam merdiven kulesi (beyaz şapkalı), zemin katta beyaz sütunlu revak.
+function bnCizgiliTugla(c, x, y, w, h, renk, koyu) {
+  bnTugla(c, x, y, w, h, renk, koyu);
+  // beyaz yatay çizgiler: fotoğraflardaki "kırmızı-beyaz çizgili" görüntü
+  for (let yy = y + 3; yy < y + h - 1; yy += 5.2) { c.fillStyle = 'rgba(250,244,232,.85)'; c.fillRect(x, yy, w, 1.25); c.fillStyle = 'rgba(80,30,20,.18)'; c.fillRect(x, yy + 1.25, w, 0.5); }
+}
+function bn12CizFakulte(c) {
+  const TUG = '#c4623e', TUGK = '#a9513a', KREM = '#f6f1e6';
+  // arka kütle: geride, biraz soluk ikinci blok (derinlik)
+  bnCizgiliTugla(c, -150, -168, 210, 60, '#c98a72', '#b97a64');
+  c.fillStyle = 'rgba(190,210,230,.28)'; c.fillRect(-150, -168, 210, 60);
+  bnDik(c, -154, -172, 218, 5, '#efeae0');
+  // ana gövde: üç katlı, uzun
+  const X0 = -232, X1 = 150, UST = -128;
+  bnCizgiliTugla(c, X0, UST, X1 - X0, -UST, TUG, TUGK);
+  // kat bant pencereleri (koyu kayıtlı, gök yansımalı)
+  for (let k = 0; k < 2; k++) {
+    const y = UST + 18 + k * 40;
+    bnDik(c, X0 + 8, y - 3, X1 - X0 - 16, 2.4, KREM);   // pencere üstü beyaz lento
+    for (let x = X0 + 10; x < X1 - 22; x += 30) bnPencere(c, x, y, 24, 18, { bolme: 2, kalin: 1.1, cerceve: '#f3eee4' });
+    bnGolgeAlt(c, X0 + 8, y - 0.6, X1 - X0 - 16, 3, 0.2);
+  }
+  // zemin kat: geri çekilmiş cam + beyaz sütunlu revak (derin gölge)
+  bnDik(c, X0, -36, X1 - X0, 36, '#5d4a48');
+  for (let x = X0 + 6; x < X1 - 10; x += 22) bnCam(c, x, -32, 18, 30, { ust: '#b7d4e6', orta: '#5f88aa', alt: '#3a5a78' });
+  bnGolgeAlt(c, X0, -36, X1 - X0, 10, 0.45);
+  for (let x = X0 + 2; x <= X1 - 2; x += 22) { bnDuvar(c, x - 2.2, -36, 4.4, 36, '#fbf8f1', '#e3dccd', false); c.fillStyle = 'rgba(60,40,40,.18)'; c.fillRect(x + 1.4, -36, 0.8, 36); }
+  // düz çatı: ince beyaz saçak, altında koyu gölge
+  bnDik(c, X0 - 6, UST - 6, X1 - X0 + 12, 6, '#fbf8f2');
+  c.fillStyle = 'rgba(60,40,40,.12)'; c.fillRect(X0 - 6, UST - 1.5, X1 - X0 + 12, 1.5);
+  bnGolgeAlt(c, X0, UST, X1 - X0, 7, 0.38);
+  // yarım silindir cam merdiven kulesi (sağda, ana gövdeden yüksek)
+  const KX = 186, KR = 34, KUST = -170;
+  if (BN12.G) {
+    bnDik(c, KX - KR, KUST, KR * 2, -KUST, '#56617f');
+    for (let y = KUST + 10; y < -8; y += 22) bnCam(c, KX - KR + 4, y, KR * 2 - 8, 16);
+  } else {
+    const gr = c.createLinearGradient(KX - KR, 0, KX + KR, 0);
+    gr.addColorStop(0, '#e9f5fb'); gr.addColorStop(0.3, '#a8d0ea'); gr.addColorStop(0.7, '#5d8cb5'); gr.addColorStop(1, '#3a5f86');
+    c.fillStyle = gr; c.fillRect(KX - KR, KUST, KR * 2, -KUST);
+    c.fillStyle = 'rgba(255,255,255,.4)'; c.fillRect(KX - KR * 0.55, KUST, 6, -KUST);
+  }
+  c.fillStyle = '#4a5560';   // silindir kayıtları: kenarlara doğru sıklaşan dikmeler
+  for (let i = -6; i <= 6; i++) { const x = KX + KR * Math.sin(i / 6 * Math.PI / 2); c.fillRect(x - 0.6, KUST, 1.2, -KUST); }
+  for (let y = KUST + 22; y < 0; y += 22) c.fillRect(KX - KR, y - 0.8, KR * 2, 1.6);
+  // beyaz şapka (eliptik disk) + gölgesi
+  c.fillStyle = '#fbf8f2'; c.beginPath(); c.ellipse(KX, KUST, KR + 6, 6, 0, 0, Math.PI * 2); c.fill();
+  c.fillStyle = 'rgba(60,50,60,.25)'; c.beginPath(); c.ellipse(KX, KUST + 5, KR, 3, 0, 0, Math.PI); c.fill();
+  // kulenin ana gövdeye birleştiği yerde gölge
+  c.fillStyle = 'rgba(40,30,40,.2)'; c.fillRect(X1, UST, 4, -UST);
+  // sol uç: beyaz taş köşe kulesi (ince, yüksek)
+  bnDuvar(c, X0 - 26, -150, 30, 150, '#f6f2ea', '#e2dbcd');
+  bnCam(c, X0 - 18, -138, 14, 110, { ust: '#d6ecf8', orta: '#6f9cc4', alt: '#3e6a92' });
+  c.fillStyle = '#5b6770'; for (let y = -124; y < -28; y += 14) c.fillRect(X0 - 18, y, 14, 0.9);
+  bnDik(c, X0 - 29, -154, 36, 5, '#fbf8f2'); bnGolgeAlt(c, X0 - 26, -149, 30, 4, 0.28);
+  // çatı: güneş panelleri (eğik koyu mavi, ince açık çizgili) ve ince paslanmaz korkuluk
+  for (let x = X0 + 18; x < X1 - 40; x += 30) {
+    c.fillStyle = BN12.G ? '#2c3550' : '#2f4f7a';
+    c.beginPath(); c.moveTo(x, UST - 6); c.lineTo(x + 24, UST - 6); c.lineTo(x + 20, UST - 15); c.lineTo(x + 4, UST - 15); c.closePath(); c.fill();
+    c.fillStyle = BN12.G ? 'rgba(150,160,200,.2)' : 'rgba(200,225,250,.45)';
+    c.fillRect(x + 4, UST - 14.5, 16, 1); c.fillRect(x + 3, UST - 11, 19, 0.6);
+    c.fillStyle = '#8a929a'; c.fillRect(x + 11.4, UST - 15, 0.6, 9);
+  }
+  c.fillStyle = '#d9dde0';
+  c.fillRect(X0 - 4, UST - 13, X1 - X0 + 8, 0.9);
+  for (let x = X0 - 4; x <= X1 + 4; x += 9) c.fillRect(x - 0.35, UST - 13, 0.7, 7);
+  bnIsikGolge(c, 470, 176);
+  // önde: genç ağaçlar ve çiçekli çalı saçağı (cepheyi örtmeyecek kadar küçük)
+  bnAgac(c, -246, 3, 1.25, 'yesil'); bnAgac(c, 96, 3, 1.05, 'kiraz'); bnAgac(c, 232, 3, 1.3, 'sari');
+  bnCali(c, -240, 236, -1, 9, ['#f6b7c8', '#ffffff', '#f7d36b']);
+}
+
+const BN12_CIZIM = { fakulte: bn12CizFakulte, sbs: bn12CizSbs, sunum: bn12CizSunum, sera: bn12CizSera, yurt: bn12CizYurt, yurt2: bn12CizYurt2, spor: bn12CizSpor, pac: bn12CizPac };
 
 // ── Önbellek: bir binanın gündüz ya da gece tuvali ──
 function bn12Tuval(ad, gece) {
@@ -702,41 +780,73 @@ function bn12Tuval(ad, gece) {
   return cv;
 }
 
+// ── Siluet tuvalleri (yarım çözünürlük): binanın tek renkli kopyası ──
+// 'sicak': gün batımının turuncu ışığı (gün ilerledikçe binanın üstüne yarı saydam biner)
+// 'pus'  : hava perspektifi; uzak (gölün karşı kıyısı) binalar soluk-mavi görünsün
+const BN12_SILUET_RENK = { sicak: '#ffa868', pus: '#cfe1f1' };
+function bn12Siluet(ad, tur) {
+  const anahtar = ad + '_' + tur;
+  if (BN12.onb[anahtar]) return BN12.onb[anahtar];
+  const gun = BN12.onb[ad + '_gun'] || bn12Tuval(ad, false);
+  if (!gun) return null;
+  const cv = bn12Kanvas(gun.width / 2, gun.height / 2), c = cv.getContext('2d');
+  c.drawImage(gun, 0, 0, cv.width, cv.height);
+  c.globalCompositeOperation = 'source-in';
+  c.fillStyle = BN12_SILUET_RENK[tur]; c.fillRect(0, 0, cv.width, cv.height);
+  BN12.onb[anahtar] = cv;
+  return cv;
+}
+// Gün ilerleyişine göre sıcak ışık: sabah çok hafif, öğlen yok, gün batımında belirgin (dunya12'nin ışık gücünden)
+function bn12SicakGuc() {
+  const isik = typeof dn12Isik === 'function' ? dn12Isik() : null;
+  const guc = isik && Number.isFinite(isik.guc) ? isik.guc : 0;
+  return Math.max(0, Math.min(0.32, (guc - 0.08) * 0.9));
+}
+
 // ── Isıtma: kareye bir tuval ──
 function bn12Isit() {
   if (!BN12.isit.length) {
     // yalnız ARKA'nın sahneye koyduğu binalar (DN12_BINALAR[].bina); liste yoksa hepsi
     let kullan = null;
     if (typeof DN12_BINALAR !== 'undefined' && Array.isArray(DN12_BINALAR)) { kullan = Object.create(null); for (const B of DN12_BINALAR) if (B && B.bina) kullan[B.bina] = true; }
-    for (const ad in BN12_OLCU) if (!kullan || kullan[ad]) { BN12.isit.push([ad, false]); BN12.isit.push([ad, true]); }
+    for (const ad in BN12_OLCU) if (!kullan || kullan[ad]) { BN12.isit.push([ad, false]); BN12.isit.push([ad, true]); BN12.isit.push([ad, 'sicak']); BN12.isit.push([ad, 'pus']); }
     if (!BN12.isit.length) BN12.isit.push(['sbs', false]);
   }
-  if (BN12.isitAdim < BN12.isit.length) { const [ad, gece] = BN12.isit[BN12.isitAdim++]; bn12Tuval(ad, gece); }
+  if (BN12.isitAdim < BN12.isit.length) {
+    const [ad, tur] = BN12.isit[BN12.isitAdim++];
+    if (typeof tur === 'string') bn12Siluet(ad, tur); else bn12Tuval(ad, tur);
+  }
   return BN12.isitAdim >= BN12.isit.length;
 }
 
 // Akşam pencere ışığı gücü: gün batımına doğru yumuşakça yanar; FINAL'in akşamında tam
 function bn12GeceGuc() {
   const gun = typeof dn12Gun === 'function' ? dn12Gun() : 0;
-  let a = bn12Yum(0.78, 1, gun) * 0.7;
+  let a = bn12Yum(0.68, 1, gun) * 0.78;   // gölete inerken (altın saat) pencereler yavaşça altın yanar
   const F = typeof K12FINAL !== 'undefined' && K12FINAL ? K12FINAL : null;
   if (F && F.aktif && Number.isFinite(F.aksam)) a = Math.max(a, 0.7 + 0.3 * Math.max(0, Math.min(1, F.aksam)));
   return a;
 }
 
-// ── Çizim: (x, y) taban ortası; olcek 1 = BN12_OLCU ──
-function bn12Ciz(ad, ctx, x, y, olcek, tm) {
+// ── Çizim: (x, y) taban ortası; olcek 1 = BN12_OLCU; pus 0..1 = uzaklık sisi (gölün karşı kıyısı için) ──
+// Sıra: gündüz tuvali → sıcak gün ışığı → pus → akşam pencereleri (yanan pencereler pusun içinde de parlasın)
+function bn12Ciz(ad, ctx, x, y, olcek, tm, pus) {
   const o = BN12_OLCU[ad]; if (!o || !ctx) return;
   const s = Number.isFinite(olcek) && olcek > 0 ? olcek : 1;
   const gun = BN12.onb[ad + '_gun'] || bn12Tuval(ad, false);
   if (!gun) return;
   const dx = x - (BN12_PAD + o.w / 2) * s, dy = y - (BN12_PAD + o.h) * s;
   const dw = (o.w + BN12_PAD * 2) * s, dh = (o.h + BN12_PAD + BN12_ALT) * s;
+  const eski = ctx.globalAlpha;
   ctx.drawImage(gun, dx, dy, dw, dh);
+  const sicak = bn12SicakGuc();
+  if (sicak > 0.01) { const sc = BN12.onb[ad + '_sicak']; if (sc) { ctx.globalAlpha = eski * sicak; ctx.drawImage(sc, dx, dy, dw, dh); } }
+  if (pus > 0.01) { const pc = BN12.onb[ad + '_pus']; if (pc) { ctx.globalAlpha = eski * Math.min(0.6, pus); ctx.drawImage(pc, dx, dy, dw, dh); } }
   const a = bn12GeceGuc();
   if (a > 0.01) {
     const gece = BN12.onb[ad + '_gece'] || bn12Tuval(ad, true);
-    if (gece) { const eski = ctx.globalAlpha; ctx.globalAlpha = eski * a; ctx.drawImage(gece, dx, dy, dw, dh); ctx.globalAlpha = eski; }
+    if (gece) { ctx.globalAlpha = eski * a; ctx.drawImage(gece, dx, dy, dw, dh); }
   }
+  ctx.globalAlpha = eski;
   void tm;
 }

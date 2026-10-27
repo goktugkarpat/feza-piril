@@ -1,6 +1,6 @@
 /* canli12.js — Bölüm 12 (Annemle Sabancı'da Bir Gün): kampüsün canlı hayatı. Sözleşme: src/BOLUM12.md.
    Dünya "yaşıyor": Feza yürürken yanından geçer; dokunursa sevimli bir tepki, dokunmazsa her canlı kendi hayatını yaşar.
-   HİÇBİRİ Feza'yı durdurmaz, yolu kapatmaz, çarpışma üretmez. Korkutucu hiçbir şey yok; böcek yok (kelebek dışında).
+   HİÇBİRİ Feza'yı durdurmaz, yolu kapatmaz, çarpışma üretmez. Korkutucu hiçbir şey yok; böcek yok (kelebekler de kaldırıldı: yerlerinde karahindiba tohumları süzülür).
    Türler (hepsi bu dosyada, yükleme anında nesne() ile yerleşir; en altta YERLEŞİM):
      k12Kedi      kampüs kedileri: o.kurk 'tekir' | 'sarman' | 'beyaz' (beyaz-siyah), o.hal 'gunes' (güneşlenir) | 'bank'
                   (bankta kıvrılıp uyur) | 'otur' (oturur, kuyruğunu sallar). Feza geçerken başını kaldırıp bakar, ara sıra miyavlar;
@@ -208,9 +208,11 @@ function cnKediGoz(c, gx, gy, rk, renk, kapak, mutlu, bak) {
   c.fillStyle = '#3b2c28'; c.beginPath(); c.ellipse(gx, gy, rx + .45, ry + .45, 0, 0, CN_PI2); c.fill();
   c.fillStyle = renk; c.beginPath(); c.ellipse(gx, gy, rx, ry, 0, 0, CN_PI2); c.fill();
   if (ry > 1.2) {
-    c.fillStyle = '#2a1f1c'; c.beginPath(); c.ellipse(gx + bak * .7 * rk, gy + .2, 1.15 * rk, ry * .78, 0, 0, CN_PI2); c.fill();
-    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(gx - .9 * rk, gy - ry * .42, .95, 0, CN_PI2); c.fill();
-    c.beginPath(); c.arc(gx + 1 * rk, gy + ry * .38, .45, 0, CN_PI2); c.fill();
+    // yuvarlak, iri göz bebeği (ince yarık bebek uzaktan "$" gibi okunuyordu); üstte büyük, altta küçük parıltı
+    const bx = gx + bak * .55 * rk, by = gy + ry * .08;
+    c.fillStyle = '#2a1f1c'; c.beginPath(); c.ellipse(bx, by, 1.85 * rk, Math.min(ry * .74, 2.3), 0, 0, CN_PI2); c.fill();
+    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(bx - .75 * rk, by - ry * .36, 1.05, 0, CN_PI2); c.fill();
+    c.beginPath(); c.arc(bx + .8 * rk, by + ry * .3, .5, 0, CN_PI2); c.fill();
   }
 }
 // Kuyruk: ikinci dereceden eğri; son çeyrek uç rengiyle
@@ -957,22 +959,31 @@ TUR.kaydet('k12Marti', { kur: cnMartiKur, guncelle: cnMartiGuncelle, ciz: cnMart
 const CN_KELEBEK = [['#f7a8c4', '#fff0f6', '#d9789c'], ['#ffd36e', '#fff7da', '#e2a63c'], ['#a9c8f5', '#eef5ff', '#7598d2'],
   ['#c7a6f0', '#f6eeff', '#9a78c9'], ['#ffb37a', '#fff1e2', '#e08850']];
 const CN_CICEK = ['#ffffff', '#ffd6e4', '#fff1a8', '#e6dcff'];
+// Not: CLAUDE.md "böcek yok" kuralı gereği kelebekler kaldırıldı; aynı yerlerde ve aynı hareketle artık KARAHİNDİBA TOHUMLARI
+// süzülür (adlar/olaylar 'kelebek' kaldı ki SES ve yerleşim bozulmasın). Tohum: ince sap, kahverengi çekirdek, ucunda beyaz
+// tüy şemsiyesi; 'acik' (eski kanat açıklığı) burada tüylerin esintiyle hafifçe açılıp kapanması, renk = tüy uçlarındaki pastel parıltı.
 function cnKelebekCiz(c, x, y, s, acik, renk, yon, egim) {
   const r = CN_KELEBEK[renk % CN_KELEBEK.length];
-  c.save(); c.translate(x, y); c.rotate(egim); c.scale(s * yon, s);
-  const a = .25 + .75 * acik;   // kanat açıklığı (yandan görünüş: kapanınca daralır)
-  // üst ve alt kanatlar (uzak çift biraz koyu, yakın çift önde)
-  c.fillStyle = r[2]; c.beginPath(); c.ellipse(-1.5, -4.5, 5.6 * a, 7.2, -.5, 0, CN_PI2); c.fill();
-  c.beginPath(); c.ellipse(-1, 2.4, 3.8 * a, 4.6, .45, 0, CN_PI2); c.fill();
-  c.fillStyle = r[0]; c.beginPath(); c.ellipse(1.2, -4.8, 6.2 * a, 7.8, .35, 0, CN_PI2); c.fill();
-  c.beginPath(); c.ellipse(1, 2.6, 4.2 * a, 5, -.4, 0, CN_PI2); c.fill();
-  c.fillStyle = r[1]; c.beginPath(); c.ellipse(2.4 + 1.6 * a, -6.4, 2.2 * a, 2.6, .35, 0, CN_PI2); c.fill();
-  c.beginPath(); c.ellipse(1.4 + .8 * a, 3.2, 1.3 * a, 1.6, -.4, 0, CN_PI2); c.fill();
-  // gövde ve antenler
-  cnElips(c, 0, -.5, 1.3, 5, 0, '#6e5866');
-  c.strokeStyle = '#6e5866'; c.lineWidth = .55; c.lineCap = 'round';
-  c.beginPath(); c.moveTo(.4, -5.2); c.quadraticCurveTo(1.8, -9, 3.6, -9.6); c.moveTo(-.3, -5.2); c.quadraticCurveTo(-.2, -9.4, 1.4, -10.6); c.stroke();
-  cnElips(c, 3.6, -9.6, .7, .7, 0, '#6e5866'); cnElips(c, 1.4, -10.6, .7, .7, 0, '#6e5866');
+  c.save(); c.translate(x, y); c.rotate(egim * .6 + .12 * yon); c.scale(s * 1.6, s * 1.6);
+  const ac = .82 + .18 * acik;   // tüy şemsiyesinin açıklığı
+  // sap ve çekirdek
+  c.strokeStyle = 'rgba(150,130,110,.85)'; c.lineWidth = .45; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(0, -3); c.lineTo(0, 5.2); c.stroke();
+  cnElips(c, 0, 6.4, .75, 1.6, 0, '#a07650');
+  // tüyler: tepedeki noktadan yarım küre biçiminde ışınlar
+  c.strokeStyle = 'rgba(255,255,255,.92)'; c.lineWidth = .32; c.beginPath();
+  for (let i = 0; i < 11; i++) {
+    const a = -Math.PI * (.08 + .84 * i / 10), L = 6.4;
+    c.moveTo(0, -3); c.lineTo(Math.cos(a) * L * ac, -3 + Math.sin(a) * L * (.75 + .25 * ac));
+  }
+  c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath();
+  for (let i = 0; i < 11; i++) {
+    const a = -Math.PI * (.08 + .84 * i / 10), L = 6.4, px = Math.cos(a) * L * ac, py = -3 + Math.sin(a) * L * (.75 + .25 * ac);
+    c.moveTo(px + .9, py); c.arc(px, py, .9, 0, CN_PI2);
+  }
+  c.fill();
+  c.fillStyle = r[1]; c.globalAlpha = .7; c.beginPath(); c.arc(0, -8.2, 1.2, 0, CN_PI2); c.fill(); c.globalAlpha = 1;   // tepede pastel ışıltı
   c.restore();
 }
 function cnCicekCiz(c, x, y, renk, boy) {   // kelebeğin kendi küçük çiçeği
@@ -1617,60 +1628,66 @@ for (const tip of Object.keys(CN_DOKUN)) {
 
 // ════════════════════ yerleşim (sütunlar; bölgeler: BOLUM12.md, tur 2 haritası COLS 1100) ════════════════════
 const yer = (tip, c, o) => nesne(tip, c, yuzey(c), o || {});
-// lojman 0–70 (sabah): tekir kedi güneşleniyor, serçeler, çiçek kelebekleri, çimde fıskiye, sabah yürüyüşündeki öğrenci
-yer('k12Kedi', 27, { kurk: 'tekir', hal: 'gunes', yon: -1 });
-yer('k12Kus', 50, { n: 4, x0: nx(38), x1: nx(64) });
-yer('k12Kelebek', 19, { renk: 0 }); yer('k12Kelebek', 43, { renk: 1 });
-yer('k12Fiskiye', 58, {});
-yer('k12Ogrenci', 34, { v: 0, poz: 'yuru', yon: 1 });
-// yol1 70–300 (scooter ile hızla geçilir): el sallayan öğrenciler, kaçmayan serçeler, uyuklayan köpek, oturan sarman
-yer('k12Ogrenci', 96, { v: 1, poz: 'yuru', yon: -1, yakin: 420 });
-yer('k12Ogrenci', 140, { v: 2, poz: 'bisiklet', yon: -1, yakin: 420 });
-yer('k12Kedi', 122, { kurk: 'sarman', hal: 'otur', yon: 1 });
-yer('k12Kus', 165, { n: 3, kacmaz: true });
-yer('k12Ogrenci', 186, { v: 5, poz: 'otur', yon: 1, yakin: 420 });
-yer('k12Kopek', 210, { uykucu: true, yon: 1 });
-yer('k12Ogrenci', 238, { v: 3, poz: 'yuru', yon: 1, yakin: 420 });
-yer('k12Kus', 255, { n: 4, kacmaz: true });
-yer('k12Marti', 225, { gy: 400 });
-yer('k12Kelebek', 270, { renk: 2 });
-yer('k12Ogrenci', 282, { v: 4, poz: 'bisiklet', yon: 1, yakin: 420 });
-// fass 300–450: bankta uyuyan beyaz-siyah kedi, iki fıskiye, sincap, kelebekler, serçeler, kitap okuyan öğrenci
-yer('k12Kedi', 352, { kurk: 'beyaz', hal: 'bank', yon: 1 });
-yer('k12Fiskiye', 332, {}); yer('k12Fiskiye', 424, {});
-yer('k12Sincap', 405, { yon: -1 });
-yer('k12Kelebek', 342, { renk: 3 }); yer('k12Kelebek', 396, { renk: 4 });
-yer('k12Kus', 383, { n: 5, x0: nx(360), x1: nx(445) });
-yer('k12Ogrenci', 318, { v: 2, poz: 'otur', yon: 1 });
-yer('k12Ogrenci', 432, { v: 0, poz: 'yuru', yon: -1 });
-// bilgi 450–560: iri kampüs köpeği, havuz kenarında güneşlenen sarman, öğrenciler, bir kelebek (havuzu ETKINLIK yapıyor)
-yer('k12Kopek', 547, { yon: -1 });
-yer('k12Kedi', 489, { kurk: 'sarman', hal: 'gunes', yon: 1 });
-yer('k12Ogrenci', 468, { v: 4, poz: 'yuru', yon: 1 });
-yer('k12Ogrenci', 532, { v: 1, poz: 'otur', yon: -1 });
-yer('k12Kelebek', 515, { renk: 1 });
-// botanik 560–700 (YENİ; kaplumbağalar ve sera BOTANIK'in): kelebek bulutları, ispinozlar, kırlangıçlar, kirpi, sincap,
-// taş kabından su içen tekir, uzakta bahçede dolaşan bir öğrenci
-yer('k12KelebekBulut', 574, { n: 6 }); yer('k12KelebekBulut', 618, { n: 7 }); yer('k12KelebekBulut', 674, { n: 6 });
-yer('k12Kus', 596, { n: 5, tur: 'ispinoz', x0: nx(565), x1: nx(640) });
-yer('k12Kirlangic', 640, { n: 2, x0: nx(575), x1: nx(698) });
-yer('k12Kirpi', 606, { yon: 1 });
-yer('k12Sincap', 684, { yon: -1 });   // ONPLAN'ın 686'daki ağacına tırmanır
-yer('k12Kedi', 664, { kurk: 'tekir', hal: 'su', yon: 1 });
-yer('k12Ogrenci', 630, { v: 3, poz: 'yuru', yon: -1, yay: 140 });
-// yol2 700–805 (bisiklet, yokuş): sincap, bisikletli öğrenci, kaçmayan serçeler, uzakta martı
-yer('k12Sincap', 728, { yon: 1 });
-yer('k12Ogrenci', 742, { v: 5, poz: 'bisiklet', yon: -1, yakin: 420 });
-yer('k12Ogrenci', 785, { v: 3, poz: 'yuru', yon: -1, yakin: 420 });
-yer('k12Kus', 770, { n: 3, kacmaz: true });
-yer('k12Marti', 760, { gy: 390 });
-// golet 805–1030 (su 830–1005; ördek, kuğu, kaz GOLET'in): martılar suyun üstünde, kıyıda kelebek, karşı kıyıda yürüyen öğrenci
-yer('k12Marti', 865, { gy: 410 }); yer('k12Marti', 930, { gy: 380 }); yer('k12Marti', 985, { gy: 400 });
-yer('k12Kelebek', 816, { renk: 0 });
-yer('k12Ogrenci', 1018, { v: 1, poz: 'yuru', yon: 1, yay: 90 });
-// tepe 1030–1100 (gün batımı, final 1070): yalnız bir kelebek ve uzakta martı; piknik sakin kalsın
-yer('k12Kelebek', 1042, { renk: 3 });
-yer('k12Marti', 1065, { gy: 370 });
+// Yerleşim bir işlevde: bolum12.js (nesne, nx, yuzey) nadiren bu dosyadan SONRA çalışabiliyor (document.write yüklemesi);
+// o zaman yerleşimi sayfa yüklenince yaparız — yoksa "nesne is not defined" ile kampüs canlıları hiç kurulmazdı.
+function cnYerlestir() {
+  // lojman 0–70 (sabah): tekir kedi güneşleniyor, serçeler, çiçek kelebekleri, çimde fıskiye, sabah yürüyüşündeki öğrenci
+  yer('k12Kedi', 27, { kurk: 'tekir', hal: 'gunes', yon: -1 });
+  yer('k12Kus', 50, { n: 4, x0: nx(38), x1: nx(64) });
+  yer('k12Kelebek', 19, { renk: 0 }); yer('k12Kelebek', 43, { renk: 1 });
+  yer('k12Fiskiye', 58, {});
+  yer('k12Ogrenci', 34, { v: 0, poz: 'yuru', yon: 1 });
+  // yol1 70–300 (scooter ile hızla geçilir): el sallayan öğrenciler, kaçmayan serçeler, uyuklayan köpek, oturan sarman
+  yer('k12Ogrenci', 96, { v: 1, poz: 'yuru', yon: -1, yakin: 420 });
+  yer('k12Ogrenci', 140, { v: 2, poz: 'bisiklet', yon: -1, yakin: 420 });
+  yer('k12Kedi', 122, { kurk: 'sarman', hal: 'otur', yon: 1 });
+  yer('k12Kus', 165, { n: 3, kacmaz: true });
+  yer('k12Ogrenci', 186, { v: 5, poz: 'otur', yon: 1, yakin: 420 });
+  yer('k12Kopek', 210, { uykucu: true, yon: 1 });
+  yer('k12Ogrenci', 238, { v: 3, poz: 'yuru', yon: 1, yakin: 420 });
+  yer('k12Kus', 255, { n: 4, kacmaz: true });
+  yer('k12Marti', 225, { gy: 400 });
+  yer('k12Kelebek', 270, { renk: 2 });
+  yer('k12Ogrenci', 282, { v: 4, poz: 'bisiklet', yon: 1, yakin: 420 });
+  // fass 300–450: bankta uyuyan beyaz-siyah kedi, iki fıskiye, sincap, kelebekler, serçeler, kitap okuyan öğrenci
+  yer('k12Kedi', 352, { kurk: 'beyaz', hal: 'bank', yon: 1 });
+  yer('k12Fiskiye', 332, {}); yer('k12Fiskiye', 424, {});
+  yer('k12Sincap', 405, { yon: -1 });
+  yer('k12Kelebek', 342, { renk: 3 }); yer('k12Kelebek', 396, { renk: 4 });
+  yer('k12Kus', 383, { n: 5, x0: nx(360), x1: nx(445) });
+  yer('k12Ogrenci', 318, { v: 2, poz: 'otur', yon: 1 });
+  yer('k12Ogrenci', 432, { v: 0, poz: 'yuru', yon: -1 });
+  // bilgi 450–560: iri kampüs köpeği, havuz kenarında güneşlenen sarman, öğrenciler, bir kelebek (havuzu ETKINLIK yapıyor)
+  yer('k12Kopek', 547, { yon: -1 });
+  yer('k12Kedi', 489, { kurk: 'sarman', hal: 'gunes', yon: 1 });
+  yer('k12Ogrenci', 468, { v: 4, poz: 'yuru', yon: 1 });
+  yer('k12Ogrenci', 532, { v: 1, poz: 'otur', yon: -1 });
+  yer('k12Kelebek', 515, { renk: 1 });
+  // botanik 560–700 (YENİ; kaplumbağalar ve sera BOTANIK'in): kelebek bulutları, ispinozlar, kırlangıçlar, kirpi, sincap,
+  // taş kabından su içen tekir, uzakta bahçede dolaşan bir öğrenci
+  yer('k12KelebekBulut', 574, { n: 5 }); yer('k12KelebekBulut', 674, { n: 5 });   // (618: botanik havuzunun üstündeki küme kaldırıldı — balıkları örtüyordu)
+  yer('k12Kus', 596, { n: 5, tur: 'ispinoz', x0: nx(565), x1: nx(640) });
+  yer('k12Kirlangic', 640, { n: 2, x0: nx(575), x1: nx(698) });
+  yer('k12Kirpi', 606, { yon: 1 });
+  yer('k12Sincap', 684, { yon: -1 });   // ONPLAN'ın 686'daki ağacına tırmanır
+  yer('k12Kedi', 664, { kurk: 'tekir', hal: 'su', yon: 1 });
+  yer('k12Ogrenci', 630, { v: 3, poz: 'yuru', yon: -1, yay: 140 });
+  // yol2 700–805 (bisiklet, yokuş): sincap, bisikletli öğrenci, kaçmayan serçeler, uzakta martı
+  yer('k12Sincap', 728, { yon: 1 });
+  yer('k12Ogrenci', 742, { v: 5, poz: 'bisiklet', yon: -1, yakin: 420 });
+  yer('k12Ogrenci', 785, { v: 3, poz: 'yuru', yon: -1, yakin: 420 });
+  yer('k12Kus', 770, { n: 3, kacmaz: true });
+  yer('k12Marti', 760, { gy: 390 });
+  // golet 805–1030 (su 830–1005; ördek, kuğu, kaz GOLET'in): martılar suyun üstünde, kıyıda kelebek, karşı kıyıda yürüyen öğrenci
+  yer('k12Marti', 865, { gy: 410 }); yer('k12Marti', 930, { gy: 380 }); yer('k12Marti', 985, { gy: 400 });
+  yer('k12Kelebek', 816, { renk: 0 });
+  yer('k12Ogrenci', 1018, { v: 1, poz: 'yuru', yon: 1, yay: 90 });
+  // tepe 1030–1100 (gün batımı, final 1070): yalnız bir kelebek ve uzakta martı; piknik sakin kalsın
+  yer('k12Kelebek', 1042, { renk: 3 });
+  yer('k12Marti', 1065, { gy: 370 });
+}
+if (typeof nesne === 'function' && typeof yuzey === 'function' && typeof nx === 'function') cnYerlestir();
+else document.addEventListener('DOMContentLoaded', () => { try { cnYerlestir(); } catch (e) { if (typeof omHataBildir === 'function') omHataBildir('canli12.yerlesim', e); } });
 
 // Test kancası (vlib12 ile): CANLI12.liste, CANLI12.dokun(o), CANLI12.isabet(wx, wy)
 globalThis.CANLI12 = { CN, liste: CN.liste, dokun: o => CN_DOKUN[o.tip](o), isabet: cnIsabetBul,
