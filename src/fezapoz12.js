@@ -289,7 +289,7 @@ function fz12AnneBak(R, s, w, tm) {   // sürerken arkadaki anneye bakar (s) ve 
   }
   if (w > 0.001) {   // kol geriye, omuz hizasında (daha yukarıda saçın arkasına girer), el bilekten sallanır
     R.la1 = lerp(R.la1, -1.72 - R.lean + 0.08 * Math.sin(tm * 3), w); R.la2 = lerp(R.la2, 0.3 + 0.38 * Math.sin(tm * 11), w);
-    R.hOpen = Math.max(R.hOpen, w); R.arm = lerp(R.arm, 1.04, w);
+    R.hOpen = Math.max(R.hOpen, w);   // ortak kol boyu korunur: uzak el gidondan kısalarak kopmasın
   }
 }
 function fz12Nese(R, n, tm) {   // yokuş aşağı süzülürken çok mutlu yüz: gözler kıvrık, kocaman gülüş (eller gidonda kalır)
@@ -556,6 +556,8 @@ function fz12Poz(poz, tm, opt, R, Q, olcek, x, y) {
   else if (poz === 'kayik') { hz = fz12Kayik(H, o, tm, R); FZ12_DON.rotA = isFinite(o.aci) ? clamp(+o.aci, -0.5, 0.5) : 0; }
   else if (poz === 'otur') hz = fz12Otur(H, o, tm, R);
   else hz = fz12Saril(H, o, tm, R, Q);
+  // Araç sarsıntısı kalça/dizlerde emilir; gidon ve pedal hedefleri aracın üstünde sabit kalır.
+  if (poz === 'scooter' || poz === 'bisiklet') H.hy += clamp(+o.bob || 0, 0, 2) / FZ_SC;
   fz12Uygula(H, R, Q);
   if (poz === 'otur' && isFinite(o.u) && +o.u < 1) fz12OturGecis(R, Q, clamp(+o.u, 0, 1), tm);
   let sallaIleri = clamp(+o.salla || 0, 0, 1);
@@ -565,6 +567,20 @@ function fz12Poz(poz, tm, opt, R, Q, olcek, x, y) {
     const bak = Math.max(bg, oto), w = bg > 0.001 ? sallaIleri : oto;
     if (bg > 0.001) sallaIleri = 0;   // anneye bakarken el geriye, anneye sallanır
     FEZA12.anneBak = bak; fz12AnneBak(R, bak, w, tm); fz12Nese(R, clamp(+o.nese || 0, 0, 1), tm);
+    if (bak > 0.001) {
+      // Anneye bakınca gövde az döner; gidondaki el bu yeni gövdeye göre yeniden çözülür.
+      fz12KolIK(R, H.hx, H.hy, R.lean, H.fTx, H.fTy, false, R.arm, FZ12_KB);
+      if (FZ12_KB[2] > 0.98) {
+        const uzaklik = FZ12_KB[2] * ((FZ_UA + FZ_FA) * R.arm + 1.2);
+        R.arm = Math.min(1.28, Math.max(R.arm, (uzaklik / 0.98 - 1.2) / (FZ_UA + FZ_FA)));
+        fz12KolIK(R, H.hx, H.hy, R.lean, H.fTx, H.fTy, false, R.arm, FZ12_KB);
+      }
+      R.ba1 = FZ12_KB[0]; R.ba2 = FZ12_KB[1];
+      if (w <= 0.001) {
+        fz12KolIK(R, H.hx, H.hy, R.lean, H.nTx, H.nTy, true, R.arm, FZ12_KA);
+        R.la1 = FZ12_KA[0]; R.la2 = FZ12_KA[1];
+      }
+    }
   }
   if (poz === 'kayik' && +o.saril > 0) {   // kayıkta anneye sarılma (GOLET yon'u anneye çevirir; hedef [x,y] dünya, P'ye göre)
     const k = 1 / FZ_SC, h = o.hedef, tx = h && isFinite(h[0]) ? h[0] * k : 17 * k, ty = h && isFinite(h[1]) ? h[1] * k : -26 * k;

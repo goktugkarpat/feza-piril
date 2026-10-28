@@ -475,7 +475,7 @@ const ZN12_PEMBE = { koyu: ['#c46d89', '#d07c97', '#bb6683'], orta: ['#e597ae', 
 function zn12Tac(q, rnd, rx, ry, cy, P, katman) {
   if (katman === 0) {
     for (let i = 0; i < 34; i++) {   // kenar tırtıkları: yaprak kümelerinin dış hatları
-      const a = i / 34 * ZN12_PI2 + rnd() * 0.15, x = Math.cos(a) * rx * 0.92, y = cy + Math.sin(a) * ry * 0.9, r = 14 + rnd() * 12;
+      const a = i / 34 * ZN12_PI2 + rnd() * 0.15, x = Math.cos(a) * rx * (0.86 + Math.sin(a * 3 + .6) * .09), y = cy + Math.sin(a) * ry * (0.83 + Math.cos(a * 2 - .4) * .08), r = 14 + rnd() * 12;
       zn12El(q, x, y, r, r * 0.86, zn12Sec(rnd, P.koyu));
     }
     for (let i = 0; i < 70; i++) {
@@ -498,9 +498,23 @@ function zn12Tac(q, rnd, rx, ry, cy, P, katman) {
       const a = rnd() * ZN12_PI2, r = Math.sqrt(rnd()), x = Math.cos(a) * r * rx * 0.5 - rx * 0.24, y = cy + Math.sin(a) * r * ry * 0.45 - ry * 0.3, rr = 7 + rnd() * 11;
       zn12El(q, x, y, rr, rr * 0.8, zn12Sec(rnd, P.acik));
     }
-    for (let i = 0; i < 150; i++) {   // yaprak benekleri
-      const a = rnd() * ZN12_PI2, r = Math.sqrt(rnd()), x = Math.cos(a) * r * rx * 0.86, y = cy + Math.sin(a) * r * ry * 0.82, ust = y < cy;
-      zn12El(q, x, y, 1.6 + rnd() * 2.4, 1.1 + rnd() * 1.2, ust && x < rx * 0.2 ? zn12Sec(rnd, P.parlak) : zn12Sec(rnd, P.acik));
+    const cicek = P !== ZN12_YESIL;
+    for (let i = 0; i < 180; i++) {   // seçilen yapraklar ve beş taç yapraklı küçük bahar çiçekleri
+      const a = rnd() * ZN12_PI2, r = Math.sqrt(rnd()), x = Math.cos(a) * r * rx * .84, y = cy + Math.sin(a) * r * ry * .78;
+      const ust = y < cy && x < rx * .2, boy = 1.8 + rnd() * 1.9;
+      q.fillStyle = ust ? zn12Sec(rnd, P.parlak) : zn12Sec(rnd, P.acik);
+      if (cicek && i % 3 === 0) {
+        q.beginPath();
+        for (let k = 0; k < 5; k++) {
+          const ac = k / 5 * ZN12_PI2 + a, px = x + Math.cos(ac) * boy * .6, py = y + Math.sin(ac) * boy * .6;
+          q.moveTo(px + boy * .52, py); q.ellipse(px, py, boy * .52, boy * .38, ac, 0, ZN12_PI2);
+        }
+        q.fill(); zn12El(q, x, y, .65, .65, '#d8ac6e');
+      } else {
+        q.save(); q.translate(x, y); q.rotate(a * .4 - .6);
+        q.beginPath(); q.moveTo(-boy * 1.5, 0); q.quadraticCurveTo(-boy * .2, -boy, boy * 1.5, 0);
+        q.quadraticCurveTo(boy * .2, boy * .75, -boy * 1.5, 0); q.fill(); q.restore();
+      }
     }
   }
 }
@@ -1041,7 +1055,8 @@ ZN12.parkHalka = c => { const x = c * T + T / 2; return [x - 100, x - 50, x, x +
 // önbellekleri boşta kur: karede ~3 ms (görünen tür/sprite gerekirse çizim anında zaten kurulur)
 function zn12KuyrukDoldur() {
   const K = ZN12.kuyruk;
-  for (const t of ['kaldirim', 'bisiklet', 'meydan', 'kosu', 'patika']) K.push(() => zn12Zemin(t));
+  // Botanik patikası ve ahşap iskele de giriş perdesinde hazırlanır; ilk karşılaşmada büyük tuval çizilmez.
+  for (const t of ['kaldirim', 'bisiklet', 'meydan', 'cakil', 'iskele', 'kosu', 'patika']) K.push(() => zn12Zemin(t));
   for (let v = 0; v < 3; v++) for (const p of ['g', 'a', 'o']) K.push(() => zn12AgacSpr(v, p));
   for (const p of ['g', 'a', 'o']) { K.push(() => zn12KirazSpr(p, 0)); K.push(() => zn12SogutSpr(p)); }
   for (const p of ['a', 'o']) K.push(() => zn12KirazSpr(p, 1));

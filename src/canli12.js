@@ -42,7 +42,8 @@ const CN_YOL = 720, CN_CIM = 704;                  // Feza'nın şeridi, yolun a
 const CN_RES = 5;                                  // önbellek tuvali: dünya birimi başına piksel
 const CN = { liste: [], takipci: null, spr: Object.create(null), saat: 0 };
 
-function cnSaat() { return performance.now() / 1000; }
+// Diğer karakterlerle aynı oyun saati: sekme arka planda kaldığında hayvan tepkileri atlamaz.
+function cnSaat() { return typeof now === 'number' && Number.isFinite(now) ? now : performance.now() / 1000; }
 function cnYaklas(v, h, k) { return v + (h - v) * (1 - Math.exp(-k)); }   // k = hız × dt
 function cnDerinlik(y) { return 1 - (CN_YOL - y) * 0.006; }                 // çimendeki canlı biraz küçük görünür
 function cnGorunur(x, pay) { return typeof cam === 'undefined' || (x > cam.x - pay && x < cam.x + VW + pay); }
@@ -87,7 +88,12 @@ function cnKirp(t, tohum) {
   return Math.max(Math.pow(Math.max(0, Math.sin(kf)), 70), Math.sin(kf * .31) > .7 ? Math.pow(Math.max(0, Math.sin(kf - .35)), 70) : 0);
 }
 // Dokunma için son çizilen yer (dünya); dokunuş yalnız son 0.3 sn'de çizilmiş canlıya isabet eder
-function cnIsabet(o, x, y, rx, ry) { o.hx = x; o.hy = y; o.hrx = rx; o.hry = ry || rx; o.hT = CN.saat; }
+function cnIsabet(o, x, y, rx, ry) {
+  // Küçük kuşların bile dokunma hedefi en az 48 CSS piksel; çizim boyutu değişmez.
+  // Dünya ölçeği tablette ve masaüstünde farklıdır, DPR tek başına yeterli değildir.
+  const yaricap = typeof S === 'number' && S > 0 && typeof DPR === 'number' ? 24 * DPR / S : 24;
+  o.hx = x; o.hy = y; o.hrx = Math.max(rx, yaricap); o.hry = Math.max(ry || rx, yaricap); o.hT = CN.saat;
+}
 function cnKayit(o) { CN.liste.push(o); }
 
 // ════════════════════ kampüs kedileri ════════════════════
@@ -1131,7 +1137,7 @@ function cnSincapGuncelle(o, dt) {
     case 'yer':
       o.kemir = cnYaklas(o.kemir, 1, dt * 3); o.kabar = cnYaklas(o.kabar, 0, dt * 2);
       if (Math.abs(o.sx - o.evX) > 3 && adx > 300) { o.durum = 'eve'; o.t = 0; }
-      else if (adx < 175 && o.t > .6) { o.durum = a ? 'agaca' : 'kac'; o.t = 0; o.hedef = a ? a.x : clamp(o.sx - Math.sign(dx || 1) * 150, o.evX - 220, o.evX + 220); }
+      else if (adx < (o.erkenUyari || 175) && o.t > .6) { o.durum = a ? 'agaca' : 'kac'; o.t = 0; o.hedef = a ? a.x : clamp(o.sx - Math.sign(dx || 1) * 150, o.evX - 220, o.evX + 220); }
       else if (Math.random() < dt * .15) o.yon = -o.yon;
       break;
     case 'sasir':   // dokunuldu: dikilir, kuyruğunu kabartır, cevizini gösterir
@@ -1678,7 +1684,7 @@ function cnYerlestir() {
   yer('k12Sincap', 684, { yon: -1 });   // ONPLAN'ın 686'daki ağacına tırmanır
   yer('k12Kedi', 664, { kurk: 'tekir', hal: 'su', yon: 1 });
   // yol2 700–805 (bisiklet, yokuş): sincap, bisikletli öğrenci, kaçmayan serçeler, uzakta martı
-  yer('k12Sincap', 728, { yon: 1 });
+  yer('k12Sincap', 728, { yon: 1, erkenUyari: 760 });   // hızlı bisiklet gelmeden gerçek dalına tırmansın; annenin yüzü önünde kalmasın
   yer('k12Ogrenci', 742, { v: 5, poz: 'bisiklet', yon: -1, yakin: 420 });
   yer('k12Ogrenci', 785, { v: 3, poz: 'yuru', yon: -1, yakin: 420 });
   yer('k12Kus', 770, { n: 3, kacmaz: true });
@@ -1693,6 +1699,21 @@ function cnYerlestir() {
 }
 if (typeof nesne === 'function' && typeof yuzey === 'function' && typeof nx === 'function') cnYerlestir();
 else document.addEventListener('DOMContentLoaded', () => { try { cnYerlestir(); } catch (e) { if (typeof omHataBildir === 'function') omHataBildir('canli12.yerlesim', e); } });
+
+// Kediler, köpek ve su gökkuşağı ilk karşılaşma karesinde çizim önbelleği oluşturmasın.
+// Önce mevcut dünya/zemin hazırlığı biter; ardından küçük iş bütçesiyle canlılar hazırlanır.
+const cnIsitKuyruk = [() => cnKediSpr('tekir'), () => cnKediSpr('sarman'), () => cnKediSpr('beyaz'),
+  cnKopekSpr, cnBankSpr, cnGokkusagiSpr];
+const cnOnceIsit = typeof dn12Isit === 'function' ? dn12Isit : null;
+globalThis.dn12Isit = function () {
+  if (cnOnceIsit && !cnOnceIsit()) return false;
+  const baslangic = performance.now();
+  while (cnIsitKuyruk.length && performance.now() - baslangic < 2) {
+    const hazirla = cnIsitKuyruk.shift();
+    try { hazirla(); } catch (err) { if (typeof omHataBildir === 'function') omHataBildir('canli12.isit', err); }
+  }
+  return cnIsitKuyruk.length === 0;
+};
 
 // Test kancası (vlib12 ile): CANLI12.liste, CANLI12.dokun(o), CANLI12.isabet(wx, wy)
 globalThis.CANLI12 = { CN, liste: CN.liste, dokun: o => CN_DOKUN[o.tip](o), isabet: cnIsabetBul,

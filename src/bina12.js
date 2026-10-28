@@ -20,7 +20,11 @@
 'use strict';
 
 const BN12_R = 2;                  // önbellek çözünürlüğü (piksel / katman birimi)
-const BN12_PAD = 26;               // tuvalin yan ve üst payı (ağaç dalı, gece ışıltısı taşabilsin)
+const BN12_PAD = 26;               // varsayılan yan ve üst pay (bina türleri aşağıda daha geniş pay alabilir)
+// Cephe ölçüsü bahçedeki ağacın taç genişliği değildir. Tür başına kenar payı,
+// palmiye ve çiçeklerin sprite sınırında düz kesilmesini önler.
+const BN12_PAY = { sbs: 38, sunum: 56, sera: 68, yurt: 64, yurt2: 58, spor: 44, pac: 48, fakulte: 46 };
+function bn12Pay(ad) { return BN12_PAY[ad] || BN12_PAD; }
 const BN12_ALT = 16;               // taban çizgisinin altındaki pay (çalı saçağı)
 const BN12_OLCU = {
   sbs:   { w: 500, h: 200 },
@@ -165,9 +169,9 @@ function bnCali(c, x0, x1, y, boy, cicekler) {
 }
 // Ağaç paletleri (ARKA'nın boyalı resimlerindeki gibi: güneşli sarımsı uçlar, pembe sakura)
 const BN12_PAL = {
-  yesil: ['#3f7a45', '#4f8f4c', '#67a656', '#86bd5f', '#a9d26b', '#d4ea86'],
-  sari:  ['#56853f', '#6c9c44', '#86b24c', '#a3c856', '#c4de66', '#e8f08e'],
-  kiraz: ['#b8697f', '#cf8398', '#e3a0b2', '#efbcc8', '#f8d6dc', '#fff0ef'],
+  yesil: ['#3d6446', '#527e4d', '#709657', '#8eaf65', '#b0c77d', '#dae3a6'],
+  sari:  ['#5b7842', '#748d49', '#91a555', '#adbc6d', '#cdd78b', '#e9ecb4'],
+  kiraz: ['#a97488', '#c68a9f', '#dda8b9', '#edc1cc', '#f7d9df', '#fff1ed'],
   cam:   ['#24492f', '#2e5b37', '#3a6c40', '#4a7f4a', '#5c9154', '#79a865']
 };
 // Yuvarlak taçlı ağaç (ön bahçe): gövde + dallar, koyu iç kütle, güneşli yaprak kümeleri
@@ -769,9 +773,9 @@ function bn12Tuval(ad, gece) {
   if (BN12.onb[anahtar]) return BN12.onb[anahtar];
   const o = BN12_OLCU[ad], ciz = BN12_CIZIM[ad];
   if (!o || !ciz || typeof document === 'undefined') return null;
-  const R = BN12_R, cw = o.w + BN12_PAD * 2, ch = o.h + BN12_PAD + BN12_ALT;
+  const R = BN12_R, pay = bn12Pay(ad), cw = o.w + pay * 2, ch = o.h + pay + BN12_ALT;
   const cv = bn12Kanvas(cw * R, ch * R), c = cv.getContext('2d');
-  c.setTransform(R, 0, 0, R, (BN12_PAD + o.w / 2) * R, (BN12_PAD + o.h) * R);
+  c.setTransform(R, 0, 0, R, (pay + o.w / 2) * R, (pay + o.h) * R);
   BN12.G = !!gece;
   BN12.tohum = ad.length * 101 + ad.charCodeAt(0) * 7; BN12.tohum2 = BN12.tohum * 3 + 5;   // gündüz ve gece aynı tohum: ağaçlar, çalılar aynı yerde
   try { ciz(c); } catch (e) { if (typeof omHataBildir === 'function') omHataBildir('bn12 ' + ad, e); }
@@ -835,8 +839,9 @@ function bn12Ciz(ad, ctx, x, y, olcek, tm, pus) {
   const s = Number.isFinite(olcek) && olcek > 0 ? olcek : 1;
   const gun = BN12.onb[ad + '_gun'] || bn12Tuval(ad, false);
   if (!gun) return;
-  const dx = x - (BN12_PAD + o.w / 2) * s, dy = y - (BN12_PAD + o.h) * s;
-  const dw = (o.w + BN12_PAD * 2) * s, dh = (o.h + BN12_PAD + BN12_ALT) * s;
+  const pay = bn12Pay(ad);
+  const dx = x - (pay + o.w / 2) * s, dy = y - (pay + o.h) * s;
+  const dw = (o.w + pay * 2) * s, dh = (o.h + pay + BN12_ALT) * s;
   const eski = ctx.globalAlpha;
   ctx.drawImage(gun, dx, dy, dw, dh);
   const sicak = bn12SicakGuc();

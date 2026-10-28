@@ -36,6 +36,9 @@ if (typeof BOLUM_NO === 'undefined' || BOLUM_NO !== 12) return;
 
 // ════════════════════════ Yerleşim (dünya birimi; T = 40) ════════════════════════
 const BT_PI2 = Math.PI * 2;
+const BT_GOSTER_POZ = { aci: .05, yuruyerek: true };
+// Küçük canlılara parmakla isabet etmek için görünmez, ekran ölçeğine duyarlı pay.
+function btDokunYari(r) { return Math.max(r, Math.min(62, 24 * DPR / S)); }
 const BT_GOL = { x0: 612 * T, x1: 652 * T, ust: 650, alt: 707 };   // gölet suyu (arka kenarı dalgalı, önü iskelenin arkasına girer)
 const BT_STATIK = { x0: 24400, x1: 26160, y0: 560, y1: 712, dosemeW: 880 };   // önbellekli arka katmanın kapsadığı alan
 const BT_SELALE = { x: 24585, ust: 618, alt: 676, dibX: 24600 };   // şelalenin ağzı ve dibi (solda kaya yığını 24480..24700)
@@ -1073,7 +1076,7 @@ function btKurbKur() {
     const n = BT.nil[BT.kPed[ilk[i]]];
     BT.kurb.push({
       ped: BT.kPed[ilk[i]], x: n.x, y: n.y - 1, yon: -1, yonS: -1, r: i, boy: i === 1 ? .85 : 1,
-      durum: 'otur', t: 0, kese: 0, keseT: 9, virakT: 1.5 + i * 2.2, kirpT: 2 + i, kapak: 0, bakX: 0, sevT: 0,
+      durum: 'otur', t: 0, kese: 0, keseT: 9, virakT: 1.5 + i * 2.2, kirpT: 2 + i, kapak: 0, bakX: 0, sevT: 0, cevapT: -1,
       zx0: 0, zy0: 0, zx1: 0, zy1: 0, zh: 0, zs: .5, u: 0, kiyiye: false, hedefPed: -1, hx: 0, hy: 0
     });
   }
@@ -1110,6 +1113,11 @@ function btVirak(f) {
 }
 function btKurbAdim(f, dt, i) {
   f.t += dt; f.sevT -= dt; f.keseT += dt;
+  // Bir kurbağaya dokununca arkadaşları sırayla cevap verir; aynı anda gürültü olmaz.
+  if (f.cevapT >= 0) {
+    f.cevapT -= dt;
+    if (f.cevapT < 0) { btVirak(f); f.sevT = 1.2; btHalka(f.x, f.y + 1, 9, .9, .65); }
+  }
   // kese: 0,9 sn'de iki kez şişer
   f.kese = f.keseT < .9 ? Math.abs(Math.sin(f.keseT / .9 * BT_PI2)) : 0;
   // göz kırpma
@@ -1117,7 +1125,8 @@ function btKurbAdim(f, dt, i) {
   f.kapak = Math.max(0, f.kapak - dt * 7);
   f.bakX = btYaklas(f.bakX, clamp((P.x - f.x) / 150, -1, 1), dt * 6);
   if (f.durum === 'zipla') {
-    f.u = Math.min(1, f.t / f.zs);
+    // Minik çömelme → sıçrama → yumuşak iniş: hareket havada bir anda başlamaz.
+    f.u = clamp((f.t - .1) / f.zs, 0, 1);
     f.x = lerp(f.zx0, f.zx1, f.u); f.y = lerp(f.zy0, f.zy1, f.u) - Math.sin(Math.PI * f.u) * f.zh;
     if (f.u >= 1) {
       f.t = 0;
@@ -1163,8 +1172,13 @@ function btKurbCiz(c, f, tm) {
   if (f.durum === 'otur' && f.ped >= 0) { const n = BT.nil[f.ped]; bob = Math.sin(tm * 1.1 + n.sal) * .8 + (n.kurbT < .5 ? Math.sin(n.kurbT / .5 * Math.PI) * 2 : 0); }
   const zip = f.durum === 'zipla' ? Math.sin(Math.PI * f.u) : 0;   // havadayken bacaklar uzar
   c.save();
-  c.translate(f.x, f.y + bob); c.scale(f.yonS * s, s);
-  if (f.durum === 'zipla') c.rotate(-(1 - 2 * f.u) * .45);
+  const sevinc = f.sevT > 0 && f.durum !== 'zipla' ? Math.sin(Math.min(1, f.sevT / 1.2) * Math.PI) : 0;
+  const hazir = f.durum === 'zipla' ? Math.sin(clamp(f.t / .1, 0, 1) * Math.PI) : 0;
+  const iniT = f.durum === 'otur' && f.ped >= 0 ? BT.nil[f.ped].kurbT : 9;
+  const indi = iniT < .2 ? Math.sin(iniT / .2 * Math.PI) : 0;
+  c.translate(f.x, f.y + bob);
+  c.scale(f.yonS * s * (1 - sevinc * .035 + hazir * .12 + indi * .1 - zip * .035), s * (1 + sevinc * .07 - hazir * .14 - indi * .1 + zip * .07));
+  if (f.durum === 'zipla') c.rotate(-(1 - 2 * f.u) * .45 * Math.min(1, f.u * 8));
   // arka bacak: oturunca katlanmış iri but, zıplarken geriye uzanır
   if (zip > .15) {
     c.strokeStyle = R[1]; c.lineWidth = 3.4; c.beginPath(); c.moveTo(-5, -6); c.lineTo(-12 - 4 * zip, -2 + 3 * zip); c.lineTo(-19 - 6 * zip, 1 + 4 * zip); c.stroke();
@@ -1208,7 +1222,7 @@ function btKurbCiz(c, f, tm) {
 }
 function btKurbIsabet(wx, wy) {
   for (const f of BT.kurb) {
-    const ux = (wx - f.x) / 32, uy = (wy - (f.y - 14)) / 26;
+    const ux = (wx - f.x) / btDokunYari(32), uy = (wy - (f.y - 14)) / btDokunYari(26);
     if (ux * ux + uy * uy < 1) return f;
   }
   return null;
@@ -1216,7 +1230,7 @@ function btKurbIsabet(wx, wy) {
 function btBalikIsabet(wx, wy) {
   let en = null, ed = 1;
   for (const b of BT.balik) {
-    const ux = (wx - b.x) / 22, uy = (wy - (b.y + b.zh)) / 15, d = ux * ux + uy * uy;
+    const ux = (wx - b.x) / btDokunYari(25), uy = (wy - (b.y + b.zh)) / btDokunYari(20), d = ux * ux + uy * uy;
     if (d < ed) { ed = d; en = b; }
   }
   return en;
@@ -1245,9 +1259,9 @@ function btKare(dt) {
   if (BT.kule === 2 || BT.kule === 4) { BT.kuleT += dt; if (BT.kuleT > (BT.kule === 4 ? 6 : 9) ) btKuleIn(); }
   if (BT.kule === 2 && BT.kuleT > 3.5 && Math.abs(P.x - BT_TAS1.x) < 200 && !BT.otoKule3) { BT.otoKule3 = true; btTirmanBasla(BT.aile.y2, BT.aile.y1); BT.kule = 3; }
   // anne Feza'ya kaplumbağaları gösterir (bir kez; kısa poz, takip bozulmaz)
-  if (!BT.goster && P.x > BT_GOSTER && P.x < BT_GOSTER + 400 && BT.fezaVx > 20 && typeof ANNE12 !== 'undefined' && ANNE12 && typeof ANNE12.kisaPoz === 'function') {
+  if (!BT.goster && P.x > BT_GOSTER && P.x < BT_GOSTER + 400 && BT.fezaVx > 20 && typeof ANNE12 !== 'undefined' && ANNE12 && typeof ANNE12.kisaPoz === 'function' && ANNE12.yuruyerekPoz === true) {
     let ok = false;
-    try { ok = ANNE12.kisaPoz('isaret', 1.7, { aci: .05 }) !== false; } catch (e) { ok = false; }
+    try { ok = ANNE12.kisaPoz('isaret', 1.7, BT_GOSTER_POZ) !== false; } catch (e) { ok = false; }
     if (ok) { BT.goster = true; btOlay('k12AnneGoster', { x: P.x }); }
   }
   // havuzlar ve nilüferler
@@ -1298,15 +1312,47 @@ function btIsabet(wx, wy) {
   let en = null, ed = 1;
   for (const k of BT.kp) {
     if (k.durum === 'dal') continue;
-    const ux = (wx - k.hx) / k.hrx, uy = (wy - k.hy) / k.hry, d = ux * ux + uy * uy;
+    const ux = (wx - k.hx) / btDokunYari(k.hrx), uy = (wy - k.hy) / btDokunYari(k.hry), d = ux * ux + uy * uy;
     if (d < ed) { ed = d; en = k; }
   }
   return en;
 }
+// Boş bir nilüferin ortasına basıldığında yakındaki kurbağanın geniş parmak alanı
+// yaprağın dokunuşunu kapmasın. Dolu yapraklar yine üzerindeki kurbağayı seçer.
+function btBosYapragaGit(n) {
+  const ped = BT.nil.indexOf(n);
+  if (BT.kPed.indexOf(ped) < 0) return false;
+  let yakin = null, mesafe = 1e9;
+  for (const f of BT.kurb) {
+    if ((f.durum === 'otur' && f.ped === ped) || f.hedefPed === ped) return false;
+    const d = Math.abs(f.x - n.x);
+    if ((f.durum === 'otur' || f.durum === 'kiyi') && d < mesafe) { mesafe = d; yakin = f; }
+  }
+  if (!yakin) return false;
+  yakin.sevT = 1.5; yakin.cevapT = -1; yakin.virakT = Math.max(yakin.virakT, 3);
+  btVirak(yakin); btKurbZipla(yakin, n.x, n.y - 1, ped, false);
+  n.dokT = 0;
+  return true;
+}
 function btDokun(wx, wy) {
+  for (const ped of BT.kPed) {
+    const n = BT.nil[ped];
+    if (Math.abs(wx - n.x) < 26 * n.s && Math.abs(wy - n.y) < 10 && btBosYapragaGit(n)) return true;
+  }
   // kurbağa: "vırak" + zıplar (kıyıdaysa olduğu yerde sevinçle hoplar)
   const f = btKurbIsabet(wx, wy);
-  if (f && f.durum !== 'zipla') { btVirak(f); f.sevT = 2; if (f.durum === 'kiyi') { f.t = 0; btKurbZipla(f, f.x, f.y, -1, true); } else btKurbYaprakla(f); return true; }
+  if (f && f.durum !== 'zipla') {
+    btVirak(f); f.sevT = 2; f.cevapT = -1; f.virakT = Math.max(f.virakT, 4);
+    let sira = 0;
+    // Ses motorunun 1.2 sn vırak aralığıyla uyumlu; her cevap gerçekten duyulur.
+    for (const q of BT.kurb) if (q !== f) {
+      q.cevapT = 1.3 + sira * 1.3;
+      q.virakT = Math.max(q.virakT, q.cevapT + 2); sira++;
+    }
+    if (f.durum === 'kiyi') { f.t = 0; btKurbZipla(f, f.x, f.y, -1, true); }
+    else btKurbYaprakla(f);
+    return true;
+  }
   // balık: dokunulan balık zıplar, ötekiler oraya toplanır
   const b = btBalikIsabet(wx, wy);
   if (b) { btBalikTopla(wx, wy, 3, -1); btBalikZipla(b); return true; }
@@ -1322,9 +1368,14 @@ function btDokun(wx, wy) {
   // nilüferler (arka ve ön)
   const nl = BT.onSuKare === BT.saat || BT.saat - BT.onSuKare < .1 ? 2 : 1;
   for (let L = 0; L < nl; L++) for (const n of (L ? BT.onNil : BT.nil)) {
-    if (Math.abs(wx - n.x) < 30 * n.s && Math.abs(wy - (n.y - 4)) < 18) {
+    if (Math.abs(wx - n.x) < 30 * n.s && Math.abs(wy - (n.y - 4)) < btDokunYari(18)) {
       n.dokT = 0;
-      if (n.renk >= 0) n.acH = n.acH > .5 ? .15 : 1; else btHalka(n.x, n.y, 10, 1, .8);
+      if (n.renk >= 0) n.acH = n.acH > .5 ? .15 : 1;
+      else {
+        btHalka(n.x, n.y, 10, 1, .8);
+        // Boş yaprağa dokunmak: en yakın kurbağa oraya zıplar. Sıra, puan veya yanlış seçim yok.
+        if (L === 0) btBosYapragaGit(n);
+      }
       btOlay('k12BotNilufer', { x: n.x });
       return true;
     }

@@ -1,6 +1,9 @@
 # Bölüm 12 — "Annemle Sabancı'da Bir Gün" (yeniden yapım sözleşmesi)
 
-> Durum (27 Ekim 2026): 10 ajanla yeniden yapıldı ve tümleştirildi. Uçtan uca akış testi (dokunmadan basılı yürüyüş): ~165 sn, Feza'nın
+> Güncel cila (28 Ekim 2026): aile referansına göre anne karakteri, araç temasları ve geçişler, kampüs yerleşimi ve
+> dokunarak oynanan küçük etkinlikler iyileştirildi. Güncel değişiklikler ve doğrulama bu belgenin sonundadır.
+
+> Önceki durum (27 Ekim 2026): 10 ajanla yeniden yapıldı ve tümleştirildi. Uçtan uca akış testi (dokunmadan basılı yürüyüş): ~165 sn, Feza'nın
 > ilerleyemediği süre ≤2 sn, anne hiç önde değil, 0 hata; 1–12 tüm bölümler hatasız açılıyor. Kampüs katmanlarını üreten betik ARKA'nın
 > `kes.py`'si; kaynak tam resimler (lojman.png, fens.png …) git geçmişinde (commit fd71ba0). Anne boyu oyunda ~136 birim (Feza 80).
 
@@ -35,7 +38,7 @@
 - Sesler: Pırıl `p_q_*`, anne `an_q_*`, anlatıcı `a_q_*`. Ses yalnız MUZIK ajanının dosyalarında (aşağıda).
 - Oyun asla takılmaz: bir modül yüklenemezse/hata verirse yol yine yürünür (oyun.js hata kalkanı var).
 
-## Hikâye ve harita (T = 40, COLS = 900, zemin düz: satır 18, `yuzey(c) = 720`)
+## Hikâye ve güncel harita (T = 40, COLS = 1100, zemin düz: satır 18, `yuzey(c) = 720`)
 Gün sabah başlar, yol boyunca öğleden sonraya, gölette altın saate, tepede gün batımına döner (`dn12Gun()` 0..1).
 
 | bölge | sütun | ne olur |
@@ -43,10 +46,11 @@ Gün sabah başlar, yol boyunca öğleden sonraya, gölette altın saate, tepede
 | `lojman` | 0–70 | Sabah. Lojmanların önü. Feza (başlangıç sütun 8) annesiyle evden çıkmış; Pırıl uçuyor. Yol kenarında çiçek tarhı (`k12Bahce` 12–60): Feza geçerken/dokununca çiçekler açar, anne bir çiçeği koklar. Bisiklet parkı (64): annenin bisikleti + Feza'nın mavi scooter'ı. |
 | `yol1` | 70–300 | **Biniş 1** (`k12Binis` ad `yol1`, 66→296): Feza mavi scooter'ında, anne kendi bisikletinde ARKADAN gelir. FENS, Üniversite Merkezi (kubbe), ağaçlı uzun yol. Yol boyu küçük sürprizler (sabun köpükleri, uçuşan çiçek yaprakları, el sallayan öğrenciler, zil). FASS önündeki parkta inerler (296). |
 | `fass` | 300–450 | FASS çimenliği, kiraz çiçekleri. **Uçurtma** (`k12Ucurtma` 315–440): anne uçurtmayı verir, Feza yürüdükçe/koştukça uçurtma arkasında yükselir; dokununca takla atar, kurdeleleri renk saçar. Durmak yok. |
-| `bilgi` | 450–560 | Bilgi Merkezi (cam kubbe, havuz/fıskiye), saat kulesi. **Bilgi** (`k12Bilgi` 460–555): havuzdan su damlaları, kuş gibi uçan resimli kitap sayfaları, fıskiye dansı; dokunulabilir, durdurmaz. |
-| `yol2` | 560–665 | **Biniş 2** (`k12Binis` ad `yol2`, 562→660): kampüs bisiklet durağından Feza kendi küçük bisikletine (destek tekerlekli, kask), anne kendi bisikletine; göletin yokuşundan aşağı süzülürler. |
-| `golet` | 665–830 | Gölet kıyısı. **Gölet** (`k12Golet` 665–830): ördek ailesi kıyıda Feza'nın peşine takılır, nilüferler, zıplayan balıklar. **Kayık** (`k12Kayik` 690→805): iskeleden anneyle kayığa binerler; anne kürek çeker, Feza basılı tutunca kürekler hızlanır; karşı iskelede inerler. |
-| `tepe` | 830–900 | Gün batımı tepesi. **Final** (`k12Final` 870): piknik örtüsü, anne ve Feza oturur, Pırıl'la birlikte küçük müzik anı, gün batımı, anne Feza'ya sımsıkı sarılır → sabah. |
+| `bilgi` | 450–560 | Bilgi Merkezi (kütüphane, cam kubbe, havuz/fıskiye), gözlem kulesi. **Bilgi** (`k12Bilgi` 460–555): havuzdan su damlaları, kuş gibi uçan resimli kitap sayfaları, fıskiye dansı; dokunulabilir, durdurmaz. |
+| `botanik` | 560–700 | Sera, bitki tarhları, ahşap yürüyüş yolu ve kaplumbağa göleti. Boş nilüferlere dokunmak kurbağaları zıplatır; hayvanlar küçük tepkiler verir. |
+| `yol2` | 700–805 | **Biniş 2** (`k12Binis` ad `yol2`, 702→800): kampüs bisiklet durağından Feza kendi küçük bisikletine (destek tekerlekli, kask), anne kendi bisikletine; göletin yokuşundan aşağı süzülürler. |
+| `golet` | 805–1030 | Gölet kıyısı. **Gölet** (`k12Golet` 805–1030): ördek ailesi kıyıda Feza'nın peşine takılır, nilüferler, zıplayan balıklar. **Kayık** (`k12Kayik` 830→1005): iskeleden anneyle kayığa binerler; anne kürek çeker, Feza basılı tutunca kürekler hızlanır; karşı iskelede inerler. |
+| `tepe` | 1030–1100 | Gün batımı tepesi. **Final** (`k12Final` 1070): piknik örtüsü, anne ve Feza oturur, Pırıl'la birlikte küçük müzik anı, gün batımı, anne Feza'ya sımsıkı sarılır → sabah. |
 
 ## Dosyalar ve sahipleri (yalnız kendi dosyanı düzenle; başkasının dosyası için `b12/istek/` klasörüne not bırak)
 | ajan | dosyalar | görev |
@@ -79,7 +83,7 @@ artık yüklenmez; fikir/çizim için okunabilir, düzenlenmez (KOORD sonunda si
   ve konumunu `ANNE12.x/y` olarak yazar. `ANNE12.birak(sahip)` → anne bulunduğu yerden yürüyüşüne devam eder (ışınlanmaz).
   ANNE pozları (en az): `dur, yuru, kos, el_salla, isaret, kokla, bisiklet` (opt.krank açısı, opt.egim), `bisiklet_bin/in` (opt.u 0..1),
   `kayik_kurek` (opt.kurek 0..1), `ucurtma_ver`, `otur`, `alkis`, `saril` (opt.u), `dans`. opt.yon ±1, opt.bak (baş yönü), opt.hiz.
-  ANNE `anne12Ciz`'e verilen (x, y) ayak tabanının ortasıdır; olcek 1 = boyu ~205 birim (Feza'nın ~1.7 katı). Bisiklette (x, y) sele
+  ANNE `anne12Ciz`'e verilen (x, y) ayak tabanının ortasıdır; olcek 1 = boyu ~136 birim (Feza'nın ~1.7 katı). Bisiklette (x, y) sele
   hizasında değil, **bisikletin yere değdiği orta nokta** olsun; YOLCULUK aracı aynı noktadan çizer. Gereken ölçüler (sele, gidon,
   pedal merkezi, krank boyu) ANNE ve YOLCULUK arasında `b12/istek/` ile kararlaştırılıp anne12.js başında sabit olarak yazılır
   (`ANNE12_BISIKLET = { sele:[x,y], gidon:[x,y], pedal:[x,y], krank: r }`).
@@ -146,3 +150,40 @@ canli12.js yerleşimleri; golet12.js su aralığı; dunya12.js sahne sütunları
 | FINAL | final12.js, sahne12.js | yeni konum (1070) + cila |
 | ETKINLIK | etkinlik12.js | çiçek, uçurtma, havuz cilası |
 | KOORD | bolum12.js, oyun.js, index.html, sw.js, arayuz.js | harita, tümleştirme, test |
+
+
+---
+## 28 Ekim 2026 — aile, kampüs ve etkileşim cilası
+
+Anne, ebeveynin verdiği aile fotoğrafındaki koyu kahverengi yandan ayrılmış saç, oval yüz, hafif gülümseme ve lacivert–krem kıyafet renkleriyle yeniden yorumlandı. Fotoğraf depoya eklenmedi. Bekleme duruşu daha dik; saç ve ifadeler oyun ölçeğinde okunur. Yürüme/koşu hızları ve mevcut konuşmalar korunur.
+
+Araçlarda el hedefi bilek yerine avuç merkezidir. Feza annesine dönerken gidonu tutan kol yeniden çözülür; sürüş sarsıntısı gidon ve pedalları bırakmadan diz/kalça hareketiyle karşılanır. Annenin bisiklete biniş/inişinde yerel çizim kökü dünya konumuna çevrilir. Ani yön değişiminde anne en küçük takip mesafesine bir karede sıçramaz; arayı hareket ederek açar. İkinci bisiklet yolundaki sincap aile gelmeden kendi dalına tırmanır; annenin yüzünü örtmez.
+
+Kampüsün bina komşulukları, kule/kütüphane/yemekhane referansları ve hayalî bahçe uzantıları [kampüs notlarında](BOLUM12_KAMPUS_NOTLARI.md) açıklanır. Bina ve ağaç önbelleklerinin kesilen kenarları düzeltildi. Göletin boyalı su dokusu çevresindeki suya daha geniş ve yumuşak bir kenarla karışır; mimari siluet ve kaynak resim çözünürlüğü korunur. Bu maske yalnız bir kez hazırlanır. Doğal yaprak renkleri ve küçük bahar çiçekleri tek seferlik hazırlanan ağaç çizimlerinde kullanılır. Çakıl/iskele zeminleri ile kedi/köpek/bank/gökkuşağı çizimleri girişte küçük iş dilimleriyle hazırlanır.
+
+Etkinlikler yine yürüyüş sırasında gerçekleşir:
+
+- Çiçeğe dokununca yakın çiçekler dalga halinde açılır; fıskiyeler sırayla su dansına katılır. Hızlı tekrar dokunuşlar suyu ekran dışına fırlatmaz.
+- Boş nilüfere dokununca en yakın uygun kurbağa oraya zıplar. Hedef yaprak atlayış süresince ayrılır; dolu yaprak kurbağanın kendi tepkisini verir. Kurbağalar sırayla cevap verir.
+- Anne ördeğe dokununca yavruları sırayla karşılık verir. Kayıkta Feza ve annesi ördeğe selam verirken yolculuk devam eder.
+- Piknikte sepete dokunmak kurabiyeyi tabağa sektirir, limonataya dokunmak bardakları tokuşturur. Dokunulmazsa kısa gösteri kendiliğinden olur; final süresi değişmez.
+- Küçük canlıların dokunma hedefleri ekran ölçeğine göre genişler. Yürüyüş/zıplama kontrolleri ve kesintisiz geçiş kuralı korunur.
+
+Teknik sınırlar: masaüstü monitör yenileme hızını izlemeye, tablet 60 FPS hedefini ve 1.5 DPR üst sınırını kullanmaya devam eder. Yeni efektler mevcut sınırlı parçacık havuzlarını kullanır. Hayvan tepki süreleri artık oyun saatine bağlıdır; sekme gizlenince duvar saatine göre ileri atlamaz. Çevrimdışı sürüm v155'tir.
+
+### Doğrulama
+
+- On iki bölümün ayrı ayrı açılışı, kısa yürüyüşü ve ana menü: oyun/konsol hatası yok. İlk on bir bölümün oyun kaynakları değiştirilmedi.
+- B12 boyunca normal hızda gerçek dokunmatik basılı tutma: scooter, küçük bisiklet, kayık ve piknik sırasıyla tamamlandı; ilerleyememe ve annenin öne geçmesi görülmedi. Bu kontrol mini oyunlara basmayı zorunlu kılmadan yapıldı.
+- Boş yaprağa dokunma, kurbağa cevapları, seri fıskiye dokunuşları, kayıkta selam ve piknik tekrarları ayrı ayrı kontrol edildi. Piknikten sarılma/sabah/sonuç kartına doğal akış hatasız tamamlandı.
+- Anne gidon temas hatası normal pozda 3.34→0.054, el sallamada 6.72→0.063 dünya birimine düştü. Feza'nın geriye bakarken gidondan ayrılması giderildi. İlk biniş kök sıçraması 22→0 birim; 30/60/120/180 Hz sayısal takip turlarında sonlu olmayan değer yok. Gerçek tarayıcıda küçük bisikletten iniş ve yedi ardışık yön değişimi de hatasız tamamlandı.
+- Yerel file:// açılışı ve geniş ekran görünümü kontrol edildi. Tablet emülasyonunda 1024×768 ve 768×1024 boyutlarında tuval ekranla aynı ölçüde kaldı; sayfa taşması oluşmadı. İki parmakla yürüme/zıplama, yalnız zıplama parmağını bırakma ve tüm dokunuşları iptal etme kontrolleri geçti; ekran yönü değiştikten sonra parmak bırakıldığında giriş takılı kalmadı.
+- İnternet kapalı ve geçici test sunucusu durdurulmuşken B12 ile ana menü açıldı. Sekiz kampüs görseli hazır, 14 B12 modülünün önbellek içeriği diskteki kaynaklarla aynıydı. v152→v154 yükseltmesi sırasında tamamlanan bölümler/son bölüm kaydı ve başka bir oyunu temsil eden önbellek korundu; eski B12 önbelleği temizlendi ve devam eden oyun kesilmedi.
+
+Performans sayıları bu bilgisayardaki yerel GPU tarayıcı testine aittir. Tablet emülasyonu yerleşim ve kontrol davranışını doğrular; fiziksel M1 iPad üzerinde yapılmış bir kare hızı ölçümü değildir. Test betikleri, aile fotoğrafı ve ekran görüntüleri dağıtılan oyun dosyalarına eklenmedi.
+
+Karşılaştırmalı hız kontrolü: aynı bilgisayar, yerel GPU kullanan Edge, 1180×820 CSS tablet emülasyonu ve oyunun 1.5 DPR sınırıyla, başlangıç sürümü ve güncel sürüm normal hızda aynı rotayı tamamladı. 195 saniyelik örneklerde her ikisi de 11.701 çizim yaptı; son kayık/final ölçümlerinde JavaScript/çizim hazırlığı p99 başlangıçta 2.0–2.2 ms, güncel tekrarda 1.9–2.2 ms idi. İlk güncel turda görülen 7–8 ms uçları ikinci turda tekrarlanmadı; kalıcı bir regresyon saptanmadı. Bu ölçüm GPU sunum süresi veya gerçek iPad FPS garantisi olarak yorumlanmamalıdır.
+
+2560×1440 masaüstü kontrolünde beş ayrı kampüs kadrajında profil masaüstü kaldı (mod=1, her rAF çizim); iki saniyelik pencerelerde 352–362 çizim, konsol/oyun hatası 0 ölçüldü. Böylece tabletin 60 FPS hedefinin masaüstüne uygulanmadığı da kontrol edildi.
+
+Son çizim yüzeyi envanteri (aynı tablet profili, ısınma ve bölge örneklerinden sonra GC): başlangıç 329 canlı canvas / 140.04 MiB, güncel 343 canvas / 151.86 MiB; fark 11.82 MiB (%8.44). Bu değer width×height×4 nominal RGBA yüzey hesabıdır, gerçek GPU belleği değildir. Başlıca artış bina kenar payları ve mevcut sprite/zeminlerin önceden hazırlanmasıdır; etkinlik/botanik/gölet/final modüllerinin canvas bütçeleri değişmemiştir. Son v155 için 14 modülün çevrimdışı SHA eşleşmesi, bölüm açılışı ve ana menü tekrar doğrulandı.

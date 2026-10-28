@@ -67,6 +67,8 @@ function gl12Hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; retur
 function gl12Olay(ad, v) { if (typeof OLAY !== 'undefined' && OLAY && OLAY.emit) OLAY.emit(ad, v); }
 function gl12V() { return typeof V12 !== 'undefined' && V12 ? V12 : null; }
 function gl12Ekranda(x, pay) { return x > cam.x - pay && x < cam.x + VW + pay; }
+// Küçük ördek ve nilüferler, ekranda en az 48 piksel çaplı dokunma alanına sahip.
+function gl12DokunYari(r) { return Math.max(r, Math.min(64, 24 * DPR / S)); }
 function gl12Alt() { return cam.y + H / S + 6; }   // ekranın altındaki dünya y'si
 
 // Su halkası (kürek, damla, ördek, dokunuş). Havuz doluysa en eskisinin yerine yazılır.
@@ -537,7 +539,7 @@ function gl12OrdekKur() {
       i, anne, ev: (anne ? 819 : 813 + i * 1.6) * T + gl12Hash(i * 3.1) * 20,
       x: 0, y: GL12_ISK.y, vx: 0, yon: i % 2 ? 1 : -1, mod: 'kara', katildi: false,
       gec: 0, gy0: 0, gy1: 0, adimF: gl12Hash(i) * 3, gagaT: gl12Hash(i * 7) * 3, gaga: 0,
-      vakT: 0, dalT: 0, kanat: 0, gezX: 0, gezT: gl12Hash(i * 5) * 3
+      vakT: 0, cevapT: -1, dalT: 0, kanat: 0, gezX: 0, gezT: gl12Hash(i * 5) * 3
     });
     GL.ordek[i].x = GL.ordek[i].ev;
   }
@@ -574,6 +576,13 @@ function gl12OrdekAdim(dt) {
   const V = gl12V();
   for (const d of GL.ordek) {
     d.vakT = Math.max(0, d.vakT - dt);
+    if (d.cevapT >= 0) {
+      d.cevapT -= dt;
+      if (d.cevapT < 0) {
+        d.vakT = .6;
+        if (gl12Ekranda(d.x, 40)) gl12Olay('k12OrdekVak', { x: d.x, yavru: !d.anne });
+      }
+    }
     if (d.dalT > 0) { d.dalT = Math.max(0, d.dalT - dt); if (d.dalT < 0.45 && !d.cikti) { d.cikti = true; gl12Halka(d.x, d.y + 1, 9, 1, 0.8); gl12Olay('k12OrdekDal', { x: d.x }); } }
     // katılma: Feza yakına gelince sırayla
     if (!d.katildi && bolgede && Math.abs(P.x - d.x) < 230 + d.i * 12) {
@@ -628,13 +637,28 @@ function gl12OrdekAdim(dt) {
   }
 }
 function gl12OrdekDokun(d) {
-  d.vakT = 0.6;
+  d.vakT = 0.6; d.cevapT = -1;
+  const K = GL.kayik && GL.kayik.k;
+  if (K && P.ucus === GL.kayik && K.faz === 'yol') {
+    // Feza ördeği seçince annesiyle birlikte selamlar; kayık süzülmeye devam eder.
+    K.elT = Math.max(K.elT, 1.4); K.bakT = .9;
+  }
   gl12Olay('k12OrdekVak', { x: d.x, yavru: !d.anne });
   if (d.mod === 'su' && d.gec === 0 && d.dalT <= 0) { d.dalT = 1.25; d.cikti = false; gl12Halka(d.x, d.y + 1, 8, 1, 0.7); gl12Olay('k12OrdekDal', { x: d.x }); }
+  // Anneye dokununca yavruları sırayla selam verir; yavruya anne karşılık verir.
+  // Yalnız kanat ve küçük hop: takip yolu, suya giriş ve kayık hızı değişmez.
+  for (const q of GL.ordek) {
+    if (q !== d && Math.abs(q.x - d.x) < 360 && (d.anne || q.anne))
+      q.cevapT = .58 + (d.anne ? q.i * .58 : 0);   // vak sesi alt aralığı 0.5 sn
+  }
   if (typeof burst === 'function') burst(d.x, d.y - 18, 5, ['#fff3a0', '#ffd0e0', '#ffffff'], 60, 0.7, 5);
 }
 
 // Ördek çizimi. (x, y): karada ayak tabanı, suda su çizgisi. Anne ördek kremsi beyaz, yavrular sarı pofuduk.
+const GL12_ORDEK_RENK = {
+  anne: { g: '#fbf5e6', k: '#e8decb', o: '#c9b89a', b: '#fffdf6' },
+  yavru: { g: '#ffd84f', k: '#f5c235', o: '#d99a22', b: '#ffe772' }
+};
 function gl12OrdekCiz(c, d, tm) {
   const s = d.anne ? 1.55 : 1, su = d.mod === 'su' && d.gec === 0;
   const atla = d.gec > 0 ? Math.sin(Math.PI * Math.min(1, d.gec)) : 0;
@@ -643,9 +667,7 @@ function gl12OrdekCiz(c, d, tm) {
   if (d.dalT > 0) { const q = 1 - d.dalT / 1.25; dal = q < 0.35 ? q / 0.35 : q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3; }
   if (dal > 0.97) return;
   const sal = su ? Math.sin(tm * 2.1 + d.i) * 0.05 : Math.sin(d.adimF * Math.PI * 2) * 0.13 * clamp(Math.abs(d.vx) / 60, 0, 1);
-  const col = d.anne
-    ? { g: '#fbf5e6', k: '#e8decb', o: '#c9b89a', b: '#fffdf6' }
-    : { g: '#ffd84f', k: '#f5c235', o: '#d99a22', b: '#ffe772' };
+  const col = d.anne ? GL12_ORDEK_RENK.anne : GL12_ORDEK_RENK.yavru;
   c.save();
   c.translate(d.x, d.y - hop - (su ? Math.sin(tm * 2.3 + d.i * 1.7) * 0.8 : 0));
   if (su) { c.beginPath(); c.rect(-30 * s, -60 * s, 60 * s, 60 * s + 0.6); c.clip(); }
@@ -1839,12 +1861,16 @@ function gl12GovdeCiz(c, K, img) {   // gövde tuvalini kayığın dönüşümü
 // ════════════════════════ Dokunma ════════════════════════
 function gl12Dokun(wx, wy) {
   let vurdu = false;
+  let secilen = null, enD = 1;
   for (const d of GL.ordek) {
     const s = d.anne ? 1.55 : 1;
-    if (Math.abs(wx - d.x) < 18 * s && wy > d.y - 26 * s && wy < d.y + 8) { gl12OrdekDokun(d); vurdu = true; break; }
+    const dx = (wx - d.x) / gl12DokunYari(20 * s), dy = (wy - (d.y - 12 * s)) / gl12DokunYari(18 * s);
+    const mesafe = dx * dx + dy * dy;
+    if (mesafe < enD) { enD = mesafe; secilen = d; }
   }
+  if (secilen) { gl12OrdekDokun(secilen); vurdu = true; }
   if (!vurdu) for (const n of GL.nilufer) {
-    if (Math.abs(wx - n.x) < 30 * n.s && Math.abs(wy - (n.y - 4)) < 18) { gl12NiluferAc(n); n.dokT = 0.5; vurdu = true; break; }
+    if (Math.abs(wx - n.x) < 30 * n.s && Math.abs(wy - (n.y - 4)) < gl12DokunYari(18)) { gl12NiluferAc(n); n.dokT = 0.5; vurdu = true; break; }
   }
   const k = GL.kugu;
   if (!vurdu && k && Math.abs(wx - k.x) < 44 && wy > k.y - 72 && wy < k.y + 8) { gl12KuguSelam(k); vurdu = true; }
@@ -1863,6 +1889,7 @@ function gl12Dokun(wx, wy) {
 if (typeof cv !== 'undefined' && cv && cv.addEventListener) {
   cv.addEventListener('pointerdown', e => {
     if (!gl12Aktif() || typeof DURUM === 'undefined' || DURUM !== 'oyun' || !GL.golet || typeof cam === 'undefined') return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     if (typeof dugmede === 'function' && dugmede(e.clientX, e.clientY)) return;
     const r = cv.getBoundingClientRect();
     const wx = cam.x + (e.clientX - r.left) * DPR / S, wy = cam.y + (e.clientY - r.top) * DPR / S;
@@ -2027,6 +2054,8 @@ function gl12KurekDinlen(c, K) {   // kayık beklerken kürekler küpeştede yat
 
 // Test kancası (konsoldan): GL12T.durum() → kayığın ve ördeklerin özeti
 const GL12T = {
+  dokunXY: gl12Dokun,
+  get ordekler() { return GL.ordek; },
   durum() {
     const K = GL.kayik && GL.kayik.k;
     return K ? { faz: K.faz, x: Math.round(K.x), v: Math.round(K.v), yon: K.yon, yer: K.yer, anne: K.an.var ? K.an.faz : '-', ordek: GL.katilan,

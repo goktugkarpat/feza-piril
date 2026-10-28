@@ -110,14 +110,31 @@ function dn12Resim(ad) {
 // Kenarı yumuşatılacak resimler: [sol pay, sağ pay] (resim genişliğinin oranı). golet fotoğraf katmanının iki yanı
 // gölün çizim suyuna ve kıyısına sert dikey çizgiyle değmesin diye saydamlaşarak biter.
 const DN12_KENAR_YUMUSAT = { golet: [0.14, 0.14] };
-function dn12KenarYumusat(im, pay) {
+function dn12KenarYumusat(im, pay, suSatiri) {
   const w = im.width, h = im.height, cv = dn12Kanvas(w, h), c = cv.getContext('2d');
   c.drawImage(im, 0, 0, w, h);
-  c.globalCompositeOperation = 'destination-in';
-  const gr = c.createLinearGradient(0, 0, w, 0);
-  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(pay[0], 'rgba(0,0,0,1)');
-  gr.addColorStop(1 - pay[1], 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-  c.fillStyle = gr; c.fillRect(0, 0, w, h);
+  const maske = dn12Kanvas(w, h), m = maske.getContext('2d');
+  const boya = (y, boy, sol, sag, yum) => {
+    const gr = m.createLinearGradient(0, 0, w, 0);
+    for (let i = 0; i <= 5; i++) {
+      const u = i / 5, a = u + (u * u * (3 - 2 * u) - u) * yum;
+      gr.addColorStop(sol * u, 'rgba(0,0,0,' + a + ')');
+    }
+    for (let i = 0; i <= 5; i++) {
+      const u = i / 5, a = 1 - u + ((1 - u) * (1 - u) * (1 + 2 * u) - (1 - u)) * yum;
+      gr.addColorStop(1 - sag + sag * u, 'rgba(0,0,0,' + a + ')');
+    }
+    m.fillStyle = gr; m.fillRect(0, y, w, boy);
+  };
+  const bas = Number.isFinite(suSatiri) ? Math.min(h, Math.max(0, suSatiri)) : h;
+  boya(0, bas, pay[0], pay[1], 0);
+  // Kıyı ve bina aynı kalır; yalnız su dokusu çizim suyuna daha uzun, yumuşak geçer.
+  // Bu satır maskesi türev hazırlanırken bir kez kurulur; kare içinde maske/gradyan yok.
+  for (let y = bas; y < h; y++) {
+    const u = Math.min(1, (y - bas) / 40), v = u * u * (3 - 2 * u);
+    boya(y, 1, pay[0] + (.26 - pay[0]) * v, pay[1] + (.26 - pay[1]) * v, v);
+  }
+  c.globalCompositeOperation = 'destination-in'; c.drawImage(maske, 0, 0);
   return cv;
 }
 // Üniversite Merkezi resminde sağdaki iri ağacın tepesi çapraz düz bir çizgiyle kırpılmış ((1432,0) → (1609,200) px).
@@ -139,7 +156,7 @@ function dn12CaprazYumusat(im) {
 }
 function dn12ResimTurev(r) {
   let im = r.bmp || r.img; if (!im) { r.turev = {}; return; }
-  const maske = DN12_KENAR_YUMUSAT[r.ad] ? dn12KenarYumusat(im, DN12_KENAR_YUMUSAT[r.ad])
+  const maske = DN12_KENAR_YUMUSAT[r.ad] ? dn12KenarYumusat(im, DN12_KENAR_YUMUSAT[r.ad], r.ad === 'golet' ? 134 : undefined)
     : r.ad === 'universite-merkezi' && (im.width || 0) === 1760 ? dn12CaprazYumusat(im) : null;
   if (maske) im = maske;
   const w = Math.max(1, Math.round((im.width || 2) / 2)), h = Math.max(1, Math.round((im.height || 2) / 2));
@@ -167,19 +184,22 @@ function dn12ResimTurev(r) {
   } catch (e) { T2.parilti = null; }
   r.turev = T2;
 }
+// Resmî 2023 kampüs planındaki komşulukları koruyan yürüyüş panoraması (ölçekli harita değildir).
+// Lojman → SUNUM/FENS → Üniversite Merkezi/yemekhane → SBS → FASS → Bilgi Merkezi.
+// Kaynak: https://www.sabanciuniv.edu/sites/default/files/2023-12/kampus_haritasi_0.pdf
 const DN12_BINALAR = [
   { ad: 'lojman',             c: 30,  taban: 430 },
-  { ad: 'orta-cim-v2',        c: 79,  taban: 362, k: 0.42 },
+  { ad: null,                 c: 82,  bina: 'sunum', w: 440, h: 160, acik: 225 },          // SUNUM, FENS'in lojmanlar tarafındaki komşusu
   { ad: 'fens',               c: 125, taban: 472 },
   { ad: null,                 c: 172, bina: 'fakulte', w: 470, h: 176, olcek: 0.8 },        // yol1: FENS ile Üniversite Merkezi arasında ikinci fakülte kanadı
   { ad: 'universite-merkezi', c: 222, taban: 505, k: 0.52 },
   { ad: 'fens',               c: 293, taban: 472, k: 0.38, ayna: true, bina: 'sbs' },   // BINA'nın SBS'i gelince o çizilir
   { ad: 'fass-cim-v1',        c: 372, taban: 446 },
-  { ad: 'orta-cim-v2',        c: 441, taban: 362, k: 0.4, ayna: true, bina: 'sunum', acik: 270 },  // BINA'nın SUNUM'u; önünde ağaç yok (altın kafes görünsün)
+  { ad: 'orta-cim-v2',        c: 441, taban: 362, k: 0.48, ayna: true },                  // FASS ile kütüphane arasındaki merkez çimeni ve uzak akademik cephe
   { ad: 'bilgi-merkezi',      c: 505, taban: 412 },
   { ad: null,                 c: 588, bina: 'fakulte', w: 470, h: 176, olcek: 0.95 },        // FENS/FASS tipi kırmızı-beyaz çizgili fakülte (botanik girişi)
   { ad: null,                 c: 640, bina: 'sera',  w: 380, h: 140 },                      // botanik bahçesinin büyük serası
-  { ad: null,                 c: 682, bina: 'sbs',   w: 500, h: 200, olcek: 0.74 },          // botanik çıkışı: tuğla + cam atriumlu bina (yol2'ye geçişte)
+  { ad: null,                 c: 682, bina: 'fakulte', w: 470, h: 176, olcek: 0.74 },       // dönüş yolundan görülen genel fakülte kanadı; ikinci bir SBS değildir
   { ad: 'kule-cevre',         c: 738, taban: 276, k: 0.6 },                                  // yol2: büyütüldü (yakın ve belirgin)
   { ad: null,                 c: 790, bina: 'yurt',  w: 340, h: 190, olcek: 1.02 },         // gölete inen yokuşta yurt
   // gölün karşı kıyısı (soldan sağa): yamaçta yurtlar, kıyıda Gösteri Merkezi ve Spor Merkezi (gerçekte yan yana, göle bakar),
@@ -190,7 +210,7 @@ const DN12_BINALAR = [
   { ad: null,                 c: 901, bina: 'spor',  w: 420, h: 125, olcek: 0.6, kiyi: true },    // Spor Merkezi (beyaz martı kanadı çatı)
   { ad: null,                 c: 921, bina: 'yurt',  w: 350, h: 195, olcek: 0.5, kiyi: true },
   { ad: null,                 c: 938, bina: 'yurt2', w: 310, h: 182, olcek: 0.45, kiyi: true },
-  { ad: null,                 c: 968, bina: 'sbs',   w: 500, h: 200, olcek: 0.46, kiyi: true },  // kıyıda tuğla + cam atriumlu bina (yansır)
+  { ad: null,                 c: 968, bina: 'yurt2', w: 310, h: 182, olcek: 0.56, kiyi: true }, // göletin yurtlar tarafı; SBS akademik merkezde tek kez görünür
   { ad: 'golet',              c: 1035, taban: 293, k: 0.62, alt: 726 },                     // büyütüldü (finalin arka planı); kıyısı gölün kıyı çizgisine oturur                               // Gösteri Merkezi + Spor Merkezi (tepeden de görünür)
   // tepe: final kadrajında batan güneş (ekranın ~%72'si) ile golet resmi arası açık su kalsın; yurtlar güneşin sağında
   { ad: null,                 c: 1097, bina: 'yurt', w: 350, h: 195, olcek: 0.52, kiyi: true },
@@ -215,18 +235,20 @@ for (const b of DN12_BINALAR) {
 // Ağaç türleri: yuvarlak (açık yeşil), sari (sarımsı yeşil), selvi (koyu, ince), cam (çam), kiraz (pembe)
 const DN12_AGAC_TUR = ['yuvarlak', 'sari', 'selvi', 'cam', 'kiraz'];
 const DN12_AGAC_OLCU = { yuvarlak: [150, 190], sari: [140, 170], selvi: [56, 190], cam: [90, 200], kiraz: [150, 165] };
+const DN12_AGAC_PAY = 12; // Yaprak uçları ve sivri taçlar tuval kenarında düz kesilmesin.
 const DN12_R = 1.5;   // önbellek çözünürlüğü (piksel / katman birimi)
 
 function dn12AgacSprite(tur) {
   const ad = 'agac_' + tur; if (DN12.onb[ad]) return DN12.onb[ad];
-  const [w, h] = DN12_AGAC_OLCU[tur], R = DN12_R, cv = dn12Kanvas(w * R, h * R), c = cv.getContext('2d');
-  c.scale(R, R);
+  const [w, h] = DN12_AGAC_OLCU[tur], R = DN12_R, p = DN12_AGAC_PAY;
+  const cv = dn12Kanvas((w + p * 2) * R, (h + p) * R), c = cv.getContext('2d');
+  c.setTransform(R, 0, 0, R, p * R, p * R);
   const cx = w / 2, tohum = tur.length * 13.7;
   // yaprak paleti: koyu (gölge, sağ alt) → açık (güneşli, sol üst)
   const PAL = {
-    yuvarlak: ['#3f7a45', '#4f8f4c', '#67a656', '#86bd5f', '#a9d26b', '#d4ea86'],
-    sari:     ['#56853f', '#6c9c44', '#86b24c', '#a3c856', '#c4de66', '#e8f08e'],
-    kiraz:    ['#b8697f', '#cf8398', '#e3a0b2', '#efbcc8', '#f8d6dc', '#fff0ef'],
+    yuvarlak: ['#3d6446', '#527e4d', '#709657', '#8eaf65', '#b0c77d', '#dae3a6'],
+    sari:     ['#5b7842', '#748d49', '#91a555', '#adbc6d', '#cdd78b', '#e9ecb4'],
+    kiraz:    ['#a97488', '#c68a9f', '#dda8b9', '#edc1cc', '#f7d9df', '#fff1ed'],
     selvi:    ['#24502f', '#2f6238', '#3c7442', '#4c874c', '#62995a', '#7fb168'],
     cam:      ['#24492f', '#2e5b37', '#3a6c40', '#4a7f4a', '#5c9154', '#79a865']
   }[tur];
@@ -310,6 +332,77 @@ function dn12KuleSprite() {
   c.fillStyle = '#7d8c93'; c.beginPath(); c.ellipse(cx - 4, ust - 47, 5, 4, 0, Math.PI, 0); c.fill();
   c.fillStyle = '#d8d2c4'; c.fillRect(cx - 0.8, ust - 60, 1.6, 7);
   DN12.onb.kule = cv; return cv;
+}
+
+// Üniversite Merkezi / yemekhane önünde yazısız küçük teras. Sabit çizim bir kez hazırlanır;
+// gerçek binayı gizlemez, masa/şemsiye silueti yapının sosyal işlevini uzaktan anlatır.
+const DN12_TERAS = { c: 240, w: 310, h: 104, s: 0.9 };
+function dn12TerasSprite() {
+  if (DN12.onb.teras) return DN12.onb.teras;
+  const w = DN12_TERAS.w, h = DN12_TERAS.h, R = 1.5;
+  const cv = dn12Kanvas(w * R, h * R), c = cv.getContext('2d');
+  c.scale(R, R);
+  // İki basamaklı açık traverten döşeme, zemine oturan yumuşak gölge.
+  dn12Elips(c, w / 2, h - 5, w * 0.47, 4, 'rgba(63,65,48,.16)');
+  c.fillStyle = '#cfbfa4'; c.fillRect(13, h - 14, w - 26, 5);
+  c.fillStyle = '#eee2c9'; c.fillRect(10, h - 18, w - 20, 4);
+  c.fillStyle = '#faf0db'; c.fillRect(10, h - 18, w - 20, 1);
+  for (let x = 24; x < w - 20; x += 23) {
+    c.fillStyle = 'rgba(152,127,94,.2)'; c.fillRect(x, h - 17, 0.6, 3);
+  }
+  // Önde ve arkada görülen ahşap sandalyeler; kapalı, okunaklı bağlantılar.
+  function sandalye(x, y, yon) {
+    c.save(); c.translate(x, y); c.scale(yon, 1);
+    c.strokeStyle = '#76543b'; c.lineWidth = 2.2; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(-5, 0); c.lineTo(-4, -25); c.lineTo(6, -25);
+    c.moveTo(-4, -12); c.lineTo(10, -12); c.lineTo(11, 0); c.stroke();
+    c.fillStyle = '#c69a63'; c.fillRect(-3.5, -23, 10, 3.8); c.fillRect(-3.5, -17.5, 10, 3.4);
+    c.fillStyle = '#e2ba80'; c.fillRect(-4, -12.5, 15, 2.6);
+    c.restore();
+  }
+  function masa(x, y, renk, koyu) {
+    sandalye(x - 27, y, 1); sandalye(x + 27, y, -1);
+    c.strokeStyle = '#8c6c4b'; c.lineWidth = 2.8; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(x, y - 68); c.lineTo(x, y - 2);
+    c.moveTo(x, y - 17); c.lineTo(x - 9, y); c.moveTo(x, y - 17); c.lineTo(x + 9, y); c.stroke();
+    dn12Elips(c, x, y - 21, 23, 5.7, '#b98d5c');
+    dn12Elips(c, x, y - 22.6, 23, 5.2, '#ecd4aa');
+    c.strokeStyle = 'rgba(255,251,224,.72)'; c.lineWidth = .8;
+    c.beginPath(); c.ellipse(x, y - 22.6, 21, 4, 0, Math.PI, Math.PI * 1.9); c.stroke();
+    // Renkli kupa ve küçük vazodaki tek çiçek, yazı veya tabela gerektirmez.
+    c.fillStyle = '#e58466'; c.fillRect(x - 13, y - 29, 5, 5);
+    c.strokeStyle = '#e58466'; c.lineWidth = 1; c.beginPath(); c.arc(x - 7.7, y - 26.7, 1.6, -.5, 1.8); c.stroke();
+    c.fillStyle = '#83b4ae'; c.fillRect(x + 9, y - 31, 3.5, 7);
+    c.strokeStyle = '#6d8d4c'; c.beginPath(); c.moveTo(x + 10.8, y - 31); c.lineTo(x + 10, y - 36); c.stroke();
+    dn12Daire(c, x + 10, y - 36.8, 2, '#f8d882');
+    // Şemsiyenin eğimli dilimleri; açık krem paneller çevredeki taşla uyumlu.
+    const ty = y - 80, uy = y - 57;
+    c.fillStyle = 'rgba(78,68,49,.14)'; dn12Elips(c, x + 7, y - 1, 36, 4, 'rgba(78,68,49,.14)');
+    for (let i = 0; i < 6; i++) {
+      const xa = x - 43 + i * 86 / 6, xb = x - 43 + (i + 1) * 86 / 6;
+      c.fillStyle = i % 2 ? '#f5edce' : (i < 3 ? renk : koyu);
+      c.beginPath(); c.moveTo(x, ty); c.quadraticCurveTo((x + xa) / 2, ty + 7, xa, uy);
+      c.quadraticCurveTo((xa + xb) / 2, uy + 5, xb, uy); c.quadraticCurveTo((x + xb) / 2, ty + 7, x, ty); c.fill();
+    }
+    c.strokeStyle = 'rgba(255,250,228,.8)'; c.lineWidth = .8;
+    c.beginPath(); c.moveTo(x - 43, uy); c.quadraticCurveTo(x, uy + 6, x + 43, uy); c.stroke();
+    dn12Daire(c, x, ty - .5, 2, '#ac8659');
+  }
+  masa(85, h - 19, '#d69672', '#c17e61');
+  masa(225, h - 19, '#83b3a1', '#669987');
+  // Alçak saksılar: terasın kenarı çimenle yumuşak birleşir.
+  for (const x of [22, 155, 289]) {
+    c.fillStyle = '#bca786'; c.beginPath(); c.moveTo(x - 8, h - 31); c.lineTo(x + 8, h - 31);
+    c.lineTo(x + 6, h - 18); c.lineTo(x - 6, h - 18); c.closePath(); c.fill();
+    c.fillStyle = '#d8c5a5'; c.fillRect(x - 9, h - 33, 18, 3);
+    for (let j = 0; j < 7; j++) {
+      const a = j * 2.4, rx = Math.cos(a) * 6, ry = Math.sin(a) * 4;
+      dn12Elips(c, x + rx, h - 35 + ry, 4.8, 3.2, j % 2 ? '#789956' : '#9bb568');
+    }
+    for (let j = 0; j < 4; j++) dn12Daire(c, x - 6 + j * 4, h - 37 - j % 2 * 3, 1.7, j % 2 ? '#f2b9bc' : '#fff0ca');
+  }
+  DN12.onb.teras = cv;
+  return cv;
 }
 
 // Bulut: yumuşak kenarlı çok sayıda küçük kümeden boyalı pamuk bulut; üstü güneşli, altı düz ve mavimsi gölgeli.
@@ -566,6 +659,11 @@ const DN12_YAKIN_AGAC = [];    // yakın katman (paralaks .62)
       if (yari && !A.kenar && Math.abs(A.L - b.L) < yari) { DN12_AGACLAR.splice(i, 1); break; }
     }
   }
+  // Kule bir yön bulma işareti: hemen önündeki taçlar alt gövdesini saklamasın.
+  const kuleL = DN12_KULE_C * T * f;
+  for (const A of DN12_AGACLAR) {
+    if (!A.kiyi && Math.abs(A.L - kuleL) < 98) A.arka = true;
+  }
   DN12_AGACLAR.sort((a, b) => (a.arka === b.arka ? a.y - b.y : a.arka ? -1 : 1));
   // yakın katman ağaçları: seyrek, büyük; gölde yok
   const fy = DN12_F.yakin, yA = DN12_GOL.y0 * T * fy, yB = DN12_GOL.y1 * T * fy;
@@ -600,6 +698,7 @@ function dn12IsitListesi() {
   DN12_ISIT.push(() => dn12Serit1('uzakSicak', [[0, 'rgba(255,190,165,0)'], [0.55, 'rgba(250,176,150,.32)'], [1, 'rgba(246,168,140,.42)']]));
   DN12_ISIT.push(() => dn12Serit1('cimPus', [[0, '#a7c77c'], [0.5, '#93bb5f'], [1, '#86b053']]));
   DN12_ISIT.push(() => dn12KuleSprite());
+  DN12_ISIT.push(() => dn12TerasSprite());
   for (const t of DN12_AGAC_TUR) DN12_ISIT.push(() => dn12AgacSprite(t));
   for (let v = 0; v < 3; v++) DN12_ISIT.push(() => dn12CaliSprite(v));
   const uz = dn12SeritYap('uzak', DN12_F.uzak, 396, 660, 1, dn12UzakCiz);
@@ -858,7 +957,8 @@ function dn12BinaKatmani(t) {
   // binalar: BINA'nın çizimi varsa o, yoksa resim
   const bnVar = typeof bn12Var === 'function' && typeof bn12Ciz === 'function';
   for (const B of DN12_BINALAR) {
-    if (B.L + B.w / 2 < a || B.L - B.w / 2 > b) continue;
+    const pay = B.bina && typeof bn12Pay === 'function' ? bn12Pay(B.bina) * (B.olcek || 1) : 0;
+    if (B.L + B.w / 2 + pay < a || B.L - B.w / 2 - pay > b) continue;
     if (B.bina && bnVar) {
       let var_ = false; try { var_ = bn12Var(B.bina); } catch (e) {}
       if (var_) {
@@ -874,6 +974,11 @@ function dn12BinaKatmani(t) {
     if (!r.turev && !DN12.turevKare) { dn12ResimTurev(r); DN12.turevKare = true; }   // ısıtma atlandıysa: karede en çok bir resim
     if (B.ayna) { g.save(); g.translate(B.L, 0); g.scale(-1, 1); dn12ResimCiz(r, im, -B.w / 2, B.y0, B.w, B.h, B.ad === 'golet' ? DN12_KIYI_PUS : 0); g.restore(); }
     else dn12ResimCiz(r, im, B.L - B.w / 2, B.y0, B.w, B.h, B.ad === 'golet' ? DN12_KIYI_PUS : 0);
+  }
+  // Yemekhane ile aynı yapıya ait küçük açık hava terası: yalnız bir önbellek resmi.
+  const terasL = DN12_TERAS.c * T * f, ts = DN12_TERAS.s;
+  if (O.teras && terasL + DN12_TERAS.w * ts / 2 > a && terasL - DN12_TERAS.w * ts / 2 < b) {
+    g.drawImage(O.teras, terasL - DN12_TERAS.w * ts / 2, DN12_TABAN + 8 - DN12_TERAS.h * ts, DN12_TERAS.w * ts, DN12_TERAS.h * ts);
   }
   // gözlem kulesi (büyütüldü: merkez çimenlikte uzaktan tanınsın); gün batımında camlı fener katı ve gövde camları yanar
   const kL = DN12_KULE_C * T * f, kk = 1.04, kw = DN12_KULE_W * kk, kh = DN12_KULE_H * kk;
@@ -901,7 +1006,8 @@ function dn12KiyiYansima(t, xa, xb) {
   const f = DN12_F.bina;
   for (const B of DN12_BINALAR) {
     if (!B.kiyi || !B.bina) continue;
-    if (B.L + B.w / 2 < xa || B.L - B.w / 2 > xb) continue;
+    const pay = typeof bn12Pay === 'function' ? bn12Pay(B.bina) * (B.olcek || 1) : 0;
+    if (B.L + B.w / 2 + pay < xa || B.L - B.w / 2 - pay > xb) continue;
     const y = dn12GolUst(B.L) + 1;
     g.save();
     g.translate(0, y); g.scale(1, -0.62); g.translate(0, -y);
@@ -970,7 +1076,8 @@ function dn12KiyiSeridi(a, b) {
 }
 function dn12AgacCizKatman(A, a, b) {
   const sp = DN12.onb['agac_' + A.tur]; if (!sp) return;
-  const [w, h] = DN12_AGAC_OLCU[A.tur], ww = w * A.s, hh = h * A.s;
+  const [w, h] = DN12_AGAC_OLCU[A.tur], p = DN12_AGAC_PAY;
+  const ww = (w + p * 2) * A.s, hh = (h + p) * A.s;
   if (A.L + ww / 2 < a || A.L - ww / 2 > b) return;
   if (A.ayna) { g.save(); g.translate(A.L, 0); g.scale(-1, 1); g.drawImage(sp, -ww / 2, A.y - hh, ww, hh); g.restore(); }
   else g.drawImage(sp, A.L - ww / 2, A.y - hh, ww, hh);
@@ -1000,7 +1107,8 @@ function dn12YakinKatman(t) {
   // büyük ağaçlar (çalıların arkasında)
   for (const A of DN12_YAKIN_AGAC) {
     const sp = O['agac_' + A.tur]; if (!sp) continue;
-    const [w, h] = DN12_AGAC_OLCU[A.tur], ww = w * A.s, hh = h * A.s;
+    const [w, h] = DN12_AGAC_OLCU[A.tur], p = DN12_AGAC_PAY;
+    const ww = (w + p * 2) * A.s, hh = (h + p) * A.s;
     if (A.L + ww / 2 < a || A.L - ww / 2 > b) continue;
     if (A.ayna) { g.save(); g.translate(A.L, 0); g.scale(-1, 1); g.drawImage(sp, -ww / 2, 694 - hh, ww, hh); g.restore(); }
     else g.drawImage(sp, A.L - ww / 2, 694 - hh, ww, hh);
@@ -1021,7 +1129,12 @@ function dn12YakinKatman(t) {
   }
   // kıyı uçları: suyun iki yanında birer çalı kümesi (düz kesik görünmesin)
   for (const x of [suA, suB, tepeL]) if (x > a - 80 && x < b + 80) {
-    const sp = O.agac_yuvarlak; if (sp) g.drawImage(sp, x - 60, 694 - 95, 120, 110);
+    const sp = O.agac_yuvarlak;
+    if (sp) {
+      const px = DN12_AGAC_PAY * 120 / DN12_AGAC_OLCU.yuvarlak[0];
+      const py = DN12_AGAC_PAY * 110 / DN12_AGAC_OLCU.yuvarlak[1];
+      g.drawImage(sp, x - 60 - px, 694 - 95 - py, 120 + px * 2, 110 + py);
+    }
   }
   void R;
 }

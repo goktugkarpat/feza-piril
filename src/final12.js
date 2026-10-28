@@ -254,13 +254,14 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     g.beginPath(); g.arc(r * 0.3, -r * 0.2, r * 0.17, 0, PI2); g.arc(-r * 0.35, r * 0.15, r * 0.15, 0, PI2); g.arc(r * 0.05, r * 0.4, r * 0.13, 0, PI2); g.arc(-r * 0.15, -r * 0.45, r * 0.12, 0, PI2); g.fill();
     g.restore();
   }
+  const KURABIYE_YIG = [[-6, -3], [6, -3], [0, -4], [-3, -8], [4, -8], [0, -12], [-7, -6], [7, -6]];
+  const YER_UCURTMA_RENK = ['#ffd36b', '#8fd6f0', '#c7a6ff'];
   function tabakCiz(x, y, n, tm) {   // beyaz tabak + üstüne yığılmış kurabiyeler
     g.fillStyle = 'rgba(80,60,70,0.18)'; g.beginPath(); g.ellipse(x, y + 1.5, 17, 3.4, 0, 0, PI2); g.fill();
     g.fillStyle = '#e9eef2'; g.beginPath(); g.ellipse(x, y, 17, 4.6, 0, 0, PI2); g.fill();
     g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(x, y - 0.6, 13, 3.2, 0, 0, PI2); g.fill();
     g.strokeStyle = '#9fc8e6'; g.lineWidth = 0.8; g.beginPath(); g.ellipse(x, y - 0.3, 15, 3.9, 0, 0, PI2); g.stroke();
-    const YIG = [[-6, -3], [6, -3], [0, -4], [-3, -8], [4, -8], [0, -12], [-7, -6], [7, -6]];
-    for (let i = 0; i < Math.min(n, YIG.length); i++) kurabiye(x + YIG[i][0], y + YIG[i][1], 5.2, i * 0.7);
+    for (let i = 0; i < Math.min(n, KURABIYE_YIG.length); i++) kurabiye(x + KURABIYE_YIG[i][0], y + KURABIYE_YIG[i][1], 5.2, i * 0.7);
   }
   function bardakCiz(x, y, dolu, sal) {   // küçük cam bardak (limonata), çizgili pipet
     g.save(); g.translate(x, y); g.rotate(sal || 0);
@@ -277,7 +278,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     g.strokeStyle = 'rgba(255,250,235,0.9)'; g.lineWidth = 1.1; g.beginPath(); g.moveTo(-14, 2);
     for (let i = 1; i <= 6; i++) g.lineTo(-14 - i * 7, 3 + Math.sin(tm * 2.4 + i) * 2.2);
     g.stroke();
-    const KUR = ['#ffd36b', '#8fd6f0', '#c7a6ff'];
+    const KUR = YER_UCURTMA_RENK;
     for (let i = 0; i < 3; i++) { const px = -22 - i * 12, py = 3 + Math.sin(tm * 2.4 + i * 2 + 1) * 2.2; g.fillStyle = KUR[i]; g.beginPath(); g.ellipse(px, py, 3.6, 1.7, 0.4, 0, PI2); g.fill(); }
     g.rotate(-0.12);
     g.fillStyle = 'rgba(60,40,60,0.18)'; g.beginPath(); g.ellipse(2, 6, 20, 3, 0, 0, PI2); g.fill();
@@ -376,7 +377,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     o.anlar = { otur: false, cagir: false, oturdu: false, dans: false, saril: false, yildiz: false };
     o.pdon = 0; o.ezil = 0; o.ppoz = 'ucus'; o.takla = -1; o.taklaYon = 1; o.notaT = 0; o.kalpT = 0;
     o.fyon = P.f < 0 ? -1 : 1;
-    o.kurabiye = 3; o.limon = 0;
+    o.kurabiye = 3; o.limon = 0; o.sepetT = 0; o.tabakT = 0; o.otoPiknik = 0; o.sonKurabiye = -9; o.sonLimon = -9;
     o.adim = () => { if (P.ucus !== o) return; P.x = o.fx; P.y = o.fy; P.vx = o.fvx || 0; P.vy = 0; P.ground = true; P.f = o.fyon; };
     OLAY.emit('k12FinalBasla', { o, sure: o.zBitti + SON_PAY });
   }
@@ -522,6 +523,19 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     // ── Pırıl (Feza oturunca bizde; öncesinde piril.js'in kendi uçuşu) ──
     if (P.ucus === o) pirilAdim(o, t, dt);
     
+    // Okuma veya düğme gerektirmeyen küçük piknik oyunu: bir kurabiye tabağa seker,
+    // sonra iki bardak tokuşur. Çocuk sepete/sürahiye dokunarak bunları tekrar oynatabilir.
+    if (t > o.zDans + .85 && o.otoPiknik === 0) {
+      o.otoPiknik = 1;
+      if (t - o.sonKurabiye > 2) kurabiyeUcur(o);
+    }
+    if (t > o.zDans + 3 && o.otoPiknik === 1) {
+      o.otoPiknik = 2;
+      if (t - o.sonLimon > 2) limonataSalla(o);
+    }
+    o.sepetT = Math.max(0, o.sepetT - dt);
+    o.tabakT = Math.max(0, o.tabakT - dt);
+
     // ── müzik notaları (dans) ve kalpler (sarılma) ──
     if (t > o.zDans && t < o.zSaril + 0.5) {
       an(o, 'dans');
@@ -541,7 +555,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     // uçan kurabiye tabağa konunca tabakta bir tane artar
     for (let i = 0; i < KURABIYE.length; i++) {
       const p = KURABIYE[i];
-      if (p.on && p.t > 0.25 && p.vy > 0 && p.y >= p.ph) { p.on = false; o.kurabiye = Math.min(8, o.kurabiye + 1); if (typeof burst === 'function') burst(p.x, p.y - 4, 6, ['#ffe08a', '#e8b86a', '#ffffff'], 60, 0.6, 4); }
+      if (p.on && p.t > 0.25 && p.vy > 0 && p.y >= p.ph) { p.on = false; o.kurabiye = Math.min(8, o.kurabiye + 1); o.tabakT = .4; if (typeof burst === 'function') burst(p.x, p.y - 4, 6, ['#ffe08a', '#e8b86a', '#ffffff'], 60, 0.6, 4); }
     }
     if (o.limon > 0) o.limon = Math.max(0, o.limon - dt);
 
@@ -565,12 +579,14 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     if (sahne) gunIsigi(o, tm);
     spr(OB.ortu, bx, y, OB.ortu.w / 2, OB.ortu.oy);
     ucurtmaYerde(bx + YER.ucurtma[0], y + YER.ucurtma[1], tm);
-    spr(OB.sepet, bx + YER.sepet[0], y + YER.sepet[1], OB.sepet.ox, OB.sepet.oy);
+    const sepetHop = o.sepetT > 0 ? Math.sin((1 - o.sepetT / .55) * Math.PI) * 6 : 0;
+    spr(OB.sepet, bx + YER.sepet[0], y + YER.sepet[1] - sepetHop, OB.sepet.ox, OB.sepet.oy);
     spr(OB.surahi, bx + YER.surahi[0], y + YER.surahi[1], OB.surahi.ox, OB.surahi.oy);
-    const sal = o.limon > 0 ? Math.sin(o.limon * 30) * 0.12 * o.limon : 0;
-    bardakCiz(bx + YER.bardak1[0], y + YER.bardak1[1], 0.7, -sal);
-    bardakCiz(bx + YER.bardak2[0], y + YER.bardak2[1], 0.55, sal);
-    tabakCiz(bx + YER.tabak[0], y + YER.tabak[1], o.faz ? o.kurabiye : 3, tm);
+    const tokus = o.limon > 0 ? Math.sin((1 - o.limon) * Math.PI) : 0;
+    bardakCiz(bx + YER.bardak1[0] + tokus * 10, y + YER.bardak1[1] - tokus * 7, 0.7, tokus * .13);
+    bardakCiz(bx + YER.bardak2[0] - tokus * 10, y + YER.bardak2[1] - tokus * 7, 0.55, -tokus * .13);
+    const tabakHop = o.tabakT > 0 ? Math.sin((1 - o.tabakT / .4) * Math.PI) * 2.4 : 0;
+    tabakCiz(bx + YER.tabak[0], y + YER.tabak[1] - tabakHop, o.faz ? o.kurabiye : 3, tm);
     if (!sahne) return;
     // anne (sarılmada yakın kolu hariç; yakın kol cizOn'da Feza'nın önünde)
     anneCiz(o, tm, AOPT.poz === 'saril' ? 'arka' : null);
@@ -581,7 +597,7 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
     if (o.faz < 2) return;
     if (AOPT.poz === 'saril') anneCiz(o, tm, 'on');
     // uçan kurabiyeler ve limonata kabarcıkları
-    for (let i = 0; i < KURABIYE.length; i++) { const p = KURABIYE[i]; if (p.on) kurabiye(p.x, p.y, 5.4, p.t * 9); }
+    for (let i = 0; i < KURABIYE.length; i++) { const p = KURABIYE[i]; if (p.on) kurabiye(p.x, p.y, 6.5, p.t * 9); }
     for (let i = 0; i < KABARCIK.length; i++) {
       const p = KABARCIK[i]; if (!p.on) continue;
       const u = p.t / p.omur; g.globalAlpha = 0.8 * (1 - u); g.strokeStyle = '#ffffff'; g.lineWidth = 0.9;
@@ -706,32 +722,47 @@ const K12FINAL = { aktif: false, t: 0, faz: '', altin: 0, aksam: 0, yakin: 1 }; 
   }
 
   // ════════════════ dokunma: küçük sevimli tepkiler (sahneyi değiştirmez) ════════════════
+  function kurabiyeUcur(o) {
+    if (o.t - o.sonKurabiye < .28) return;
+    const p = al(KURABIYE); if (!p) return;
+    const bx = ortuX(o), y = o.y, tt = .75;
+    const sx = bx + YER.sepet[0] - 4, sy = y - 34;
+    const hx = bx + YER.tabak[0] + (Math.random() - .5) * 8, hy = y + YER.tabak[1] - 6;
+    p.on = true; p.x = sx; p.y = sy; p.t = 0; p.omur = 2;
+    p.vx = (hx - sx) / tt; p.vy = (hy - sy) / tt - .5 * 520 * tt; p.ph = hy;
+    o.sepetT = .55; o.sonKurabiye = o.t;
+    OLAY.emit('k12FinalAn', { an: 'kurabiye', o });
+  }
+  function limonataSalla(o) {
+    if (o.t - o.sonLimon < .6) return;
+    o.limon = 1; o.sonLimon = o.t;
+    const bx = ortuX(o);
+    for (let i = 0; i < 6; i++) {
+      const p = al(KABARCIK); if (!p) break;
+      p.on = true; p.x = bx + YER.surahi[0] + (Math.random() - .5) * 14; p.y = o.y - 14 - Math.random() * 8;
+      p.vx = 0; p.vy = -20 - Math.random() * 20; p.t = 0; p.omur = 1 + Math.random() * .6;
+      p.s = 1.2 + Math.random() * 1.4; p.ph = Math.random() * 6;
+    }
+    OLAY.emit('k12FinalAn', { an: 'limonata', o });
+  }
   function dokun(e) {
     const o = aktif;
-    if (!o || o.faz < 2 || DURUM !== 'oyun' || typeof cam === 'undefined') return;
+    if (!o || o.faz < 2 || DURUM !== 'oyun' || typeof cam === 'undefined' || e.target !== cv || (e.pointerType === 'mouse' && e.button !== 0)) return;
     const r = cv.getBoundingClientRect(), wx = cam.x + (e.clientX - r.left) * DPR / S, wy = cam.y + (e.clientY - r.top) * DPR / S;
-    const bx = ortuX(o), y = o.y;
+    const bx = ortuX(o), y = o.y, pay = Math.min(64, 24 * DPR / S);
     let vurdu = false;
-    if (P.ucus === o && Math.hypot(wx - o.px, wy - o.py) < 48) {   // Pırıl: takla
-      if (o.takla < 0) { o.takla = 0; o.taklaYon = wx < o.px ? -1 : 1; }
-      if (typeof burst === 'function') burst(o.px, o.py, 10, ['#ffe08a', '#c9b2ff', '#9ff0c8', '#ffffff'], 110, 0.8, 5);
-      OLAY.emit('k12FinalAn', { an: 'takla', o }); vurdu = true;
-    } else if (Math.abs(wx - (bx + YER.sepet[0])) < 34 && wy > y - 60 && wy < y + 20) {   // sepet: kurabiye tabağa uçar
-      const p = al(KURABIYE);
-      if (p) {
-        const sx = bx + YER.sepet[0] - 4, sy = y - 34, hx = bx + YER.tabak[0] + (Math.random() - 0.5) * 8, hy = y + YER.tabak[1] - 6, tt = 0.75;
-        p.on = true; p.x = sx; p.y = sy; p.t = 0; p.omur = 2; p.vx = (hx - sx) / tt; p.vy = (hy - sy) / tt - 0.5 * 520 * tt; p.ph = hy;
+    if (P.ucus === o && Math.hypot(wx - o.px, wy - o.py) < Math.max(48, pay)) {
+      if (o.takla < 0) {
+        o.takla = 0; o.taklaYon = wx < o.px ? -1 : 1;
+        if (typeof burst === 'function') burst(o.px, o.py, 10, ['#ffe08a', '#c9b2ff', '#9ff0c8', '#ffffff'], 110, .8, 5);
+        OLAY.emit('k12FinalAn', { an: 'takla', o });
       }
-      OLAY.emit('k12FinalAn', { an: 'kurabiye', o }); vurdu = true;
-    } else if (Math.abs(wx - (bx + YER.surahi[0])) < 36 && wy > y - 50 && wy < y + 20) {   // limonata: bardaklar tokuşur, kabarcıklar
-      o.limon = 1;
-      for (let i = 0; i < 6; i++) {
-        const p = al(KABARCIK); if (!p) break;
-        p.on = true; p.x = bx + YER.surahi[0] + (Math.random() - 0.5) * 14; p.y = y - 14 - Math.random() * 8;
-        p.vx = 0; p.vy = -20 - Math.random() * 20; p.t = 0; p.omur = 1 + Math.random() * 0.6; p.s = 1.2 + Math.random() * 1.4; p.ph = Math.random() * 6;
-      }
-      OLAY.emit('k12FinalAn', { an: 'limonata', o }); vurdu = true;
-    } else kalpAt(wx, wy, false);   // başka yere: minik kalp (dokunuşu yutmaz)
+      vurdu = true;
+    } else if (Math.abs(wx - (bx + YER.sepet[0])) < Math.max(34, pay) && wy > y - 60 && wy < y + 20) {
+      kurabiyeUcur(o); vurdu = true;
+    } else if (Math.abs(wx - (bx + YER.surahi[0])) < Math.max(36, pay) && wy > y - 50 && wy < y + 20) {
+      limonataSalla(o); vurdu = true;
+    } else kalpAt(wx, wy, false);
     if (vurdu) { e.preventDefault(); e.stopPropagation(); }
   }
   addEventListener('pointerdown', dokun, true);

@@ -46,7 +46,7 @@ Korkutucu hiçbir şey yoktur, kaybetmek yoktur. Feza okuma bilmediği için her
 
 11. **Ay Işığı Şatosu** — Feza ile Pırıl, Vela ve ailesiyle şatonun ay ışığını aynalarla geri getirir. Ayna salonu, org ve pasta etkinliklerinden sonra pelerinle uçar ve Ay Balosu'na katılırlar.
 
-12. **Annemle Sabancı’da Bir Gün** — Feza, annesi ve Pırıl Sabancı Üniversitesi kampüsünde sabahtan gün batımına bir gün geçirir. Lojmanların önünde çiçekler açar; Feza mavi scooter'ına, annesi kendi bisikletine biner ve anne hep arkasından gelir. FASS çimenliğinde uçurtma uçururlar, Bilgi Merkezi'nin havuzunda fıskiyeler dans eder, botanik bahçesinde kaplumbağalarla oynarlar, Feza kendi küçük bisikletiyle göletin yokuşundan iner, anneyle kayığa binip büyük gölette ördek sürüleri, sazanlar ve kuğularla gezerler, tepede gün batımında piknik yapıp sarılırlar. Hiçbir şey yolu kapatmaz: her şey yürürken olur, dokunursa daha güzel olur. Kampüs kedileri, köpekler, sincaplar ve öğrenciler yol boyu eşlik eder.
+12. **Annemle Sabancı’da Bir Gün** — Feza, annesi ve Pırıl Sabancı Üniversitesi kampüsünde sabahtan gün batımına bir gün geçirir. Lojmanların önünde çiçekler açar; Feza mavi scooter'ına, annesi kendi bisikletine biner ve anne hep arkasından gelir. FASS çimenliğinde uçurtma uçururlar, Bilgi Merkezi'nin havuzunda fıskiyeler dans eder, botanik bahçesinde kaplumbağalarla oynar, boş nilüferlere dokunarak kurbağaları zıplatırlar, Feza kendi küçük bisikletiyle göletin yokuşundan iner, anneyle kayığa binip büyük gölette ördek sürüleri, sazanlar ve kuğularla gezerler, tepede gün batımında piknik yapıp sarılırlar. Hiçbir şey yolu kapatmaz: her şey yürürken olur, dokunursa daha güzel olur. Kampüs kedileri, köpekler, sincaplar ve öğrenciler yol boyu eşlik eder. Çiçekler ve fıskiyeler dokunuşa dalga halinde karşılık verir; ördek yavruları sırayla selamlar, piknikte kurabiyeler tabağa uçar ve limonata bardakları tokuşur. Anne karakteri aile referansına göre çizilmiştir. Bina komşulukları [resmî kampüs planına göre uyarlanmıştır](src/BOLUM12_KAMPUS_NOTLARI.md).
 
 **Pofuduklar** ormanın ışığını karınlarında taşıyan tüylü orman dostlarıdır. Üstlerine zıplamak onları gıdıklayıp ışıklarını uyandırır:
 hapşırırlar, karınları parlar, çevrelerindeki mantarlar ve bitkiler renklenir, Feza'nın peşine takılırlar. Bazıları çok derin uyur;
@@ -68,6 +68,7 @@ onları yalnızca ışık şarkısı uyandırır.
 - **Anka'nın uyanışı:** büyük fildişi yumurtayı parmağınla okşa veya ona dokun; kabuğu ısınır, çatlar ve Anka açılır. Sonra kanadın iki ucundan birindeki parlayan tüyden başlayıp geniş tüy yayının üzerinden geç. Beş tüy renklenince Anka kanatlarını açıp Feza'ya bir tüy armağan eder. Yazı, nota bilgisi ve renk eşleştirmesi yoktur; Pırıl bekleyen çocuğa görünür biçimde yardımcı olur.
 - **Lav nehri:** kayık 35 saniyelik yolculukta kendisi ilerler, Anka ona eşlik eder. Parmağını yukarıda veya aşağıda tutarak nehrin akışı içinde yol göster; büyük inci beyazı ışık çiçeklerinin yanından geçmek onları açar. Yakındaki çiçeğe dokunmak da kayığı oraya yönlendirir. Kaçırılan çiçek veya ışık ilerlemeyi engellemez; kaçırılan hedefler toplanmış sayılmaz.
 - **Zaman Vadisi:** ışıklı damlalara dokun veya üzerlerinde parmağını gezdir. Yaprakları ve rüya baloncuklarını okşa; art arda dokunmak da çalışır. Küçük tilkilere dokunmak veya yanlarından yürümek onları uyandırır. Etkinlikler için başlat düğmesi yoktur.
+- **Anneyle kampüs gezisi:** yürümek veya aracı ilerletmek için basılı tut; bırakınca yavaşlar. Çiçek, uçurtma, fıskiye, hayvanlar ve boş nilüferlere dokunmak küçük oyunları canlandırır. Hiçbiri tamamlanmayı bekleyen bir kapı oluşturmaz; yalnız yürüyerek de rüya tamamlanabilir.
 - **Zıplamak:** sol alttaki büyük yuvarlak düğmeye bas. Havadayken bir daha basınca Pırıl Feza'yı yukarı iter.
 - **Işık çiçekleri:** Feza dokununca açılır, çevre renklenir. Pırıl karanlık göllere ışık üfler, nilüfer yaprakları çıkar.
 - **Pofuduklar:** uyuyan Pofuduğun üstüne zıplayınca hapşırıp uyanır ve Feza'nın peşine takılır; bazıları zıplatma minderi ya da basamak olur.
@@ -80,7 +81,7 @@ onları yalnızca ışık şarkısı uyandırır.
 
 - **Sessiz açmak:** adrese `?sessiz` ekle. Açılışı atlamak için `?atla`, altyazı için `?altyazi`.
 - **Sesli açılış:** tarayıcı sesi ilk dokunuşa kadar kilitlerse müzik ve geçerli açılış konuşması o dokunuşta devam eder; konuşma ses bağlamı hazır olmadan söylenmiş sayılmaz. Sekmeye geri dönüldüğünde aynı ses bağlamı sürdürülür.
-- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=12`. Seçim ekranında Zamanın Uyuduğu Vadi dördüncü sıradadır; raf Pırıl’ın Ejderha Vadisi, Balkabağı Gecesi ve Kuzey Işıkları ile başlar.
+- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=12`. Seçim rafı Annemle Sabancı’da Bir Gün ve Ay Işığı Şatosu ile başlar; ardından Pırıl’ın Ejderha Vadisi, Balkabağı Gecesi, Kuzey Işıkları ve Zamanın Uyuduğu Vadi gelir. Bütün rüyalar baştan açıktır.
   Hepsinde yatak animasyonu tamamlanınca oyun doğrudan başlar; ayrıca oda dönüşümü, ikinci uyanış, ışıkla belirme veya kontrol beklemesi yoktur.
   Ormanın yatak girişi yaklaşık 13,4 saniye, diğer rüyalarınki 7,85 saniyedir. Yatağı da atlayan sessiz deneme: `?sessiz&atla&bolum=5`.
 - **Kayıtları sıfırlamak:** seçim ekranında sol üst köşeye 3 saniye basılı tut. Bitirilen rüyalar cihazda saklanır, kilit yoktur.
@@ -88,4 +89,4 @@ onları yalnızca ışık şarkısı uyandırır.
   Büyük ekranlarda çözünürlük otomatik uyarlanır.
 - **Seslendirme:** tr-TR-EmelNeural kadın sesiyle önceden kaydedilmiş, kırpılmış mp3'ler (`sesler.js`); cümleleri değiştirmek için
   `src/ses.js` düzenlenip `python gen_voice.py` çalıştırılır.
-- Teknik ayrıntı: `src/SPEC.md` (modül sözleşmesi), `src/BOLUM2.md`, `src/BOLUM3.md`, `src/BOLUM5.md` … `src/BOLUM10.md`.
+- Teknik ayrıntı: `src/SPEC.md` (modül sözleşmesi), `src/BOLUM2.md`, `src/BOLUM3.md`, `src/BOLUM5.md` … `src/BOLUM12.md`; kampüs kaynakları ve yerleşim için `src/BOLUM12_KAMPUS_NOTLARI.md`.

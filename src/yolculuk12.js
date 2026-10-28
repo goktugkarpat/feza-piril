@@ -263,8 +263,8 @@ const YOL12 = (() => {
         egim: 0, yay: yayKur(), zil: 0, zilBekle: -1, yon: 1, ilkZil: false },
       piril: { x: 0, y: 0, vx: 0, vy: 0, sevinc: 0 },
       surpriz: [], halka: [],
-      poz: { u: 0, arac: arac(o), it: 0, krank: 0, hiz: 0, egim: 0, kask: KASK_RENK, salla: 0, nese: 0, bakGeri: 0 },
-      anneOpt: { poz: 'bisiklet', u: 0, krank: 0, egim: 0, hiz: 0, bak: 0.2, yon: 1, zil: 0, salla: 0, nese: 0, egil: 0, katman: undefined, golge: undefined }
+      poz: { u: 0, arac: arac(o), it: 0, krank: 0, hiz: 0, egim: 0, bob: 0, kask: KASK_RENK, salla: 0, nese: 0, bakGeri: 0 },
+      anneOpt: { poz: 'bisiklet', u: 0, krank: 0, egim: 0, hiz: 0, hizDunya: 0, pedal: 0, bak: 0.2, yon: 1, zil: 0, salla: 0, nese: 0, egil: 0, katman: undefined, golge: undefined, cerceveX: undefined, cerceveY: undefined }
     };
     o.x = k.x;
     // yol1: yolun ortasında anne yanaşır, el sallaşırlar · yol2: göletin yokuşu (pedal durur, keyifle süzülürler)
@@ -407,7 +407,7 @@ const YOL12 = (() => {
     k.nese = lerp(k.nese, k.yokusta ? 1 : 0, 1 - Math.exp(-dt * 2.5));
     selamAdim(o, k, dt);
     // Feza
-    P.x = k.x; P.y = k.zemin + yayBob(k.yay, k.v) + k.binBob; P.vx = k.v; P.vy = 0; P.ground = true; P.f = 1;
+    P.x = k.x; P.y = k.zemin + yayBob(k.yay, k.v); P.vx = k.v; P.vy = 0; P.ground = true; P.f = 1;
     o.x = k.x;
     pozYaz(k);
   }
@@ -445,7 +445,7 @@ const YOL12 = (() => {
   }
   function pozYaz(k) {
     const q = k.poz, A = AYAR[k.arac];
-    q.hiz = clamp(k.v / A.vMax, 0, 1); q.egim = k.egim; q.it = k.it; q.krank = k.krank; q.arac = k.arac;
+    q.hiz = clamp(k.v / A.vMax, 0, 1); q.egim = k.egim; q.bob = k.binBob; q.it = k.it; q.krank = k.krank; q.arac = k.arac;
     q.kask = KASK_RENK; q.salla = k.salla; q.bakGeri = k.bakGeri; q.nese = k.nese;
     if (!fezaHazir()) return;
     try {
@@ -484,6 +484,8 @@ const YOL12 = (() => {
     if (a.faz === 'park' || a.faz === 'bitti') return;
     a.t += dt;
     const q = k.anneOpt;
+    q.hizDunya = a.v;
+    q.pedal = lerp(q.pedal, a.pedal ? 1 : 0, 1 - Math.exp(-dt * 5));
     if (a.faz === 'yuru') {
       // bisikletinin yanına (bin u=0 duruş noktası: bisiklet x - 22) yumuşak yürür
       const hedef = a.bx - 22, d = hedef - a.ax, ad = Math.abs(d);
@@ -494,7 +496,11 @@ const YOL12 = (() => {
       a.ax += adimX; a.yon = ad > 1 ? Math.sign(d) : 1;
       q.poz = a.v > 140 ? 'kos' : 'yuru'; q.hiz = a.v; q.yon = a.yon; q.u = 0;
       ANNE12.x = a.ax; ANNE12.y = k.zemin;
-      if (ad < 1.5 || (a.t > 6 && ad < 60)) { a.faz = 'bin'; a.t = 0; a.v = 0; a.yon = 1; }
+      if (ad < 1.5 || (a.t > 6 && ad < 60)) {
+        a.faz = 'bin'; a.t = 0; a.v = 0; a.yon = 1;
+        q.poz = 'bisiklet_bin'; q.u = 0; q.hiz = q.hizDunya = 0; q.yon = 1;
+        ANNE12.x = a.x = a.bx;
+      }
       return;
     }
     if (a.faz === 'bin') {
@@ -542,7 +548,7 @@ const YOL12 = (() => {
       krankAdim(a, dt, AO.teker, 2.4, 2.6);
       yayAdim(a.yay, dt, a.x + AO.onTeker[0], a.x + AO.arkaTeker[0], a.v);
       a.egim = lerp(a.egim, clamp((a.v - v0) / dt / 3000, -0.04, 0.06), 1 - Math.exp(-dt * 4));
-      q.poz = 'bisiklet'; q.krank = a.krank; q.hiz = clamp(a.v / 300, 0, 1); q.egim = 0; q.yon = 1; q.u = 1;
+      q.poz = 'bisiklet'; q.krank = a.krank; q.hiz = clamp(a.v / 300, 0, 1); q.hizDunya = a.v; q.egim = 0; q.yon = 1; q.u = 1;
       q.bak = Math.max(clamp(0.15 + (k.x - a.x - ANNE_ARA) / 400, 0, 0.4), yanas);
       ANNE12.x = a.x; ANNE12.y = k.zemin;
       if (fezaBitti && kalan < 1 && a.v < 4) { a.x = parkHedef; a.v = 0; a.faz = 'in'; a.t = 0; a.ilkZil = false; }
@@ -557,11 +563,11 @@ const YOL12 = (() => {
     if (a.zilBekle >= 0) { a.zilBekle -= dt; if (a.zilBekle < 0) zilCal(o, 'anne'); }
   }
   function anneBirak(o) {
-    const k = yol(o), a = k.anne;
+    const k = yol(o), a = k.anne, yerel = a.faz === 'bin' || a.faz === 'sur' || a.faz === 'in';
     a.faz = 'bitti'; a.v = 0; a.bx = a.x;
     if (typeof ANNE12 !== 'undefined' && ANNE12 && (!ANNE12.sahip || ANNE12.sahip === o)) {   // anne başka binişe geçtiyse dokunma
-      ANNE12.x = a.x; ANNE12.y = k.zemin;
-      if (typeof ANNE12.birak === 'function') { try { ANNE12.birak(o); } catch (e) { omHataBildir('ANNE12.birak', e); } }
+      ANNE12.x = yerel ? a.x : a.ax; ANNE12.y = k.zemin;
+      if (typeof ANNE12.birak === 'function') { try { ANNE12.birak(o, yerel ? a.x : 0, yerel ? k.zemin : 0); } catch (e) { omHataBildir('ANNE12.birak', e); } }
     }
   }
 
@@ -719,8 +725,9 @@ const YOL12 = (() => {
   }
   function anneParca(k, katman, tm) {
     const q = k.anneOpt; q.katman = katman; q.golge = false;
+    q.cerceveX = k.anne.x; q.cerceveY = k.zemin;
     try { anne12Ciz(g, 0, 0, 1, tm, q); } catch (e) { omHataBildir('anne12Ciz', e); }
-    q.katman = undefined; q.golge = undefined;
+    q.katman = undefined; q.golge = undefined; q.cerceveX = q.cerceveY = undefined;
   }
   const AN_DURUM = { teker: 0, w: 0, krank: 0, zil: 0, hiz: 0, ayak: 1 };
   function anneYuruCiz(k, tm) {
