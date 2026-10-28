@@ -2,7 +2,7 @@
    Ortak AU çalgıları/limitleyicisi kullanılır; yeni ses bağlamı ve sürekli osilatör yok. */
 'use strict';
 const MZ14=(()=>{
- let K=null,bar=0,lastPlace=-1,phrase=0,finishAt=Infinity,finished=false;
+ let K=null,bar=0,lastPlace=-1,phrase=0,finishAt=Infinity,finished=false,focusUntil=-Infinity;
  const cd=Object.create(null);
  const CH=[
   [[38,50,54,57,61,64],[43,50,55,59,62,66],[45,52,57,61,64,69],[40,52,55,59,62,66]],
@@ -26,7 +26,7 @@ const MZ14=(()=>{
   if(typeof P!=='undefined'&&P.ucus&&P.ucus.tip==='k14Voyage')return 'ucus';
   return 'gezegen';
  }
- function bagla(kit){K=kit;bar=phrase=0;lastPlace=-1;finishAt=Infinity;finished=false;for(const n in cd)delete cd[n];}
+ function bagla(kit){K=kit;bar=phrase=0;lastPlace=-1;finishAt=Infinity;finished=false;focusUntil=-Infinity;for(const n in cd)delete cd[n];}
  function pad(ch,t,d,v){
   if(!K||!K.ac)return;
   for(let i=1;i<5;i++){if(!K.yerVar(1,t,t+d+1.8,false,1))continue;const out=K.zarf(t,.85,v*(i===1?.7:.4),d+1.3,K.panla(K.B.pad,(i-2.5)*.16));K.osc('sine',K.NOTE(ch[i]),t,t+d+1.8,out);}
@@ -38,10 +38,11 @@ const MZ14=(()=>{
   if(m==='sabah'&&finishAt===Infinity)finishAt=t+7.5;
   if(t>=finishAt){finished=true;return 2.6;}
   const bpm=quiet?72:flying?106:[88,82,102,88,76][r],e=30/bpm,d=e*6;
-  const ch=CH[r][ORDER[phrase%16]],breath=phrase%8===7,vol=quiet?.65:1;
+  const focused=!quiet&&!flying&&t<focusUntil;
+  const ch=CH[r][ORDER[phrase%16]],breath=phrase%8===7,vol=quiet?.65:focused?.82:1;
   if(phrase%2===0||quiet){pad(ch,t,d*1.6,.020*vol);K.bas(ch[0],t,.026*vol,'uzun',d*1.5);}
   const seq=flying?[1,3,5,2,4,5]:r===2?[1,2,4,3,2,5]:[1,3,4,2,3,5];
-  const n=quiet?3:breath?4:6;
+  const n=quiet?3:breath||focused?4:6;
   for(let i=0;i<n;i++){
    const note=ch[seq[i]]+(r===4?12:0),at=t+i*e*(quiet?1.75:1),v=(i===0?.039:.027)*vol;
    if(r===4)K.cam(K.NOTE(note),at,v*.72,2.6,(i%2?1:-1)*.32,K.B.tus,true);
@@ -51,8 +52,8 @@ const MZ14=(()=>{
   if(!breath){
    const tune=MELODY[phrase%8],transpose=r===3?3:r===4?4:0;
    for(let i=0;i<tune.length;i++){
-    if(quiet&&i>1)break;const q=tune[i],note=q[1]+transpose-(quiet?12:0),at=t+q[0]*e;
-    if(r===1||r===4)K.tus(note,at,(quiet?.025:.032),q[2]*e+1.5,(phrase%2?-.15:.15),true,K.B.tus);
+    if((quiet||focused)&&i>1)break;const q=tune[i],note=q[1]+transpose-(quiet?12:0),at=t+q[0]*e;
+    if(r===1||r===4)K.tus(note,at,quiet?.025:.032*vol,q[2]*e+1.5,(phrase%2?-.15:.15),true,K.B.tus);
     else K.flut(note,at,q[2]*e*.93,.031*vol,phrase%2?-.18:.18,K.B.flut,true);
    }
    if(r===3&&phrase%4===2)K.flut(ch[3]+12,t+e*3,2.3*e,.021,-.25,K.B.flut,false);
@@ -65,7 +66,9 @@ const MZ14=(()=>{
  function karisim(t){
   if(!K||!active())return;const r=region(),m=mode(),q=m==='eve'||m==='sabah';
   const levels={arp:q?.66:.88,pad:r===3?.95:.82,tus:r===4?1:.83,flut:q?.7:.91,zil:.6,soprano:r===4?.5:.15,bas:.5};
-  for(const n in K.TEMEL)if(K.B[n])K.hedefle(K.B[n].gain,K.TEMEL[n]*(levels[n]||0),t,1.6);
+  // Leave a little breathing room for the toy's own notes, with a slow release.
+  const focused=!q&&m==='gezegen'&&t<focusUntil;
+  for(const n in K.TEMEL)if(K.B[n])K.hedefle(K.B[n].gain,K.TEMEL[n]*(levels[n]||0)*(focused?(n==='flut'||n==='tus'?.76:n==='arp'?.88:1):1),t,1.6);
   if(K.revMuzik)K.hedefle(K.revMuzik.gain,r===4?.64:r===1?.59:.49,t,2);
   if(K.dly&&K.dly.fbG)K.hedefle(K.dly.fbG.gain,r===1||r===4?.24:.17,t,2);
   // Ay'da atmosfer/rüzgâr yok. Mars'ın fırtınası kaskın ardından çok yumuşak duyulur.
@@ -75,6 +78,7 @@ const MZ14=(()=>{
   if(!active()||!/^k14/.test(name))return false;
   if(!K||!K.calabilir())return true;const t=K.zaman(),v=value||{},part=Number.isFinite(v.part)?v.part:Number.isFinite(v.index)?v.index:0;
   const gap=name==='k14Touch'?.14:name==='k14Step'?.16:name==='k14Ice'?.14:name==='k14Dust'?.18:name==='k14Lift'?2:name==='k14Done'?1.6:.45;
+  if(name==='k14Touch'||name==='k14Step'||name==='k14Ice')focusUntil=t+3.2;
   if(t-(cd[name]??-100)<gap)return true;cd[name]=t;
   const notes=[74,78,81,83,86],i=Math.max(0,Math.min(4,Math.floor(part)%5)),bus=K.sfxG;
   if(name==='k14Touch'){
@@ -89,7 +93,20 @@ const MZ14=(()=>{
   else if(name==='k14Land'){K.ton(t,'sine',180,95,.32,.031,.03,0,.19,bus);K.gur(t,.42,'lowpass',1200,480,.7,.009,.05,0,.16,bus);K.tus(74,t+.22,.028,1.6,0,true,bus);}
   else if(name==='k14Dust'){K.gur(t,.25,'bandpass',1700,820,.6,.013,.04,.16,.05,bus);}
   else if(name==='k14Ice'){K.cam(K.NOTE(notes[i]+12),t,.036,2.8,(i-2)*.13,bus,true);K.tus(notes[i],t+.08,.026,1.9,0,true,bus);}
-  else if(name==='k14Done'){[62,66,69,74,78,81].forEach((n,j)=>K.arp(n,t+j*.095,.045,(j-2.5)*.1,2.7,bus));K.flut(81,t+.45,1,.028,.08,bus,true);}
+  else if(name==='k14Done'){
+    // A recognisable family cadence in each world's own key and material voice.
+    const w=Number.isInteger(v.world)&&v.world>=0&&v.world<4?v.world:0;
+    const tune=[[62,69,73,76,81],[64,67,71,74,79],[65,69,72,76,81],[66,73,77,80,85]][w];
+    tune.forEach((n,j)=>{const at=t+j*.13,pan=(j-2)*.1;
+      if(w===1)K.ksilofon(n,at,.033,pan,'ahsap',bus);
+      else if(w===3)K.cam(K.NOTE(n),at,.025,2.2,pan,bus,true);
+      else K.arp(n,at,.037,pan,2.5,bus);
+    });
+    if(w===0)K.tus(tune[4],t+.58,.025,2,.08,true,bus);
+    else if(w===3)K.arp(tune[2]-12,t+.58,.024,-.08,2.6,bus);
+    else K.flut(tune[4],t+.58,1.1,.025,.08,bus,true);
+    focusUntil=t+3.2;
+  }
   else if(name==='k14Final'){[50,57,62,66,69,74,78,81].forEach((n,j)=>K.arp(n,t+j*.14,.044,(j-3.5)*.07,3.4,bus));K.flut(78,t+.8,2.3,.031,0,bus,true);}
   else if(name==='k14Step'&&v.world===1&&v.kind===0){K.gur(t,.2,'bandpass',1450,730,.6,.009,.03,.1,.04,bus);K.tus(notes[i],t+.1,.027,1,0,false,bus);}
   else if(name==='k14Step'&&v.world===2){K.flut(notes[i],t,.42,.028,.1,bus,false);K.arp(notes[i]-12,t,.025,-.1,1.5,bus);}

@@ -3,7 +3,7 @@
    aile14CizPoz çağrısına aittir; dışarıda her karakter tek kez çizilir. */
 'use strict';
 const AILE14 = (() => {
-  const PI2=Math.PI*2, M={hazir:false,x:0,y:720,vx:0,yon:1,faz:0,yuru:0,pose:'ayakta',poseT:0,poseDur:0,opt:null,tm:0,ship:false,fezaFaz:0,fezaYuru:0,fezaX:NaN,talkT:0,wasGround:true,prevVy:0,landT:0,landForce:0};
+  const PI2=Math.PI*2, M={hazir:false,x:0,y:720,vx:0,yon:1,faz:0,yuru:0,pose:'ayakta',poseT:0,poseDur:0,poseAge:0,hopAge:0,hopDur:0,opt:null,tm:0,ship:false,fezaFaz:0,fezaYuru:0,fezaX:NaN,talkT:0,nodT:0,wasGround:true,prevVy:0,landT:0,landForce:0};
   const FK={a_lidM:1,a_hx:0,a_hy:0,a_hw:0,a_shine:0,a_dim:null};
   const FR=typeof FZ_REST!=='undefined'?Object.assign({},FZ_REST):{};
   const PAL14={feza:{cloth:'#f7f4e8',shade:'#c5d7dd',edge:'#6f94a7',accent:'#4c94c9',dark:'#315c7b',light:'#b2e5eb',glove:'#f9f7e9',sole:'#47667a',seam:'#8da7ad'},
@@ -15,7 +15,11 @@ const AILE14 = (() => {
   const TEACH={o:null,w:0,active:false,side:-1,recover:false},TEACH_BOX={x0:0,y0:0,x1:0,y1:0};
   const FINITE=n=>Number.isFinite(n), cut=(n,a,b)=>Math.max(a,Math.min(b,n));
   const EMPTY14=Object.freeze({});
+  const LOOK14={anne:{x:.4,y:.3,stamp:-1},feza:{x:.4,y:0,stamp:-1}};
+  const contact=()=>({valid:false,near:{x:0,y:0,bend:-1},far:{x:0,y:0,bend:-1}}),CONTACT14={anne:contact(),feza:contact()},BRIDGE14={active:false,age:0,u:0,anne:contact(),feza:contact()};
   const SM=t=>{t=cut(t,0,1);return t*t*(3-2*t);};
+  function trackLook(who,o){const q=LOOK14[who],x=cut(FINITE(o.gazeX)?o.gazeX:.4,-.85,.85),y=cut(FINITE(o.gazeY)?o.gazeY:0,-.7,.7);
+    if(q.stamp<0||M.tm<q.stamp){q.x=x;q.y=y;}else if(M.tm>q.stamp){const k=1-Math.exp(-Math.min(.1,M.tm-q.stamp)*10);q.x+=(x-q.x)*k;q.y+=(y-q.y)*k;}q.stamp=M.tm;o.gazeX=q.x;o.gazeY=q.y;}
   function el(c,x,y,rx,ry,color,a=0){c.fillStyle=color;c.beginPath();c.ellipse(x,y,Math.max(.01,rx),Math.max(.01,ry),a,0,PI2);c.fill();}
   function path(c,pts,color,width){c.strokeStyle=color;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';c.beginPath();c.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)c.lineTo(pts[i],pts[i+1]);c.stroke();}
   function line(c,x0,y0,x1,y1,color,width){c.strokeStyle=color;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();}
@@ -153,8 +157,11 @@ const AILE14 = (() => {
     let dx=fx-hx,dy=fy-w*.7-hy,d0=Math.max(.001,Math.hypot(dx,dy)),d=cut(d0,Math.abs(l1-l2)+.01,l1+l2-.01);const a=Math.atan2(dy,dx),k=Math.acos(cut((l1*l1+d*d-l2*l2)/(2*l1*d),-1,1)),ax=hx+Math.cos(a)*d,ay=hy+Math.sin(a)*d;const kneeX=hx+Math.cos(a-k)*l1,kneeY=hy+Math.sin(a-k)*l1;
     limb(c,hx,hy,kneeX,kneeY,ax,ay,w,pal,far,false);boot(c,ax,ay+w*.7,footA,w,pal,far);
   }
-  const HAND={x:0,y:0};
-  function arm(c,sx,sy,swing,pose,reach,len,w,pal,far,tm,u,air,targetX,targetY){
+  const HAND={x:0,y:0,bend:-1};
+  function arm(c,sx,sy,swing,pose,reach,len,w,pal,far,tm,u,air,targetX,targetY,prior,bridgeU){
+    // A gesture-to-gesture bridge goes straight to the new authored target;
+    // its own envelope replaces the otherwise necessary idle-to-pose entry.
+    if(prior)u=1;
     const adult=pal===PAL14.anne,wave=pose==='el_salla',joy=pose==='sevinc',hug=pose==='saril',up=pose==='uzan';
     let wx=sx+Math.sin(swing)*len*.82+len*.065,wy=sy+Math.cos(swing)*len*.91,bend=-1;
     let tx=wx,ty=wy,weight=0;
@@ -170,17 +177,19 @@ const AILE14 = (() => {
       const full=weight/u,ex=wx+(tx-wx)*full,ey=wy+(ty-wy)*full,a0=Math.atan2(wy-sy,wx-sx),a1=Math.atan2(ey-sy,ex-sx),da=((a1-a0+Math.PI*3)%PI2)-Math.PI;
       const r0=Math.hypot(wx-sx,wy-sy),r1=Math.hypot(ex-sx,ey-sy),a=a0+da*u,r=r0+(r1-r0)*u;wx=sx+Math.cos(a)*r;wy=sy+Math.sin(a)*r;
     }else{wx+=(tx-wx)*weight;wy+=(ty-wy)*weight;}
+    if(prior){const a0=Math.atan2(prior.y-sy,prior.x-sx),a1=Math.atan2(wy-sy,wx-sx),da=((a1-a0+Math.PI*3)%PI2)-Math.PI,r0=Math.hypot(prior.x-sx,prior.y-sy),r1=Math.hypot(wx-sx,wy-sy),a=a0+da*bridgeU,r=r0+(r1-r0)*bridgeU;wx=sx+Math.cos(a)*r;wy=sy+Math.sin(a)*r;}
     const l1=len*.53,l2=len*.47,dx=wx-sx,dy=wy-sy,a=Math.atan2(dy,dx);
     let d=cut(Math.hypot(dx,dy),Math.abs(l1-l2)+.01,len-.05);
     // A 2-D elbow cannot change its bend side continuously unless the arm
     // straightens first. Ease through that straight chain, without stretching
     // either bone or flipping the elbow at the first frame of a new pose.
     if(bend===1){const straight=Math.pow(Math.sin(Math.PI*u),6);d+=(len-d)*straight;bend=u<.5?-1:1;}
+    if(prior){const straight=Math.pow(Math.sin(Math.PI*bridgeU),6);d+=(len-d)*straight;bend=bridgeU<.5?prior.bend:bend;}
     const k=Math.acos(cut((l1*l1+d*d-l2*l2)/(2*l1*d),-1,1));
     // One actual two-bone chain: no elastic forearms when waving/reaching.
     wx=sx+Math.cos(a)*d;wy=sy+Math.sin(a)*d;
     const ex=sx+Math.cos(a+bend*k)*l1,ey=sy+Math.sin(a+bend*k)*l1;
-    limb(c,sx,sy,ex,ey,wx,wy,w,pal,far,true);HAND.x=wx;HAND.y=wy;
+    limb(c,sx,sy,ex,ey,wx,wy,w,pal,far,true);HAND.x=wx;HAND.y=wy;HAND.bend=bend;
   }
   function backpack(c,adult,pal,breath,shoulder){const A=art(pal).pack,k=adult?1:.72,y=shoulder+3,w=31*k,h=51*k;c.drawImage(A.cv,-w-5,y,w,h);
     c.strokeStyle=pal.edge;c.lineWidth=adult?2:1.5;c.beginPath();c.moveTo(-w+3,y+9*k);c.bezierCurveTo(-w+15,y+7*k,-w+12,y+24*k,-7,y+28*k+breath);c.stroke();
@@ -205,7 +214,7 @@ const AILE14 = (() => {
     const hug=pose==='saril'?pu:0;
     const hip=(adult?-56.1:-33.4)+seat*(adult?25.1:16.4)+walk*(adult?3.6:3.2)+run*(adult?2.5:2.3)+land*(adult?5:3.8)+hug*(adult?4.5:1.2)+Math.cos(phase*2)*(adult?1.1:.8)*walk*(1-jumpW)+(joy?Math.sin(tm*4.5)*1.3*pu:0);
     const shoulder=hip-(adult?34:22),headY=shoulder-(adult?27:18)+breath;
-    const lean=run*.085+hug*(adult?.1:.075),upperX=-(shoulder-hip)*lean,headX=-(headY-hip)*run*.085-hug*(adult?6:1.5);
+    const lean=run*.085+hug*(adult?.1:.075),upperX=-(shoulder-hip)*lean,headX=-(headY-hip)*run*.085-hug*(adult?6:1.5),idleSway=Math.sin(tm*.95+(adult?1.2:0))*.017*(1-walk)*(1-seat)*(1-jumpW)*(1-hug),bridge=o.bridge,tracked=CONTACT14[adult?'anne':'feza'];
     c.save();c.translate(x,y);c.scale(s*dir,s);
     // The shadow stays on the real floor while Feza floats in lunar gravity.
     // Cabin owners explicitly disable it; no duplicate shadow over the seats.
@@ -220,20 +229,20 @@ const AILE14 = (() => {
     const footN=groundN+((adult?29:24)-groundN)*seat,footB=groundB+((adult?16:14)-groundB)*seat;
     const legY=(nearY+((adult?-12:-9)*(1-air*.5)-nearY)*jumpW)*(1-seat),backY=(farY+((adult?-16:-11)*(1-air*.35)-farY)*jumpW)*(1-seat);
     const l1=adult?25:14,l2=adult?24:14,w=adult?6.4:5.1;
-    arm(c,-9+upperX,shoulder+4,-Math.sin(phase)*(.45+run*.18)*walk*(1-jumpW)+.02,pose,0,adult?31:22,w*.72,pal,true,tm,pu,air,o.handX,o.handY);
+    arm(c,-9+upperX,shoulder+4,-Math.sin(phase)*(.45+run*.18)*walk*(1-jumpW)+.02-idleSway,pose,0,adult?31:22,w*.72,pal,true,tm,pu,air,o.handX,o.handY,bridge&&bridge.far,BRIDGE14.u);tracked.far.x=HAND.x;tracked.far.y=HAND.y;tracked.far.bend=HAND.bend;
     leg(c,-4,hip+3,footB,backY,l1,l2,w,pal,true,Math.max(0,-Math.cos(phase))*.12*walk*(1-jumpW)*(1-seat)-.04*seat-.08*jumpW*(1-seat));
     c.save();c.translate(0,hip);c.transform(1,0,-lean,1,0,0);c.translate(0,-hip);suitBody(c,adult,pal,hip,shoulder,breath);c.restore();
     leg(c,4,hip+3,footN,legY,l1,l2,w,pal,false,Math.max(0,Math.cos(phase))*.12*walk*(1-jumpW)*(1-seat)-.04*seat+.08*jumpW*(1-seat));
     // Küçük karşı baş hareketi kaskı adımlara dengeler; cam, yüz ve boyun halkası
     // aynı dönüşümü paylaşır, baş camın içinden kaymaz.
-    const joyW=(joy?pu:0)*(1-jumpW),headTilt=-Math.sin(phase)*.028*walk*(1-jumpW)+Math.sin(tm*1.4)*.008*(1-jumpW-joyW)-.045*jumpW-.025*joyW+hug*(adult?.12:-.035);
+    const joyW=(joy?pu:0)*(1-jumpW),headTilt=-Math.sin(phase)*.028*walk*(1-jumpW)+Math.sin(tm*1.4)*.008*(1-jumpW-joyW)-.045*jumpW-.025*joyW+hug*(adult?.12:-.035)+(FINITE(o.headPitch)?cut(o.headPitch,-.09,.09):0);
     c.save();c.translate(headX,headY);c.rotate(headTilt);c.translate(0,-headY);
     helmet(c,adult,headY,tm,o,true);
     c.save();c.translate(adult?-1:1,headY+(adult?1:4));c.scale(adult?1.32:1.33,adult?1.32:1.33);c.rotate(Math.sin(tm*1.7)*.012*(1-jumpW)-.08*jumpW-(joy?.04*pu:0));
     if(adult)motherFace(c,tm,o,hug);else childFace(c,tm,o,hug);c.restore();
     helmet(c,adult,headY,tm,o,false);
     c.restore();
-    arm(c,7+upperX,shoulder+4,Math.sin(phase)*(.48+run*.18)*walk*(1-jumpW)-.04,pose,FINITE(o.reach)?o.reach:0,adult?32:22,w*.78,pal,false,tm,pu,air,o.handX,o.handY);
+    arm(c,7+upperX,shoulder+4,Math.sin(phase)*(.48+run*.18)*walk*(1-jumpW)-.04+idleSway,pose,FINITE(o.reach)?o.reach:0,adult?32:22,w*.78,pal,false,tm,pu,air,o.handX,o.handY,bridge&&bridge.near,BRIDGE14.u);tracked.near.x=HAND.x;tracked.near.y=HAND.y;tracked.near.bend=HAND.bend;tracked.valid=true;
     if(o.handOut){o.handOut.x=x+HAND.x*s*dir;o.handOut.y=y+(HAND.y+bob)*s;}
     c.restore();
   }
@@ -242,7 +251,10 @@ const AILE14 = (() => {
     dt=FINITE(dt)?cut(dt,0,.1):0;if(!dt||typeof P==='undefined'||!FINITE(P.x)||!FINITE(P.y))return;
     M.tm+=dt;
     M.talkT=Math.max(0,M.talkT-dt);
-    if(M.poseT>0)M.poseT=Math.max(0,M.poseT-dt);
+    M.nodT=Math.max(0,M.nodT-dt);
+    if(M.hopAge<M.hopDur)M.hopAge=Math.min(M.hopDur,M.hopAge+dt);
+    if(BRIDGE14.active){BRIDGE14.age+=dt;BRIDGE14.u=SM(BRIDGE14.age/.34);if(BRIDGE14.age>=.34)BRIDGE14.active=false;}
+    if(M.poseT>0){M.poseAge+=dt;M.poseT=Math.max(0,M.poseT-dt);}
     const grounded=P.ground!==false;
     if(grounded&&!M.wasGround){M.landT=.28;M.landForce=cut(Math.abs(M.prevVy)/400,.12,.85);}
     else M.landT=Math.max(0,M.landT-dt);
@@ -279,8 +291,8 @@ const AILE14 = (() => {
     M.yuru+=(cut(Math.abs(M.vx)/80,0,1)-M.yuru)*(1-Math.exp(-dt*8));
     const childCycle=gait(false,Math.abs(pv)).cycle,fd=FINITE(M.fezaX)?Math.abs(P.x-M.fezaX):0;M.fezaX=P.x;if(fd<200)M.fezaFaz+=fd/childCycle*PI2;M.fezaYuru+=(cut(Math.abs(pv)/70,0,1)-M.fezaYuru)*(1-Math.exp(-dt*10));
   }
-  const OA={yon:1,hiz:0,walk:0,phase:0,smile:.86,reach:0,poseU:1,vy:0,gazeX:.4,gazeY:.3,groundY:720,handX:NaN,handY:NaN},OF={yon:1,hiz:0,walk:0,phase:0,smile:.86,reach:0,poseU:1,vy:0,land:0,gazeX:.4,gazeY:0,airborne:false,groundY:720,handX:NaN,handY:NaN};
-  function poseWeight(){return M.poseT>0?SM((M.poseDur-M.poseT)/.22)*SM(M.poseT/.32):1;}
+  const OA={yon:1,hiz:0,walk:0,phase:0,smile:.86,reach:0,poseU:1,vy:0,gazeX:.4,gazeY:.3,headPitch:0,groundY:720,handX:NaN,handY:NaN},OF={yon:1,hiz:0,walk:0,phase:0,smile:.86,reach:0,poseU:1,vy:0,land:0,gazeX:.4,gazeY:0,headPitch:0,airborne:false,groundY:720,handX:NaN,handY:NaN};
+  function poseWeight(){return M.poseT>0?SM(M.poseAge/.22)*SM(M.poseT/.32):1;}
   function cizAnne(tm){if(!M.hazir||M.ship||typeof g==='undefined')return;
     OA.yon=M.yon;OA.hiz=Math.abs(M.vx);OA.walk=M.yuru;OA.phase=M.faz;OA.reach=M.poseT>0&&M.opt&&FINITE(M.opt.reach)?M.opt.reach:0;OA.poseU=poseWeight();
     OA.gazeX=cut((P.x-M.x)*M.yon/180,-.65,.7);OA.gazeY=cut((P.y-70-(M.y-110))/130,-.35,.55);
@@ -288,6 +300,9 @@ const AILE14 = (() => {
     OA.handX=M.poseT>0&&M.opt&&FINITE(M.opt.worldX)?(M.opt.worldX-M.x)*OA.yon:NaN;OA.handY=M.poseT>0&&M.opt&&FINITE(M.opt.worldY)?M.opt.worldY-M.y:NaN;
     if(FINITE(OA.handX)){OA.gazeX=cut(OA.handX/130,-.8,.8);OA.gazeY=FINITE(OA.handY)?cut((OA.handY+110)/90,-.6,.6):OA.gazeY;}
     const st=shipState(),welcome=st&&st.encounter;
+    if(TEACH.active&&TEACH.o&&welcome&&welcome.o===TEACH.o&&FINITE(welcome.targetX)&&FINITE(welcome.targetY)){
+      OA.gazeX=cut((welcome.targetX-M.x)*OA.yon/240,-.8,.8);OA.gazeY=cut((welcome.targetY-(M.y-112))/160,-.55,.6);
+    }
     let show=M.poseT>0?M.pose:M.yuru>.1?'yuru':'ayakta';
     if(M.poseT<=0&&welcome&&welcome.phase==='welcome'&&M.yuru<.2){
       const u=SM(cut((welcome.age-.5)/.6,0,1))*SM(cut((4.7-welcome.age)/.6,0,1));
@@ -295,7 +310,8 @@ const AILE14 = (() => {
       OA.handX=(welcome.targetX-M.x)*OA.yon;OA.handY=welcome.targetY-M.y;
       OA.gazeX=cut(OA.handX/180,-.8,.8);OA.gazeY=cut((OA.handY+110)/150,-.5,.6);
     }
-    OA.groundY=M.y;const hop=M.poseT>0&&M.pose==='zipla'?Math.sin(cut((M.poseDur-M.poseT)/Math.max(.01,M.poseDur),0,1)*Math.PI)*18:0;
+    trackLook('anne',OA);OA.headPitch=OA.gazeY*.045+(M.nodT>0?Math.sin((1-M.nodT/.64)*PI2)*.025:0);OA.smile=.86+(M.poseT>0&&M.pose==='sevinc'?.1*OA.poseU:0);OA.bridge=BRIDGE14.active&&BRIDGE14.anne.valid?BRIDGE14.anne:null;
+    OA.groundY=M.y;const hop=M.hopDur>0&&M.hopAge<M.hopDur?Math.sin(cut(M.hopAge/M.hopDur,0,1)*Math.PI)*18:0;OA.airborne=hop>.001?undefined:false;
     draw(g,M.x,M.y-hop,1,'anne',show,FINITE(tm)?tm:M.tm,OA);
   }
   function cizFeza(tm){
@@ -305,15 +321,34 @@ const AILE14 = (() => {
     OF.airborne=P.ground===false;const gy=typeof yuzey==='function'?yuzey(P.x/(typeof T==='number'?T:40)):720;OF.groundY=FINITE(gy)?gy:720;
     OF.handX=M.poseT>0&&M.opt&&FINITE(M.opt.worldX)?(M.opt.worldX-P.x)*OF.yon:NaN;OF.handY=M.poseT>0&&M.opt&&FINITE(M.opt.worldY)?M.opt.worldY-P.y:NaN;
     if(FINITE(OF.handX)){OF.gazeX=cut(OF.handX/100,-.8,.8);OF.gazeY=FINITE(OF.handY)?cut((OF.handY+69)/90,-.6,.6):OF.gazeY;}
+    const st=shipState(),toy=st&&st.activity,focus=st&&st.encounter;
+    if(toy&&toy.started&&!toy.done&&Math.abs(P.x-toy.x)<500&&Math.abs(P.vx||0)<110&&P.ground!==false){
+      const tx=focus&&focus.o===toy&&FINITE(focus.targetX)?focus.targetX:toy.x,ty=focus&&focus.o===toy&&FINITE(focus.targetY)?focus.targetY:toy.y-140;
+      OF.gazeX=cut((tx-P.x)*OF.yon/140,-.8,.8);OF.gazeY=cut((ty-(P.y-70))/130,-.6,.6);
+    }
+    trackLook('feza',OF);OF.headPitch=OF.gazeY*.035;OF.smile=.86+(M.poseT>0&&M.pose==='sevinc'?.1*OF.poseU:0);OF.bridge=BRIDGE14.active&&BRIDGE14.feza.valid?BRIDGE14.feza:null;
     const pose=M.poseT>0?M.pose:P.ground===false?'zipla':M.fezaYuru>.1?'yuru':'ayakta';
     draw(g,FINITE(P.rx)?P.rx:P.x,FINITE(P.ry)?P.ry:P.y,1,'feza',pose,FINITE(tm)?tm:M.tm,OF);return true;
   }
-  function pose(name,opt){M.pose=typeof name==='string'?name:'ayakta';M.opt=opt||null;M.poseT=opt&&FINITE(opt.sure)?cut(opt.sure,0,30):1.4;M.poseDur=M.poseT;}
+  function pose(name,opt){const next=typeof name==='string'?name:'ayakta',continuing=M.poseT>0&&M.pose===next,w=continuing?poseWeight():0,duration=opt&&FINITE(opt.sure)?cut(opt.sure,0,30):1.4;
+    // The mother's small shared bounce has a physical arc of its own. A new
+    // crater tap can renew the hand gesture without teleporting her to floor.
+    if(next==='zipla'&&duration>0&&M.hopAge>=M.hopDur){M.hopAge=0;M.hopDur=duration;}
+    if(!continuing&&M.poseT>0&&duration>0){BRIDGE14.active=CONTACT14.anne.valid||CONTACT14.feza.valid;BRIDGE14.age=BRIDGE14.u=0;for(const who of ['anne','feza']){BRIDGE14[who].valid=CONTACT14[who].valid;for(const side of ['near','far']){const from=CONTACT14[who][side],to=BRIDGE14[who][side];to.x=from.x;to.y=from.y;to.bend=from.bend;}}}
+    else if(duration===0)BRIDGE14.active=false;
+    M.pose=next;M.opt=opt||null;M.poseT=continuing&&duration>0?Math.max(M.poseT,duration):duration;M.poseDur=M.poseT;
+    // A child may tap or drag repeatedly. Extend the same gesture without
+    // dropping its hand to the resting pose at every successful input. The
+    // inverse smoothstep also preserves a gesture refreshed during release.
+    const out=SM(M.poseT/.32),incoming=out>0?cut(w/out,0,1):0;M.poseAge=continuing?.22*(.5-Math.sin(Math.asin(1-2*incoming)/3)):0;
+  }
   // Kabin çıkışının son ayak temasından normal takibe teslim. Çağıran önce
   // insideShip'i kapatır; böylece iki beden görünmez veya anne geriye ışınlanmaz.
   function anchor(x,y,dir){
     if(!FINITE(x)||!FINITE(y))return false;
-    M.x=x;M.y=y;M.vx=0;M.yuru=0;M.fezaYuru=0;M.fezaX=typeof P!=='undefined'&&FINITE(P.x)?P.x:NaN;M.hazir=true;M.ship=false;M.landT=0;M.wasGround=true;TEACH.o=null;TEACH.w=0;TEACH.active=TEACH.recover=false;
+    M.x=x;M.y=y;M.vx=0;M.yuru=0;M.fezaYuru=0;M.fezaX=typeof P!=='undefined'&&FINITE(P.x)?P.x:NaN;M.hazir=true;M.ship=false;M.landT=0;M.hopAge=M.hopDur=0;M.wasGround=true;TEACH.o=null;TEACH.w=0;TEACH.active=TEACH.recover=false;
+    LOOK14.anne.stamp=LOOK14.feza.stamp=-1;
+    BRIDGE14.active=false;CONTACT14.anne.valid=CONTACT14.feza.valid=false;
     if(dir===1||dir===-1)M.yon=dir;
     return true;
   }
@@ -327,6 +362,7 @@ const AILE14 = (() => {
     TEACH_BOX.y0=Math.min(o.y-390,M.y-155,P.y-110);TEACH_BOX.y1=Math.max(o.y+25,M.y+12,P.y+12);return TEACH_BOX;
   }
   if(typeof OLAY!=='undefined')OLAY.on('konusma',e=>{if(typeof BOLUM_NO!=='undefined'&&BOLUM_NO===14&&e&&/^an_uz_/.test(e.anahtar||''))M.talkT=FINITE(e.sure)?cut(e.sure,0,20):0;});
+  if(typeof OLAY!=='undefined')OLAY.on('k14ActivityStep',()=>{if(typeof BOLUM_NO!=='undefined'&&BOLUM_NO===14&&M.nodT<=0)M.nodT=.64;});
   return {adim,cizAnne,cizFeza,pose,anchor,state,draw,cycleDistance,isit,cacheInfo,activityBox};
 })();
 function aile14CizPoz(ctx,x,y,scale,who,pose,tm,opts){AILE14.draw(ctx,x,y,scale,who,pose,tm||0,opts);}
