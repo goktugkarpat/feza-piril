@@ -62,6 +62,57 @@ const GL = {
 for (let i = 0; i < 40; i++) GL.halka.push({ on: false, x: 0, y: 0, r: 0, t: 0, sure: 1, guc: 1 });
 for (let i = 0; i < 56; i++) GL.iz.push({ on: false, x: 0, y: 0, t: 0, yon: 1, guc: 1 });
 
+// Kayıkta isteğe bağlı sazan besleme. Altı küçük atış havuzu; yolculuk hiç durmaz.
+const GL12_EKMEK = { cool: 0, throwT: 0, count: 0, eaten: 0, last: null, hand: [22,-34],
+  pool: Array.from({length:6},()=>({on:false,phase:0,t:0,x:0,y:0,sx:0,sy:0,tx:0,ty:0,portions:0,spin:0})) };
+function gl12EkmekSepetVurdu(K,wx,wy) { const p=gl12Nokta(K,77,-37);return Math.hypot(wx-p.x,wy-p.y)<gl12DokunYari(61); }
+function gl12EkmekAt(wx,wy) {
+  const K=GL.kayik&&GL.kayik.k;
+  if(!gl12Aktif()||DURUM!=='oyun'||!K||P.ucus!==GL.kayik||K.faz!=='yol'||GL12_EKMEK.cool>0||!Number.isFinite(wx)||!Number.isFinite(wy))return false;
+  let b=null;for(const q of GL12_EKMEK.pool)if(!q.on){b=q;break;}if(!b)return false;
+  const basket=gl12EkmekSepetVurdu(K,wx,wy);
+  let x=basket?K.x+K.yon*180:clamp(wx,K.x-340,K.x+340);
+  // Yemi kayığın dışına bırak; kayığın altında kaybolmasın.
+  if(Math.abs(x-K.x)<130)x=K.x+K.yon*165;
+  x=clamp(x,GL12_SU.x0+45,GL12_SU.x1-45);
+  b.on=true;b.phase=0;b.t=0;b.sx=P.x+K.yon*17;b.sy=P.y-37;b.x=b.sx;b.y=b.sy;b.tx=x;b.ty=clamp(wy,GL12_ON_Y+2,GL12_ON_Y+22);b.portions=3;b.spin=GL12_EKMEK.count*.8;
+  GL12_EKMEK.cool=.9;GL12_EKMEK.throwT=.85;GL12_EKMEK.last=b;GL12_EKMEK.count++;
+  const V=gl12V();if(V)V.ekmek=GL12_EKMEK.count;
+  gl12Olay('k12EkmekAt',{x:b.tx,y:b.ty,n:GL12_EKMEK.count});
+  return true;
+}
+function gl12EkmekAdim(dt) {
+  if(!(dt>0)||!Number.isFinite(dt)||DURUM!=='oyun')return;
+  GL12_EKMEK.cool=Math.max(0,GL12_EKMEK.cool-dt);GL12_EKMEK.throwT=Math.max(0,GL12_EKMEK.throwT-dt);
+  for(const b of GL12_EKMEK.pool){if(!b.on)continue;b.t+=dt;
+    if(b.phase===0){const K=GL.kayik&&GL.kayik.k,u=clamp((b.t-.17)/.7,0,1);
+      if(b.t<.17&&K&&P.ucus===GL.kayik){b.sx=P.x+K.yon*17;b.sy=P.y-37;}
+      b.x=lerp(b.sx,b.tx,u);b.y=lerp(b.sy,b.ty,u)-Math.sin(u*Math.PI)*70;
+      if(u>=1){b.phase=1;b.t=0;gl12Halka(b.x,b.y,7,.9,.5);gl12Olay('k12EkmekSu',{x:b.x,y:b.y});}
+    }else {b.x+=Math.sin(GL.t*.9+b.spin)*dt*1.8;b.y=b.ty+Math.sin(GL.t*2.1+b.spin)*.9;if(b.t>11||b.portions<=0)b.on=false;}
+  }
+}
+function gl12EkmekHedef(s) {
+  if(s.yemT>GL.t)return null;
+  let b=null,d=850;for(const q of GL12_EKMEK.pool){if(!q.on||q.phase!==1||q.portions<=0)continue;const z=Math.abs(q.x-s.x);if(z<d){d=z;b=q;}}
+  return b;
+}
+function gl12EkmekCiz(c,tm) {
+  const K=GL.kayik&&GL.kayik.k;if(!K)return;
+  if(P.ucus===GL.kayik&&K.faz==='yol'){
+    const pos=gl12Nokta(K,77,-37);c.save();c.translate(pos.x,pos.y);c.scale(K.yonG,1);
+    c.strokeStyle='#9e7044';c.lineWidth=2;c.fillStyle='#cb9a5c';c.beginPath();c.ellipse(0,0,14,6,0,0,Math.PI*2);c.fill();
+    c.fillRect(-13,-9,26,9);c.strokeRect(-13,-9,26,9);c.fillStyle='#fff0c0';
+    for(let i=0;i<3;i++){c.beginPath();c.ellipse(-7+i*7,-10-(i%2)*3,6,5,.15,0,Math.PI*2);c.fill();}
+    c.strokeStyle='rgba(255,237,182,.65)';c.lineWidth=1.1;c.beginPath();c.ellipse(0,-5,22+Math.sin(tm*2)*2,13,0,0,Math.PI*2);c.stroke();c.restore();
+  }
+  for(const b of GL12_EKMEK.pool){if(!b.on||!gl12Ekranda(b.x,50))continue;c.save();c.translate(b.x,b.y);
+    if(b.phase===0)c.rotate(b.spin+b.t*3);c.fillStyle='#b57e42';c.strokeStyle='#8e5b2d';c.lineWidth=.8;
+    for(let j=0;j<(b.phase===0?1:b.portions);j++){const dx=b.phase===0?0:(j-1)*9,dy=b.phase===0?0:Math.sin(j*2+b.spin)*3;c.beginPath();c.moveTo(dx-5,dy-3);c.quadraticCurveTo(dx,dy-7,dx+5,dy-2);c.lineTo(dx+4,dy+3);c.lineTo(dx-4,dy+3);c.closePath();c.fill();c.stroke();c.fillStyle='#fff0cb';c.fillRect(dx-3.5,dy-2,6,3.3);c.fillStyle='#b57e42';}
+    c.restore();
+  }
+}
+
 function gl12Aktif() { return typeof BOLUM_NO !== 'undefined' && BOLUM_NO === 12; }
 function gl12Hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
 function gl12Olay(ad, v) { if (typeof OLAY !== 'undefined' && OLAY && OLAY.emit) OLAY.emit(ad, v); }
@@ -385,6 +436,7 @@ function gl12Fezapoz(poz) {
 // Kayığın her karedeki ilerleyişi. U: uçuş girdisi (Feza kayıktayken), değilse null.
 function gl12KayikIlerle(o, dt, U) {
   const K = o.k, F = GL.fopt;
+  if(K.faz!=='yol')F.saril=0;
   K.t += dt;
   gl12Dalga(K, dt);
   const hedefX = K.yon > 0 ? GL12_K.varisR : GL12_K.varisL;
@@ -514,6 +566,9 @@ function gl12FezaYolda(K, dt, basili) {   // Feza kayıkta: basılı tutunca kü
   if (K.bakT < 0) K.bakT = GL.katilan > 0 ? 5 + gl12Hash(GL.t) * 4 : 99;
   const geri = GL.katilan > 0 && K.bakT < 1.3 ? -1 : 0;
   K.bakH += (geri - K.bakH) * (1 - Math.exp(-dt * 5));
+  const toss=GL12_EKMEK.throwT>0?Math.sin(clamp((.85-GL12_EKMEK.throwT)/.7,0,1)*Math.PI):0;
+  F.saril=toss*.88;GL12_EKMEK.hand[0]=lerp(9,30,toss);GL12_EKMEK.hand[1]=lerp(-28,-43,toss);F.hedef=GL12_EKMEK.hand;
+  if(toss>.03){F.kurek=undefined;F.salla=0;}
   F.bak = K.bakH;                                          // arada dönüp peşindeki ördeklere bakar
 }
 // fezapoz12.js 'binis_in' pozunu kayık için de destekliyor mu (FEZA12_ARAC.kayik.binisIn)
@@ -1498,8 +1553,10 @@ function gl12T3Adim(dt, binisli, K) {
   // Sazanlar: evinin çevresinde süzülür; kayık (ya da iskele ucundaki Feza) yakındaysa yanına gelir, öp öp yapar
   const fezaSuda = binisli || (P.x > GL12_SU.x0 - 40 && P.x < GL12_SU.x1 + 40 && Math.abs(P.y - GL12_ISK.y) < 4);
   for (const s of GLT3.sazan) {
+    const yem=gl12EkmekHedef(s);
     const uzak = !gl12Ekranda(s.x, 700) && !(binisli && Math.abs(s.x - kx) < 900);
-    if (uzak) continue;   // görünmeyeni güncelleme
+    if (uzak&&!yem) continue;   // görünmeyeni güncelleme; yeme yaklaşan sazan atışı bitirebilsin
+    s.yemPop=Math.max(0,(s.yemPop||0)-dt);
     s.kacT = Math.max(0, s.kacT - dt); s.opT = Math.max(0, s.opT - dt);
     const yakin = fezaSuda && Math.abs(s.x - kx) < (s.es ? 700 : 380) && s.kacT <= 0;
     let hx, hy, hz, vmax;
@@ -1513,6 +1570,10 @@ function gl12T3Adim(dt, binisli, K) {
       hx = s.hedefX; hy = s.y0; hz = 0.55 + 0.25 * Math.sin(t * 0.3 + s.i); vmax = 38;
     }
     if (s.kacT > 0) { hx = s.x + s.yon * 200; vmax = 160; hz = 0.75; }
+    if(yem){s.kacT=0;const yon=Math.sign(yem.x-s.x)||s.yon;hx=yem.x-yon*39*s.s;hy=yem.y+3;hz=.035;vmax=285;
+      if(Math.hypot(s.x+s.yon*43*s.s-yem.x,s.y-yem.y)<25&&s.z<.25){yem.portions--;s.yemT=GL.t+1.7;s.yemPop=1.3;s.opT=1.2;GL12_EKMEK.eaten++;gl12Halka(yem.x,yem.y,12,1.25,.8);gl12Sicrat(yem.x,yem.y,3,.3);gl12Olay('k12SazanYedi',{x:s.x,n:GL12_EKMEK.eaten});}
+    }
+
     const hedefV = clamp((hx - s.x) * 0.9, -vmax, vmax);
     s.vx += (hedefV - s.vx) * (1 - Math.exp(-dt * (s.kacT > 0 ? 6 : 1.6)));
     s.x += s.vx * dt; s.y += (hy - s.y) * (1 - Math.exp(-dt * 0.8)); s.z += (hz - s.z) * (1 - Math.exp(-dt * 1.2));
@@ -1599,7 +1660,7 @@ function gl12SazanCiz(c, tm) {   // su katmanında (kayığın ve her şeyin alt
     const kuy = Math.sin(s.kuyruk) * 0.35, sal = Math.sin(s.kuyruk * 0.5) * 0.04;
     const op = s.opT > 0 ? Math.sin((1.2 - s.opT) / 1.2 * Math.PI) : 0;
     c.save();
-    c.translate(s.x, s.y); c.scale(s.yon * s.s, s.s * (0.92 + 0.08 * (1 - s.z)));
+    c.translate(s.x, s.y-Math.sin((s.yemPop||0)/1.3*Math.PI)*4); c.scale(s.yon * s.s, s.s * (0.92 + 0.08 * (1 - s.z)));
     c.rotate(sal - op * 0.22);
     c.globalAlpha = a;
     const R = GL12_SAZAN_RENK[s.renk];
@@ -1671,6 +1732,8 @@ function gl12T3Dokun(wx, wy) {
   }
   for (const s of GLT3.sazan) {
     if (Math.abs(wx - s.x) < 50 * s.s && Math.abs(wy - s.y) < 18 * s.s) {
+      const K=GL.kayik&&GL.kayik.k;
+      if(K&&P.ucus===GL.kayik&&K.faz==='yol'&&Math.abs(wx-K.x)<430){gl12EkmekAt(wx,wy);return true;}
       s.kacT = 1.1; s.yon = -s.yon; s.z = 0.2;   // kuyruk çırpıp döner, biraz sonra yine gelir
       gl12Halka(s.x, s.y, 14, 1.2, 0.9); gl12Sicrat(s.x - s.yon * 40 * s.s, s.y, 5, 0.6);
       gl12Olay('k12SazanDokun', { x: s.x });
@@ -1860,6 +1923,9 @@ function gl12GovdeCiz(c, K, img) {   // gövde tuvalini kayığın dönüşümü
 
 // ════════════════════════ Dokunma ════════════════════════
 function gl12Dokun(wx, wy) {
+  const feedK=GL.kayik&&GL.kayik.k;
+  const canFeed=feedK&&P.ucus===GL.kayik&&feedK.faz==='yol';
+  if(canFeed&&gl12EkmekSepetVurdu(feedK,wx,wy)){gl12EkmekAt(wx,wy);return true;}
   let vurdu = false;
   let secilen = null, enD = 1;
   for (const d of GL.ordek) {
@@ -1877,6 +1943,8 @@ function gl12Dokun(wx, wy) {
   const q = GL.kap;
   if (!vurdu && q && Math.abs(wx - q.x) < 38 && wy > q.y - 36 && wy < q.y + 10) { q.sakla = 1.6; vurdu = true; if (typeof burst === 'function') burst(q.x, q.y - 14, 4, ['#c8f0b0', '#ffffff'], 40, 0.7, 5); }
   if (!vurdu) vurdu = gl12BuyukDokun(wx, wy);
+  // Önce eski gölet canlıları kendi tepkisini verir; yalnız boş suya veya sazana dokunmak yem atar.
+  if(!vurdu&&canFeed&&Math.abs(wx-feedK.x)<430&&wy>GL12_SU.ust+4&&wy<gl12Alt()){gl12EkmekAt(wx,wy);return true;}
   if (!vurdu && wx > GL12_SU.x0 && wx < GL12_SU.x1 && wy > GL12_SU.ust + 4) {   // suya dokunuş: halka (+ arada balık)
     const ny = Math.max(wy, GL12_SU.ust + 8);
     gl12Halka(wx, ny, 14, 1.4, 0.9); gl12Halka(wx, ny, 7, 1, 0.6);
@@ -1905,6 +1973,7 @@ function gl12Kare(dt) {
   if (GL.kareT === now) return;
   GL.kareT = now;
   GL.t += dt;
+  gl12EkmekAdim(dt);
   for (const h of GL.halka) if (h.on) { h.t += dt; if (h.t >= h.sure) h.on = false; }
   for (const q of GL.iz) if (q.on) { q.t += dt; if (q.t >= 2.6) q.on = false; }
   if (GL.ordek.length) gl12OrdekAdim(dt);
@@ -2033,6 +2102,7 @@ TUR.kaydet('k12Kayik', {
       gl12BayrakCiz(c, K, tm);
     }
     gl12OnKatman(c, tm);
+    gl12EkmekCiz(c,tm);
     if (P.ucus === o && typeof pirilCizPoz === 'function' && Number.isFinite(K.px)) {   // Pırıl yanlarında uçar (köprünün de önünde)
       c.save(); c.translate(K.px, K.py); if (K.pyon < 0) c.scale(-1, 1);
       try { pirilCizPoz(c, 0, 0, 1, 'ucus', tm); } catch (e) {}
@@ -2055,6 +2125,7 @@ function gl12KurekDinlen(c, K) {   // kayık beklerken kürekler küpeştede yat
 // Test kancası (konsoldan): GL12T.durum() → kayığın ve ördeklerin özeti
 const GL12T = {
   dokunXY: gl12Dokun,
+  ekmekDurum() { return { atis:GL12_EKMEK.count,yenen:GL12_EKMEK.eaten,aktif:GL12_EKMEK.pool.filter(q=>q.on).length,cool:GL12_EKMEK.cool }; },
   get ordekler() { return GL.ordek; },
   durum() {
     const K = GL.kayik && GL.kayik.k;

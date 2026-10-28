@@ -679,6 +679,9 @@ const MZ12 = (() => {
       K.kabar((akor || AK.D).pad.map(n => n + 12), t, 0.8, 0.6, 2.4, 0.01, K.sahneG, false);
       tn.forEach((n, i) => K.cam(hz(n + 12), t + 0.2 + i * 0.22, 0.008, 2.6, (i - 1) * 0.4, S(), true));
     },
+    k12EkmekAt(t) { K.gur(t,.24,'bandpass',1800,2900,.7,.009,.035,.1,.07,S()); },
+    k12EkmekSu(t) { K.damla(1050,t,.009,.2,S()); },
+    k12SazanYedi(t) { K.damla(440,t,.011,.15,S()); K.ksilofon(74,t+.12,.012,-.1,'ahsap',S()); },
     k12SazanOp(t) { K.damla(330 + rnd() * 60, t, 0.01, 0.15, S()); K.damla(420 + rnd() * 60, t + 0.13, 0.008, 0.15, S()); },   // "blup-blup" baloncuk
     k12SazanDokun(t) { sipirti(t, 0.7, 0.2); K.damla(380, t + 0.05, 0.01, 0.2, S()); },
     k12OrdekSuru(t, v) {

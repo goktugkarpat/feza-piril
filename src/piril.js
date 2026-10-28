@@ -582,12 +582,17 @@ function stepDragon(dt) {
   // Feza durduğunda omzunun yanında tatlıca havada asılı kalma (hover / perching)
   const fzDur = P.ground && P.idle > 0.8 && Math.abs(P.vx) < 20 && drFree() && D.mode !== 'otur';
   D.omuzW = lerp(D.omuzW || 0, fzDur ? 1 : 0, 1 - Math.exp(-dt * 3.2));
-  // B12: anne Feza'nın hemen arkasında yürür → Pırıl önde/yukarıda uçar ve öndeki omzunda asılı kalır (annenin yüzünü kapatmaz)
+  // Anneyle rüyalarda Pırıl önde/yukarıda uçar ve öndeki omzunda asılı kalır (annenin yüzünü kapatmaz)
   // (yan, Feza'nın yönüne değil annenin konumuna göre: Feza dönüp annesine baksa da Pırıl annenin karşı yanında kalır)
-  const b12 = BOLUM_NO === 12 && typeof ANNE12 !== 'undefined' && ANNE12 && ANNE12.hazir && isFinite(ANNE12.x);
+  const b12 = (BOLUM_NO === 12 || BOLUM_NO === 13) && typeof ANNE12 !== 'undefined' && ANNE12 && ANNE12.hazir && isFinite(ANNE12.x);
   const arka = b12 ? -(Math.sign(P.x - ANNE12.x) || P.f) : P.f;   // Pırıl'ın duracağı yanın tersi (normalde Feza'nın arkası)
   const tx0 = P.x - arka * (b12 ? 34 : 40) + wx, ty0 = P.y - (b12 ? 122 : 112) + wy;
   let tx = lerp(tx0, P.x - arka * 27 + wx * 0.35, D.omuzW), ty = lerp(ty0, P.y - 72 + wy * 0.45, D.omuzW);
+  const anne14 = BOLUM_NO === 14 && typeof AILE14 !== 'undefined' && AILE14 && typeof AILE14.state === 'function' ? AILE14.state() : null;
+  const aile14 = !!(anne14 && anne14.hazir && !anne14.ship && isFinite(anne14.x) && isFinite(anne14.y)), yan14 = aile14 ? (Math.sign(P.x - anne14.x) || P.f || 1) : 1, ust14 = aile14 ? Math.min(P.y - 154, anne14.y - 196) : 0;
+  // Astronot kaskları normal baştan daha geniş. Pırıl annenin karşı yanında,
+  // çocuğun camının üstünde süzülür; konum değil yay hedefi değişir.
+  if (aile14) { tx = P.x + yan14 * 68 + wx * .6; ty = ust14 + wy * .5; }
   let k = lerp(28, 38, D.omuzW), damp = lerp(8.5, 11, D.omuzW), direct = false, hopW = 0, flapW = D.omuzW > 0.05 ? lerp(3.1, 2.1, D.omuzW) : 0, rollW = 0;
   // Feza hızlı koştuğunda arkasından yetişmek için heyecanla kanat çırpma ve rüzgâr girdabı
   const fzFast = Math.abs(P.vx) > 155;
@@ -757,7 +762,8 @@ function stepDragon(dt) {
     } else { D.mode = 'follow'; D.modeT = 0; D.vx = -P.f * 420; D.vy = Math.min(D.vy, 0) - 60; D.lockF = 0.45; }   // arkasından yukarı dön
   } else if (D.mode === 'orbit') {     // Feza durunca başının üstünde oyuncu bir çember
     const a = D.oa + D.modeT * 2.3;
-    tx = P.x + (BOLUM_NO === 12 && typeof ANNE12 !== 'undefined' && ANNE12 && isFinite(ANNE12.x) ? (Math.sign(P.x - ANNE12.x) || P.f) * 34 : 0) + Math.cos(a) * 58; ty = P.y - 104 + Math.sin(a) * 18 + Math.sin(a * 2) * 6;   // B12: çember öne kayık (arkadaki annenin başına girmesin)
+    tx = P.x + ((BOLUM_NO === 12 || BOLUM_NO === 13) && typeof ANNE12 !== 'undefined' && ANNE12 && isFinite(ANNE12.x) ? (Math.sign(P.x - ANNE12.x) || P.f) * 34 : 0) + Math.cos(a) * 58; ty = P.y - 104 + Math.sin(a) * 18 + Math.sin(a * 2) * 6;   // çember öne kayık (arkadaki annenin başına girmesin)
+    if (aile14) { tx = P.x + yan14 * (68 + Math.cos(a) * 18); ty = ust14 + Math.sin(a) * 8; }
     k = 40; damp = 10;
     if (D.modeT > 2.73 * 2 || P.idle < 0.5) { D.mode = 'follow'; D.modeT = 0; D.nextOrbit = P.idle + 6; }
   } else if (D.mode === 'happy') {
@@ -1268,6 +1274,27 @@ function stepDragon(dt) {
   D.headRoll = lerp(D.headRoll, rollW, 1 - Math.exp(-dt * 6));
 
   if (!isFinite(tx) || !isFinite(ty)) { tx = P.x - P.f * 40; ty = P.y - 112; if (D.mode !== 'follow') drMode('follow'); }   // hedef bozuksa (eksik nesne/olay verisi) güvenli takip
+  if (!direct && BOLUM_NO === 13 && typeof IP13CHAR !== 'undefined' && IP13CHAR.bas) {
+    // Çiçeğe veya bir ipucuna uçarken annenin yüzünün önünde oyalanmasın.
+    // Konum itilmez; mevcut yay uçuşu başın üstünden yumuşak bir yol seçer.
+    const h = IP13CHAR.bas;
+    if (isFinite(h.x) && isFinite(h.y) && h.y > 0) {
+      const rx = (h.rx || 25) + 39, ry = (h.ry || 29) + 31;
+      const dx = (D.x - h.x) / rx, dy = (D.y - h.y) / ry;
+      const q = Math.sqrt(dx * dx + dy * dy), w = smooth(clamp((1.85 - q) / 1.25, 0, 1));
+      if (w > 0) { const side = Math.sign(P.x - h.x) || P.f || 1; tx = lerp(tx, h.x + side * (rx + 14), w); ty = lerp(ty, h.y - ry - 18, w); k = lerp(k, Math.max(k, 46), w); damp = lerp(damp, Math.max(damp, 12), w); }
+    }
+  }
+  if (!direct && aile14 && (drFree() || D.mode === 'yol' || D.mode === 'merak' || D.mode === 'ilgi' || D.mode === 'happy' || D.mode === 'alkis')) {
+    // İpucuna giderken de iki gerçek kaskın önünde oyalanmasın. Genişletilmiş
+    // sınır Pırıl'ın başını/kanadını ve kaskın küçük adım hareketini içerir.
+    for (let i = 0; i < 2; i++) {
+      const hx = i ? anne14.x : P.x, hy = i ? anne14.y - 117 : P.y - 73;
+      const rx = i ? 76 : 70, ry = i ? 76 : 64, dx = (D.x - hx) / rx, dy = (D.y - hy) / ry;
+      const q = Math.sqrt(dx * dx + dy * dy), w = smooth(clamp((1.85 - q) / 1.25, 0, 1));
+      if (w > 0) { tx = lerp(tx, hx + yan14 * (rx + 14), w); ty = Math.min(ty, lerp(ty, hy - ry - 18, w)); k = lerp(k, Math.max(k, 46), w); damp = lerp(damp, Math.max(damp, 12), w); }
+    }
+  }
   if (!direct) {
     D.vx += ((tx - D.x) * k - D.vx * damp) * dt; D.vy += ((ty - D.y) * k - D.vy * damp) * dt;
     const sp = Math.hypot(D.vx, D.vy); if (sp > 1400) { D.vx *= 1400 / sp; D.vy *= 1400 / sp; }

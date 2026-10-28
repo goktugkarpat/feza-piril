@@ -64,20 +64,22 @@
 <script>
   // Bölüm seçimi: ?bolum=N > başlıktan seçim bayrağı (sessionStorage) > 1. Yalnız biri yüklenir (aynı adları tanımlarlar).
   var BOLUM_NO = 1;
+  var BOLUM_SECENEKLERI = [1,2,3,4,5,6,7,8,9,11,12,13,14];
   var V5 = { bahce: 0, mini: false, sal: false, final: false };
   var V6 = { fener: 0, fenerTop: 12, midilli: 0, mini: false, kopru: false, final: false };   // Bölüm 6 (Şenlik Kalesi) genel durumu
   var V7 = { fener: 0, fenerTop: 10, yavru: 0, kardan: false, kizak: false, final: false };   // Bölüm 7 (Kuzey Işıkları) genel durumu
   var V8 = { kostum: null, fener: 0, fenerTop: 12, hayalet: 0, hayaletTop: 5, seker: 0, kapi: 0, kapiTop: 6, kabakYuz: false, iskelet: false, kazan: false, supurge: false, final: false };   // Bölüm 8 (Balkabağı Gecesi) genel durumu
   var V9 = { pul: 0, pulTop: 10, yavru: 0, yavruTop: 6, meyve: false, kanat: false, kolye: false, binis: false, final: false };   // Bölüm 9 (Pırıl'ın Ejderha Vadisi) genel durumu
-  var V10 = { damla: 0, tilki: 0, bahce: 0, kure: 0, sandal: false, sandalAktif: false, sandalAsama: 0, final: false };   // Zamanın Uyuduğu Vadi
   var V11 = { pelerin: null, ayna: 0, aynaTop: 12, salon: false, org: false, pasta: false, ucus: false, final: false };   // Bölüm 11 (Ay Işığı Şatosu) genel durumu
+  var V14 = {activity:0,seals:[false,false,false,false],voyage:0,final:false};
+  var V13 = { kopru: 0, minder: 0, kelebek: 0, perde: 0, yolculuk: false, yolculukAktif: false, final: false };
   var V12 = { final: false, binis: null, cicek: 0, ucurtma: false, kayik: false, ordek: 0 };   // Bölüm 12 (Annemle Sabancı'da Bir Gün) genel durumu
   try {
     var bq = /[?&]bolum=(\d+)(?:&|$)/.exec(location.search);
     var bs = bq ? +bq[1] : +(sessionStorage.getItem('fezaIsikSec') || 1);   // başlık sayfası her zaman Bölüm 1; Bölüm 2-11 seçim ekranından (oturum bayrağı + yenileme)
-    BOLUM_NO = (Number.isInteger(bs) && bs >= 2 && bs <= 12) ? bs : 1;
+    BOLUM_NO = (Number.isInteger(bs) && BOLUM_SECENEKLERI.indexOf(bs) >= 0) ? bs : 1;
   } catch (e) {}
-  document.write('<script src="src/' + (BOLUM_NO === 12 ? 'bolum12' : BOLUM_NO === 11 ? 'bolum11' : BOLUM_NO === 10 ? 'bolum10' : BOLUM_NO === 9 ? 'bolum9' : BOLUM_NO === 8 ? 'bolum8' : BOLUM_NO === 7 ? 'bolum7' : BOLUM_NO === 6 ? 'bolum6' : BOLUM_NO === 5 ? 'bolum5' : BOLUM_NO === 4 ? 'bolum4' : BOLUM_NO === 3 ? 'bolum3' : BOLUM_NO === 2 ? 'bolum2' : 'bolum') + '.js"><\/script>');
+  document.write('<script src="src/' + (BOLUM_NO === 14 ? 'bolum14' : BOLUM_NO === 13 ? 'bolum13' : BOLUM_NO === 12 ? 'bolum12' : BOLUM_NO === 11 ? 'bolum11' : BOLUM_NO === 9 ? 'bolum9' : BOLUM_NO === 8 ? 'bolum8' : BOLUM_NO === 7 ? 'bolum7' : BOLUM_NO === 6 ? 'bolum6' : BOLUM_NO === 5 ? 'bolum5' : BOLUM_NO === 4 ? 'bolum4' : BOLUM_NO === 3 ? 'bolum3' : BOLUM_NO === 2 ? 'bolum2' : 'bolum') + '.js"><\/script>');
 </script>
 <script src="src/dunya.js"></script>
 <script src="src/feza.js"></script>
@@ -86,6 +88,8 @@
 <script src="src/sahne.js"></script>
 <script src="src/sahne11.js"></script>
 <script src="src/sahne12.js"></script>
+<script src="src/sahne13.js"></script>
+<script src="src/sahne14.js"></script>
 <script src="src/arayuz.js"></script>
 <script src="src/sarki.js"></script>
 <script src="src/dunya2.js"></script>
@@ -115,19 +119,33 @@
   if (BOLUM_NO === 9) ['dunya9', 'yavru', 'meyve', 'kanat', 'kolye', 'buyukanne', 'yuva'].forEach(function(n) {   // Pırıl'ın Ejderha Vadisi
     document.write('<script src="src/' + n + '.js"><\/script>');
   });
-  if (BOLUM_NO === 10) ['dunya10', 'zaman10', 'zamanyol10'].forEach(function(n) {
-    document.write('<script src="src/' + n + '.js"><\/script>');
-  });
+  if (BOLUM_NO === 14) ['cosmos14', 'dunya14', 'anne12', 'aile14', 'uzay14'].forEach(function(n) { document.write('<script src="src/' + n + '.js"><\/script>'); });
+  if (BOLUM_NO === 13) ['dunya13', 'gokbahce13', 'anne12', 'fezapoz12', 'fezapoz13', 'anne13', 'zengin13', 'ipek13'].forEach(function(n) { document.write('<script src="src/' + n + '.js"><\/script>'); });
   if (BOLUM_NO === 12) ['dunya12', 'zemin12', 'canli12', 'anne12', 'fezapoz12', 'yolculuk12', 'etkinlik12', 'botanik12', 'bina12', 'golet12', 'final12'].forEach(function(n) { document.write('<script src="src/' + n + '.js"><\/script>'); });
   if (BOLUM_NO === 11) ['dunya11', 'vampir11', 'ayna11', 'pelerin11', 'aynasalon11', 'org11', 'pasta11', 'ucus11', 'balo11'].forEach(function(n) {   // Ay Işığı Şatosu
     document.write('<script src="src/' + n + '.js"><\/script>');
   });
 </script>
+<script>
+  // Decode the space artwork during the bedside opening, never during a touch.
+  // A missing optional image keeps the illustrated fallback and cannot block play.
+  if (BOLUM_NO === 14) {
+    for (const art of [window.COSMOS14, typeof DN14 === 'object' ? DN14 : null]) {
+      if (art && typeof art.loadAssets === 'function') art.loadAssets().catch(() => {});
+    }
+  }
+</script>
 <script src="src/muzik.js"></script>
 <script src="src/muzik12.js"></script>
+<script src="src/muzik13.js"></script>
+<script src="src/muzik14.js"></script>
+<script src="src/ses14.js"></script>
 <script src="sesler.js"></script>
 <script src="sesler12.js"></script>
+<script src="sesler13.js"></script>
+<script src="sesler14.js"></script>
 <script src="src/ses.js"></script>
+<script src="src/ses13.js"></script>
 <script src="src/oyun.js"></script>
 <script>
   // iPad'de internetsiz çalışma (file:// ile açılınca atlanır)

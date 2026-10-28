@@ -873,6 +873,7 @@ function fzShadow(bx, by, al) {
 }
 const FZ_KAY_OPT = { aci: 0, isik: 0, hiz: 1 };   // oyun içi kayma pozu seçenekleri (tek nesne)
 function drawFeza(tm) {
+  if (BOLUM_NO === 14 && window.AILE14) { g.setTransform(S,0,0,S,-cam.x*S,-cam.y*S); if (AILE14.cizFeza(tm)) return; }
   const p12 = BOLUM_NO === 12 && typeof fz12Tam === 'function' ? fz12Tam() : null;   // Bölüm 12: scooter/bisiklet/kayık/bağdaş/sarılma (fezapoz12.js; binişte P.ucus doluyken de)
   if (P.ucus && !p12 && !(BOLUM_NO === 12 && P.ucus.fezaCiz)) { fzKa = 0; return; }   // (Bölüm 12: P.ucus.fezaCiz iken normal yürüyüşle çizilir: finalde örtüye yürür)   // Bölüm 3 uçuş: Feza'yı ucus.js çizer (fezaCizPoz 'binis')
   if (P.fade > 0 && !P.respawned) return;
