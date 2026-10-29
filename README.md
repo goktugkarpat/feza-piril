@@ -40,6 +40,8 @@ Korkutucu hiçbir şey yoktur, kaybetmek yoktur. Feza okuma bilmediği için her
 
 12. **İpek Göğü** — Feza, annesi ve Pırıl ay ışıklı gök bahçelerinde ışık köklerini büyütür, nefes alan bulutlarda zıplar, havaya çizdiği yollarla tırmanılabilir yapraklar çıkarır ve kuzey ışığı tüllerini aralar. Yaşayan bir yaprakta uçarken dokunmaya karşılık veren göğün sevimli sakinleriyle karşılaşır, birlikte yıldız bahçesini uyandırırlar. Çizdiği ışık yolunu küçük bir dost izler; anneyle Feza ışığı ve göğün sürprizlerini birlikte takip eder. Anneyle sarılma, özgün müzik ve Türkçe anlatım bu rüyaya eşlik eder; yol kapısı, süre baskısı veya kaybetme yoktur.
 
+13. **Annemle Yıldız Yolculuğu** — Feza ile annesi Ay, Mars, Jüpiter ve Uranüs’ü keşfeder. On iki etkinlikte gerçek parçaları takar, uyuyan yıldızları uyandırır, fotoğraf çeker, kızıl tozları siler, kristal çıkarır, kumdan evler yapar, bulutları buluşturur, yıldızlara yelken açar ve buzda kayarlar. Büyük gerçek nesneler, aynı anda tek belirgin ipucu ve kısa Türkçe yönlendirme okuma gerektirmez; boş yere dokunmak oyunu gizlice çözmez. Her rüyadaki gibi uzay yolculuğu Dünya’ya ve Feza’nın yatağına dönüşle biter.
+
 **Pofuduklar** ormanın ışığını karınlarında taşıyan tüylü orman dostlarıdır. Üstlerine zıplamak onları gıdıklayıp ışıklarını uyandırır:
 hapşırırlar, karınları parlar, çevrelerindeki mantarlar ve bitkiler renklenir, Feza'nın peşine takılırlar. Bazıları çok derin uyur;
 onları yalnızca ışık şarkısı uyandırır.
@@ -73,7 +75,7 @@ onları yalnızca ışık şarkısı uyandırır.
 
 - **Sessiz açmak:** adrese `?sessiz` ekle. Açılışı atlamak için `?atla`, altyazı için `?altyazi`.
 - **Sesli açılış:** tarayıcı sesi ilk dokunuşa kadar kilitlerse müzik ve geçerli açılış konuşması o dokunuşta devam eder; konuşma ses bağlamı hazır olmadan söylenmiş sayılmaz. Sekmeye geri dönüldüğünde aynı ses bağlamı sürdürülür.
-- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=9` veya `?bolum=11` … `?bolum=13`. Seçim rafı İpek Göğü, Annemle Sabancı’da Bir Gün ve Ay Işığı Şatosu ile başlar; ardından Pırıl’ın Ejderha Vadisi, Balkabağı Gecesi, Kuzey Işıkları gelir. Bütün rüyalar baştan açıktır.
+- **Doğrudan bir rüyayı açmak:** `?bolum=1` … `?bolum=9` veya `?bolum=11` … `?bolum=14`. Seçim rafı Annemle Yıldız Yolculuğu, İpek Göğü, Annemle Sabancı’da Bir Gün ve Ay Işığı Şatosu ile başlar; ardından Pırıl’ın Ejderha Vadisi, Balkabağı Gecesi, Kuzey Işıkları gelir. Bütün rüyalar baştan açıktır.
   Hepsinde yatak animasyonu tamamlanınca oyun doğrudan başlar; ayrıca oda dönüşümü, ikinci uyanış, ışıkla belirme veya kontrol beklemesi yoktur.
   Ormanın yatak girişi yaklaşık 13,4 saniye, diğer rüyalarınki 7,85 saniyedir. Yatağı da atlayan sessiz deneme: `?sessiz&atla&bolum=5`.
 - **Kayıtları sıfırlamak:** seçim ekranında sol üst köşeye 3 saniye basılı tut. Bitirilen rüyalar cihazda saklanır, kilit yoktur.
