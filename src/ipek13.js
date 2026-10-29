@@ -335,6 +335,7 @@
   return null;
  }
  function i13Down(e){
+  if(i13Hand.on&&i13Hand.id!==e.pointerId)return;
   if(DURUM!=='oyun'||e.target!==cv||e.pointerType==='mouse'&&e.button!==0)return;
   const p=i13Point(e);
   if(i13Active&&i13Active.tip==='k13Gok'){i13Active.weave=i13Clamp(i13Active.weave+.045);i13SkyGift(i13Active,p.x,p.y);return;}

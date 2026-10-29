@@ -2,7 +2,7 @@
    uçuşta açılan, sarılmada sakinleşen özgün masal teması. Ortak AU motorunu kullanır. */
 'use strict';
 const MZ13=(()=>{
- let K=null,bar=0,mode='kiyi',finishAt=Infinity,finished=false,peak=false;
+ let K=null,bar=0,mode='kiyi',finishAt=Infinity,finished=false,peak=false,focusUntil=-Infinity;
  const cooldown=Object.create(null);
  const CH=[{root:38,n:[50,54,57,61,64]},{root:43,n:[55,59,62,66,69]},{root:47,n:[54,57,59,62,66]},{root:45,n:[57,61,64,66,71]},{root:40,n:[52,55,59,62,66]},{root:42,n:[54,57,61,64,69]}];
  const HARMONY=[0,0,1,3,2,1,4,3,0,5,1,3,2,4,3,0];
@@ -19,7 +19,7 @@ const MZ13=(()=>{
   const x=typeof P!=='undefined'?P.x/40:0;
   return x<90?'kiyi':x<170?'kopru':x<285?'bulut':x<390?'bahce':x<470?'koru':x<630?'ucus':'meydan';
  }
- function bagla(kit){K=kit;bar=0;mode='kiyi';finishAt=Infinity;finished=false;peak=false;for(const k in cooldown)delete cooldown[k];}
+ function bagla(kit){K=kit;bar=0;mode='kiyi';finishAt=Infinity;finished=false;peak=false;focusUntil=-Infinity;for(const k in cooldown)delete cooldown[k];}
  function pad(ch,t,d,v){
   if(!K||!K.ac)return;
   for(let j=0;j<3;j++){if(!K.yerVar(1,t,t+d+1.5,false,1))continue;const out=K.zarf(t,.72,v*(j===0?.8:.6),d+1.15,K.panla(K.B.pad,(j-1)*.25));K.osc('sine',K.NOTE(ch.n[j]),t,t+d+1.55,out);}
@@ -30,13 +30,13 @@ const MZ13=(()=>{
   if(t>=finishAt){finished=true;return 2.4;}
   const flight=mode==='ucus',cloud=mode==='bulut',quiet=mode==='saril'||mode==='sabah',rise=mode==='tac';
   const eighth=30/(flight?114:cloud?108:quiet?82:rise?96:98),dur=eighth*6;
-  const ci=quiet?0:rise?[1,3,0,0][bar%4]:HARMONY[bar%16],ch=CH[ci],breath=!flight&&!rise&&bar%8===7,level=quiet?.72:1;
+  const ci=quiet?0:rise?[1,3,0,0][bar%4]:HARMONY[bar%16],ch=CH[ci],breath=!flight&&!rise&&bar%8===7,focused=!quiet&&!flight&&!rise&&t<focusUntil,level=quiet?.72:focused?.86:1;
   if(bar%2===0||quiet||rise){pad(ch,t,dur*1.5,(rise?.034:quiet?.027:.024)*level);K.bas(ch.root,t,.033*level,'uzun',dur*1.35);}
   const order=flight?[0,2,4,1,3,4]:[0,2,3,1,2,4],count=quiet?3:breath?4:6;
   for(let i=0;i<count;i++)K.arp(ch.n[order[i]]+12,t+i*eighth*(quiet?1.8:1),(i===0?.045:.032)*level,(i%2?1:-1)*.3,quiet?2:1.65,K.B.arp);
   if(!breath){
    const answer=Math.floor(bar/8)%2,melody=(answer?B:A)[bar%8];
-   for(let i=0;i<melody.length;i++){const n=melody[i],oct=quiet?-12:0,vol=mode==='bahce'?.023:quiet?.026:rise?.042:.035;if(quiet&&i>1)break;K.flut(n[1]+oct,t+n[0]*eighth,n[2]*eighth*.9,vol,answer?-.18:.18,K.B.flut,true);}
+   for(let i=0;i<melody.length;i++){const n=melody[i],oct=quiet?-12:0,vol=mode==='bahce'?.023:quiet?.026:rise?.042:.035;if((quiet||focused)&&i>1)break;K.flut(n[1]+oct,t+n[0]*eighth,n[2]*eighth*.9,vol,answer?-.18:.18,K.B.flut,true);}
    if(bar%4===1&&!quiet)K.flut(ch.n[2],t+4*eighth,1.4*eighth,.022,-.25,K.B.flut,false);
   }
   if((cloud||flight)&&bar%2===0){K.tus(ch.n[3]+12,t+3*eighth,.032,1.15,-.25,true,K.B.tus);K.tus(ch.n[4]+12,t+4.5*eighth,.026,1.1,.25,true,K.B.tus);}
@@ -48,8 +48,9 @@ const MZ13=(()=>{
  }
  function karisim(t,d){
   if(!K||!active())return;mode=phase();const quiet=mode==='saril'||mode==='sabah',rise=mode==='tac';
+  const focused=!quiet&&!rise&&mode!=='ucus'&&t<focusUntil;
   const levels={arp:quiet?.72:.92,pad:rise?.94:.8,tus:.82,flut:.93,zil:.72,soprano:rise?.65:.3,bas:.56};
-  for(const n in K.TEMEL)if(K.B[n])K.hedefle(K.B[n].gain,K.TEMEL[n]*(levels[n]||0),t,1.25);
+  for(const n in K.TEMEL)if(K.B[n])K.hedefle(K.B[n].gain,K.TEMEL[n]*(levels[n]||0)*(focused?(n==='flut'||n==='tus'?.74:n==='arp'?.86:1):1),t,1.25);
   if(K.revMuzik)K.hedefle(K.revMuzik.gain,.57,t,1.8);
   if(K.dly&&K.dly.fbG)K.hedefle(K.dly.fbG.gain,.23,t,1.8);
   if(K.ruzgarG)K.hedefle(K.ruzgarG.gain,mode==='ucus'?.009:.003,t,1.5);
@@ -57,7 +58,9 @@ const MZ13=(()=>{
  function sfx(name,value){
   if(!/^k13/.test(name)||!active())return false;if(!K||!K.calabilir())return true;
   const t=K.zaman(),gap=name==='k13Mantar'?.12:name==='k13Iz'?.42:name==='k13Gok'?4:name==='k13Dost'?1.6:.65;
-  if(t-(cooldown[name]??-100)<gap)return true;cooldown[name]=t;
+  const key=name==='k13Mantar'?name+':'+Math.max(0,Math.min(4,Math.floor(Number(value)||0))):name;
+  if(t-(cooldown[key]??-100)<gap)return true;cooldown[key]=t;
+  if(name!=='k13Gok'&&name!=='k13Dost')focusUntil=t+2.8;
   const notes=[74,78,81,83,86],i=Math.max(0,Math.min(4,Math.floor(Number(value)||0)));
   if(name==='k13Mantar'){K.ksilofon([74,78,81][i%3],t,.044,(i-1)*.25,'ahsap',K.sfxG);K.arp([74,78,81][i%3]+12,t+.06,.025,(i-1)*.18,1.5,K.sfxG);}
   else if(name==='k13Minder'){K.ton(t,'sine',165,315,.3,.05,.025,0,.1,K.sfxG);K.gur(t,.3,'bandpass',850,1800,.8,.014,.045,0,.12,K.sfxG);K.tus(74,t+.08,.034,.6,.12,true,K.sfxG);}

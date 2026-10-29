@@ -3,7 +3,7 @@
    aile14CizPoz çağrısına aittir; dışarıda her karakter tek kez çizilir. */
 'use strict';
 const AILE14 = (() => {
-  const PI2=Math.PI*2, M={hazir:false,x:0,y:720,vx:0,yon:1,faz:0,yuru:0,pose:'ayakta',poseT:0,poseDur:0,poseAge:0,hopAge:0,hopDur:0,opt:null,tm:0,ship:false,fezaFaz:0,fezaYuru:0,fezaX:NaN,talkT:0,nodT:0,wasGround:true,prevVy:0,landT:0,landForce:0};
+  const PI2=Math.PI*2, M={hazir:false,x:0,y:720,vx:0,yon:1,faz:0,yuru:0,pose:'ayakta',poseT:0,poseDur:0,poseAge:0,hopAge:0,hopDur:0,opt:null,tm:0,ship:false,fezaFaz:0,fezaYuru:0,fezaX:NaN,talkT:0,nodT:0,nodWait:0,wasGround:true,prevVy:0,landT:0,landForce:0};
   const FK={a_lidM:1,a_hx:0,a_hy:0,a_hw:0,a_shine:0,a_dim:null};
   const FR=typeof FZ_REST!=='undefined'?Object.assign({},FZ_REST):{};
   const PAL14={feza:{cloth:'#f7f4e8',shade:'#c5d7dd',edge:'#6f94a7',accent:'#4c94c9',dark:'#315c7b',light:'#b2e5eb',glove:'#f9f7e9',sole:'#47667a',seam:'#8da7ad'},
@@ -252,6 +252,7 @@ const AILE14 = (() => {
     M.tm+=dt;
     M.talkT=Math.max(0,M.talkT-dt);
     M.nodT=Math.max(0,M.nodT-dt);
+    M.nodWait=Math.max(0,M.nodWait-dt);
     if(M.hopAge<M.hopDur)M.hopAge=Math.min(M.hopDur,M.hopAge+dt);
     if(BRIDGE14.active){BRIDGE14.age+=dt;BRIDGE14.u=SM(BRIDGE14.age/.34);if(BRIDGE14.age>=.34)BRIDGE14.active=false;}
     if(M.poseT>0){M.poseAge+=dt;M.poseT=Math.max(0,M.poseT-dt);}
@@ -265,7 +266,10 @@ const AILE14 = (() => {
     if(typeof DURUM!=='undefined'&&DURUM!=='oyun')return;
     const pv=FINITE(P.vx)?P.vx:0,d=Math.abs(pv)>15?Math.sign(pv):P.f===-1?-1:P.f===1?1:M.yon,groundY=typeof yuzey==='function'?yuzey(P.x/(typeof T==='number'?T:40)):720;
     let target=P.x-d*(Math.abs(pv)>30?100:80);
-    const toy=ship&&ship.activity,canTeach=!!(toy&&toy.started&&!toy.done&&FINITE(toy.x)&&FINITE(toy.y)&&Math.abs(P.x-toy.x)<500&&Math.abs(P.y-toy.y)<300&&Math.abs(pv)<110);
+    const toy=ship&&ship.activity,finishWatch=!!(toy&&toy.done&&FINITE(toy.finishT)&&toy.finishT<2.4);
+    // Watch the newly opened result from the same clear standing place while
+    // celebrating; do not walk across its flowers/panels at the first frame.
+    const canTeach=!!(toy&&toy.started&&(!toy.done||finishWatch)&&FINITE(toy.x)&&FINITE(toy.y)&&Math.abs(P.x-toy.x)<500&&Math.abs(P.y-toy.y)<300&&Math.abs(pv)<110);
     if(canTeach){
       if(TEACH.o!==toy){TEACH.o=toy;TEACH.side=P.x>toy.x+110?1:-1;}
       // A narrow viewport can keep both faces while the child works on either
@@ -362,7 +366,7 @@ const AILE14 = (() => {
     TEACH_BOX.y0=Math.min(o.y-390,M.y-155,P.y-110);TEACH_BOX.y1=Math.max(o.y+25,M.y+12,P.y+12);return TEACH_BOX;
   }
   if(typeof OLAY!=='undefined')OLAY.on('konusma',e=>{if(typeof BOLUM_NO!=='undefined'&&BOLUM_NO===14&&e&&/^an_uz_/.test(e.anahtar||''))M.talkT=FINITE(e.sure)?cut(e.sure,0,20):0;});
-  if(typeof OLAY!=='undefined')OLAY.on('k14ActivityStep',()=>{if(typeof BOLUM_NO!=='undefined'&&BOLUM_NO===14&&M.nodT<=0)M.nodT=.64;});
+  if(typeof OLAY!=='undefined')OLAY.on('k14ActivityStep',e=>{if(typeof BOLUM_NO!=='undefined'&&BOLUM_NO===14&&M.nodT<=0&&M.nodWait<=0&&(!e||!e.partial&&!e.replay)){M.nodT=.64;M.nodWait=1.6;}});
   return {adim,cizAnne,cizFeza,pose,anchor,state,draw,cycleDistance,isit,cacheInfo,activityBox};
 })();
 function aile14CizPoz(ctx,x,y,scale,who,pose,tm,opts){AILE14.draw(ctx,x,y,scale,who,pose,tm||0,opts);}

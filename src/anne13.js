@@ -7,7 +7,7 @@ const IP13CHAR = (() => {
   const i13ch = { ad: '', kalan: 0, zaman: 0, agirlik: 0, u: 0, o: {}, sahip: false,
     tx: NaN, ty: NaN, sonTx: NaN, sonTy: NaN, vref: 0, vyref: 0, vy: 0,
     binme: 0, sonPoz: '', cizSay: 0, anaFeza: true, reachX: 25, reachY: -76,
-    gazeX:0,gazeY:0,gazeW:0,aweT:-1,awePulse:0, bakY: 0, merak: 0, merakT: 0, merakY: 610, tepkiT: 0, sonIstek: -10, izSon: -10 };
+    gazeX:0,gazeY:0,gazeW:0,aweT:-1,awePulse:0, bakY: 0, merak: 0, merakT: 0, merakY: 610, tepkiT: 0, sonIstek: -10, izSon: -10, zenginSon:-10 };
   const i13co = { gorunum:'gok13', poz: 'dur', yon: 1, hiz: 0, bak: 0, egil: 0, u: 0, ust: undefined,
     bakisX:0,bakisY:0,bakisW:0,hayret:0, ustW: 0, ustO: null, ifade: 'mutlu', ifadeW: 0.7, golge: true };
   const i13isik={t:-1,owner:null,x:0,y:0,w:0};
@@ -43,19 +43,25 @@ const IP13CHAR = (() => {
     R[A_GUL]=1;R[A_BKY]=-.65;R[A_KAS]=.45;R[A_CNT]=0;
   }
   function i13Hayran(R,tm,o){
-    anPozDur(R,tm,o);const s=Math.sin(tm*.9),wave=.5+.5*Math.sin(tm*1.15),awe=i13ch.gazeW;
+    anPozDur(R,tm,o);const s=Math.sin(tm*.9),wave=.5+.5*Math.sin(tm*1.15),awe=i13ch.gazeW,reaction=Math.max(i13ch.awePulse,Math.exp(-Math.pow((i13ch.tepkiT-.38)/.38,2))),rest=i13sm((i13ch.tepkiT-1.15)/.8);
     R[A_GV]-=.025;R[A_BA]=-.15-.025*s;R[A_OMZ]+=.35*wave;
-    anElTut(R,A_OEX,true,26+1.5*s+1.1*awe,-100-3*wave-2*awe,-.5);
-    anElTut(R,A_UEX,false,10,-81,-1.1);
-    R[A_OEA]=.85+.1*awe;R[A_UEA]=.6+.12*awe;R[A_OEK]=-.5;R[A_UEK]=-1.1;
-    R[A_BKY]=-.81-.06*wave;R[A_BKX]=.4+.32*Math.sin(tm*.29+.6);R[A_GUL]=1;R[A_AGZ]=0;R[A_KAS]=.55;R[A_CNT]=0;
+    anElTut(R,A_OEX,true,26+1.5*s+1.1*awe,-100-3*wave-2*awe+12*rest,-.5);
+    anElTut(R,A_UEX,false,10,-81+5*rest,-1.1);
+    R[A_OEA]=.85+.1*awe-.12*rest;R[A_UEA]=.6+.12*awe;R[A_OEK]=-.5;R[A_UEK]=-1.1;
+    R[A_BKY]=-.81-.06*wave;R[A_BKX]=.4+.32*Math.sin(tm*.29+.6);R[A_GUL]=1;R[A_AGZ]=0;R[A_KAS]=.28+.27*reaction;R[A_CNT]=0;
   }
   function i13Minder(R,tm,o) {
     anPozDur(R,tm,o);
-    const w=.6+.4*Math.sin(tm*1.7),t=i13ch.tepkiT,clap=t>.18&&t<.86?Math.pow(Math.sin((t-.18)/.68*Math.PI*2),2):0;
-    anElMutlak(R,A_OEX,true,25-5*clap,-72-5*w);anElMutlak(R,A_UEX,false,17+2*clap,-74-4*w);
+    const w=.6+.4*Math.sin(tm*1.7),t=i13ch.tepkiT,clap=t>.18&&t<.86?Math.pow(Math.sin((t-.18)/.68*Math.PI*2),2):0,settle=i13sm((t-.9)/.8);
+    anElMutlak(R,A_OEX,true,25-5*clap,-72-5*w+11*settle);anElMutlak(R,A_UEX,false,17+2*clap,-74-4*w+9*settle);
     R[A_OEA]=R[A_UEA]=.9;R[A_OEK]=-.65;R[A_UEK]=-.7;
-    R[A_BKY]=-.9;R[A_BA]=-.17;R[A_GUL]=1;R[A_KAS]=.55;R[A_MUT]=.55;
+    R[A_BKY]=i13ch.bakY;R[A_BA]=-.17+.12*settle;R[A_GUL]=1;R[A_KAS]=.55-.18*settle;R[A_MUT]=.55-.2*settle;
+  }
+  function i13Paylas(R,tm,o){
+    anPozDur(R,tm,o);const u=i13cl(i13ch.tepkiT/1.4,0,1),p=Math.sin(u*Math.PI);
+    // Gerçek başarısını fark eder; nesneyi uzaktan tutuyormuş gibi yapmaz.
+    R[A_GV]+=.02*p;R[A_BA]=.025+.04*p;anElMutlak(R,A_OEX,true,23+3*p,-70-8*p);anElMutlak(R,A_UEX,false,10,-65);
+    R[A_OEK]=-.65;R[A_UEK]=-1;R[A_OEA]=.7+.15*p;R[A_UEA]=.5;R[A_BKY]=i13ch.bakY;R[A_BKX]=.65;R[A_GUL]=1;R[A_AGZ]=0;R[A_KAS]=.25+.1*p;R[A_CNT]=0;
   }
   function i13Yolculuk(R,tm,o) {
     anPozOtur(R,tm,o);
@@ -82,6 +88,7 @@ const IP13CHAR = (() => {
       AN_POZ.i13perde = [i13Perde,'ayakta'];
       AN_POZ.i13minder = [i13Minder,'ayakta'];
       AN_POZ.i13hayran = [i13Hayran,'ayakta'];
+      AN_POZ.i13paylas = [i13Paylas,'ayakta'];
       AN_POZ.i13yolculuk = [i13Yolculuk,'otur'];
       AN_POZ.i13saril = [i13Saril,'ayakta'];
     }
@@ -108,7 +115,7 @@ const IP13CHAR = (() => {
     const o = i13ch.o, etkin = i13Etkin(), ad = i13ch.ad;
     i13ch.agirlik = i13ac(i13ch.agirlik,etkin?1:0,dt,etkin?6:4);
     i13ch.u = i13ac(i13ch.u,i13var(o.u)?i13cl(o.u,0,1):1,dt,9);
-    const ust = etkin && (ad==='dokuma'||ad==='perde'||ad==='minder'||ad==='hayran');
+    const ust = etkin && (ad==='dokuma'||ad==='perde'||ad==='minder'||ad==='hayran'||ad==='paylas');
     const tam = etkin && !!P.ucus && (!!o.sahip || ad==='yolculuk'||ad==='saril');
     const hedef = etkin && i13var(o.ax) && (tam || Math.abs(o.ax-P.x)<230);
     const elle = tam || hedef;
@@ -140,8 +147,9 @@ const IP13CHAR = (() => {
     }
     const bin = etkin && ad==='yolculuk' ? (i13var(o.binme)?o.binme:1) : 0;
     i13ch.binme = i13ac(i13ch.binme,i13cl(bin,0,1),dt,4.8);
-    if(etkin&&(ad==='dokuma'||ad==='perde'||ad==='hayran')&&i13var(o.x)&&Math.abs(ANNE12.vx)<22&&Math.abs(o.x-ANNE12.x)>12)ANNE12.yon=Math.sign(o.x-ANNE12.x);
+    if(etkin&&(ad==='dokuma'||ad==='perde'||ad==='hayran'||ad==='paylas')&&i13var(o.x)&&Math.abs(ANNE12.vx)<22&&Math.abs(o.x-ANNE12.x)>12)ANNE12.yon=Math.sign(o.x-ANNE12.x);
     let targetX=i13var(o.x)?o.x:P.x,targetY=i13var(o.y)?o.y:P.y-55;
+    if(ad==='minder')targetY=P.y-58;
     if(tam&&ad==='dokuma'){targetX=ANNE12.x+ANNE12.yon*26;targetY=ANNE12.y-65-24*i13ch.u;}
     else if(ad==='hayran'&&!i13var(o.y))targetY=P.y-245;
     i13ch.reachX=i13ac(i13ch.reachX,(targetX-ANNE12.x)*ANNE12.yon,dt,6);
@@ -180,15 +188,15 @@ const IP13CHAR = (() => {
     const o = i13ch.o, ad = i13Etkin()?i13ch.ad:'', w = i13ch.agirlik;
     const tam = !!P.ucus && !!ad && (!!o.sahip||ad==='yolculuk'||ad==='saril');
     const moving = Math.abs(ANNE12.vx)>22 && ad!=='yolculuk';
-    const cp = ad==='dokuma'?'i13dokuma':ad==='perde'?'i13perde':ad==='minder'?'i13minder':ad==='hayran'?'i13hayran':ad==='saril'?'i13saril':ad==='yolculuk'?'i13yolculuk':'';
+    const cp = ad==='dokuma'?'i13dokuma':ad==='perde'?'i13perde':ad==='minder'?'i13minder':ad==='hayran'?'i13hayran':ad==='paylas'?'i13paylas':ad==='saril'?'i13saril':ad==='yolculuk'?'i13yolculuk':'';
     i13co.poz = cp && !moving?cp:ANNE12.poz; i13co.yon = ANNE12.yon; i13co.hiz = Math.abs(ANNE12.vx);
     if(ad==='perde'&&!moving&&i13var(o.x)&&Math.abs(o.x-ANNE12.x)>12)i13co.yon=Math.sign(o.x-ANNE12.x);
-    i13co.u = ad==='yolculuk'?i13ch.binme:i13ch.u; i13co.bak = ad==='hayran'?-.8:ad==='minder'?-.55:ad==='dokuma'?0:ad==='yolculuk'?-.15+.4*Math.sin(tm*.28):i13ch.bakY*i13ch.merak+ANNE12.bak*(.6-i13ch.merak*.3);
+    i13co.u = ad==='yolculuk'?i13ch.binme:i13ch.u; i13co.bak = ad==='hayran'?-.8:ad==='minder'?i13ch.bakY:ad==='dokuma'?0:ad==='yolculuk'?-.15+.4*Math.sin(tm*.28):i13ch.bakY*i13ch.merak+ANNE12.bak*(.6-i13ch.merak*.3);
     i13co.egil = ANNE12.egil*.5; i13co.golge = ad!=='yolculuk';
     i13co.ust = moving&&cp&&ad!=='saril'?cp:undefined; i13co.ustW = w;
     i13cu.u = i13ch.u; i13co.ustO = i13cu;
     i13co.ifade = ad==='saril'?'sevgi':ad==='hayran'?'sasir':ad==='minder'?'gulen':'mutlu';
-    i13co.ifadeW = ad==='saril'?i13sm(i13ch.u):ad==='minder'?.8:.55;
+    i13co.ifadeW = ad==='saril'?i13sm(i13ch.u):ad==='minder'?.8-.4*i13sm((i13ch.tepkiT-.9)/.8):ad==='hayran'?.22+.45*Math.max(i13ch.awePulse,Math.exp(-Math.pow((i13ch.tepkiT-.38)/.38,2))):.55;
     i13co.bakisX=i13ch.gazeX;i13co.bakisY=i13ch.gazeY;i13co.bakisW=ad==='saril'?0:i13ch.gazeW;i13co.hayret=i13ch.awePulse;
     i13co.aci = -.65;
     const sarma = tam&&ad==='saril'&&i13ch.u>.35&&!moving;
@@ -224,6 +232,10 @@ const IP13CHAR = (() => {
     if(!i13actif()||typeof DURUM==='undefined'||DURUM!=='oyun'||!e||!i13var(e.x)||!i13var(e.y)||i13Etkin()||P.ucus||i13ch.zaman-i13ch.izSon<3.4||Math.abs(e.x-P.x)>430)return;
     // Parmak izinden yükselen filizi fark eder; başka bir etkinlik pozunun önüne geçmez.
     i13ch.izSon=i13ch.zaman;i13Poz('hayran',{sure:1.65,x:e.x,y:e.y-40});
+  });
+  if(typeof OLAY!=='undefined')for(const event of ['ipekYuvaDost','ipekYagmurBloom','ipekOrkestra','ipekBulutBahce'])OLAY.on(event,e=>{
+    if(!i13actif()||typeof DURUM==='undefined'||DURUM!=='oyun'||!e||!i13var(e.x)||!i13var(e.y)||P.ucus||Math.abs(e.x-P.x)>430||i13ch.zaman-i13ch.zenginSon<2.4||i13Etkin()&&i13ch.ad!=='paylas')return;
+    i13ch.zenginSon=i13ch.zaman;i13Poz('paylas',{sure:1.6,x:e.x,y:e.y-65,u:1});
   });
   return {adim:i13Adim,ciz:i13Ciz,poz:i13Poz,state:i13State,bas:i13bas};
 })();

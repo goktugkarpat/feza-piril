@@ -79,7 +79,8 @@ const MZ14=(()=>{
   if(!K||!K.calabilir())return true;const t=K.zaman(),v=value||{},part=Number.isFinite(v.part)?v.part:Number.isFinite(v.index)?v.index:0;
   const gap=name==='k14Touch'?.14:name==='k14Step'?.16:name==='k14Ice'?.14:name==='k14Dust'?.18:name==='k14Lift'?2:name==='k14Done'?1.6:.45;
   if(name==='k14Touch'||name==='k14Step'||name==='k14Ice')focusUntil=t+3.2;
-  if(t-(cd[name]??-100)<gap)return true;cd[name]=t;
+  const key=name==='k14Step'||name==='k14Ice'?name+':'+(Number.isInteger(v.world)?v.world:0)+':'+(Number.isInteger(v.kind)?v.kind:0)+':'+Math.max(0,Math.min(4,Math.floor(part))):name;
+  if(t-(cd[key]??-100)<gap)return true;cd[key]=t;
   const notes=[74,78,81,83,86],i=Math.max(0,Math.min(4,Math.floor(part)%5)),bus=K.sfxG;
   if(name==='k14Touch'){
     // A tiny immediate tactile answer; the longer melody belongs to a real solved step.

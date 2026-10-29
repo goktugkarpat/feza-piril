@@ -100,12 +100,17 @@ function dn13Point(p,t){const a=1-t;return [a*a*a*p[0]+3*a*a*t*p[2]+3*a*t*t*p[4]
 function dn13Limb(c,p,w0,w1,col,hi){const L=[],R=[];for(let j=0;j<=16;j++){const t=j/16,a=dn13Point(p,Math.max(0,t-.01)),b=dn13Point(p,Math.min(1,t+.01)),q=dn13Point(p,t),dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy)||1,w=(w0+(w1-w0)*Math.pow(t,.8))*.5;L.push([q[0]-dy/len*w,q[1]+dx/len*w]);R.push([q[0]+dy/len*w,q[1]-dx/len*w]);}
  c.beginPath();c.moveTo(L[0][0],L[0][1]);for(let j=1;j<L.length;j++)c.lineTo(L[j][0],L[j][1]);for(let j=R.length-1;j>=0;j--)c.lineTo(R[j][0],R[j][1]);c.closePath();const q=c.createLinearGradient(p[0]-w0,0,p[0]+w0,0);q.addColorStop(0,col);q.addColorStop(.6,hi);q.addColorStop(1,col);c.fillStyle=q;c.fill();
  c.strokeStyle=dn13Rgba(hi,.65);c.lineWidth=Math.max(.65,w0*.025);c.beginPath();c.moveTo(p[0]-w0*.13,p[1]);c.bezierCurveTo(p[2]-w0*.1,p[3],p[4],p[5],p[6],p[7]);c.stroke();}
-function dn13Leaf(c,x,y,len,w,a,col){c.save();c.translate(x,y);c.rotate(a);c.fillStyle=col;c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(-w,-len*.5,0,-len);c.quadraticCurveTo(w,-len*.48,0,0);c.fill();c.restore();}
+// The folded light side and hairline vein are baked into the existing plant atlases.
+// Unequal shoulders make the leaves read as living foliage rather than flat stamps.
+function dn13Leaf(c,x,y,len,w,a,col){c.save();c.translate(x,y);c.rotate(a);c.fillStyle=col;c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(-w*.94,-len*.39,w*.11,-len);c.quadraticCurveTo(w*1.08,-len*.55,0,0);c.fill();
+ if(len>11){c.globalAlpha*=.22;c.fillStyle='#c5dbc0';c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(w*.22,-len*.4,w*.11,-len);c.quadraticCurveTo(w*1.08,-len*.55,0,0);c.fill();c.globalAlpha/= .22;c.strokeStyle='rgba(9,39,45,.32)';c.lineWidth=.55;c.beginPath();c.moveTo(0,-.8);c.quadraticCurveTo(w*.12,-len*.45,w*.11,-len*.91);c.stroke();}c.restore();}
 function dn13Crown(c,x,y,w,h,pal,seed){
  const R=rng(seed),sil=new Path2D(),shadow=new Path2D(),mid=new Path2D(),lit=new Path2D();
  // An asymmetric leafy envelope follows a bending branch, rather than a circular blob.
  for(let j=0;j<18;j++){const a=j*DN13_TAU/18,r=.73+R()*.33,xx=x+Math.cos(a)*w*.51*r,yy=y+Math.sin(a)*h*.48*r+Math.cos(a)*h*.11;if(j===0)sil.moveTo(xx,yy);else sil.lineTo(xx,yy);}sil.closePath();
  const gr=c.createLinearGradient(x-w*.2,y-h*.5,x+w*.4,y+h*.5);gr.addColorStop(0,pal[4]);gr.addColorStop(.6,pal[3]);gr.addColorStop(1,'#092a37');c.fillStyle=gr;c.fill(sil);
+ // Branch shadows join the canopy to its trunk. They remain inside the leafy mass.
+ c.save();c.clip(sil);c.lineCap='round';for(let j=0;j<5;j++){const xx=x+(j-2)*w*.17,yy=y-h*(.02+dn13Hash(seed+j)*.21);c.strokeStyle=dn13Rgba(pal[0],.44);c.lineWidth=2.4+(4-j)*.3;c.beginPath();c.moveTo(x-w*.2,y+h*.28);c.bezierCurveTo(x-w*.08,y+h*.02,xx-w*.08,yy+h*.07,xx+w*.12,yy-h*.05);c.stroke();c.strokeStyle=dn13Rgba(pal[6],.15);c.lineWidth=.6;c.stroke();}c.restore();
  for(let j=0;j<350;j++){const a=R()*DN13_TAU,d=Math.sqrt(R()),xx=x+Math.cos(a)*d*w*.53,yy=y+Math.sin(a)*d*h*.47+Math.cos(a)*h*.11,l=7+R()*13,wi=2.7+R()*3.2,an=(R()-.5)*1.4+Math.cos(a)*.5;
   const ca=Math.cos(an),sa=Math.sin(an),path=j%7===0?lit:j%3===0?mid:shadow;path.moveTo(xx,yy);path.quadraticCurveTo(xx+ca*l*.45+sa*wi,yy+sa*l*.45-ca*wi,xx+ca*l,yy+sa*l);path.quadraticCurveTo(xx+ca*l*.45-sa*wi,yy+sa*l*.45+ca*wi,xx,yy);
  }
@@ -197,9 +202,14 @@ function dn13FernArt(v){const im=dn13Cv(300,270),c=im.getContext('2d'),R=rng(137
   for(let k=1;k<10;k++){const u=k/10,x=150+(ex-150)*u*u,y=268+(ey-268)*u,w=27*Math.sin(u*Math.PI)*(1-j%3*.1);for(let sd=-1;sd<=1;sd+=2)dn13Leaf(c,x,y,w+6,5+R()*3,angle+sd*(.85+u*.4),cols[k%3]);}}
  return im;}
 function dn13SproutArt(v){const im=dn13Cv(240,200),c=im.getContext('2d'),R=rng(13811+v),col=v?'#9b9bc5':'#78c3bf';c.lineCap='round';
- for(let j=0;j<7;j++){const x=36+j*27,y=198,h=38+R()*95; c.strokeStyle=v?'#67799c':'#477d85';c.lineWidth=2.5;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x-7,y-h*.4,x+5,y-h);c.stroke();
-  if(j%2){dn13Bloom(c,col,x+5,y-h,53,43,.51);const q=c.createLinearGradient(0,y-h-14,0,y-h+5);q.addColorStop(0,dn13Mix(col,'#f4ffed',.76));q.addColorStop(1,col);c.fillStyle=q;c.beginPath();c.moveTo(x-15,y-h+1);c.bezierCurveTo(x-16,y-h-19,x+22,y-h-26,x+25,y-h+1);c.quadraticCurveTo(x+5,y-h+7,x-15,y-h+1);c.fill();c.strokeStyle='rgba(224,255,240,.88)';c.lineWidth=.6;c.beginPath();c.moveTo(x-11,y-h+1);c.quadraticCurveTo(x+5,y-h+6,x+21,y-h+1);c.stroke();}
-  else {for(let k=0;k<4;k++)dn13Leaf(c,x+3,y-h*.3-k*9,14+k*2,5,(k%2?1:-1)*.8,v?'#7688a4':'#4d9e94');dn13Bloom(c,col,x+5,y-h,31,35,.38);dn13El(c,x+5,y-h,3,5,dn13Mix(col,'#f1ffeb',.69));}}
+ for(let j=0;j<7;j++){const x=36+j*27,y=198,h=38+R()*95;c.strokeStyle=v?'#67799c':'#477d85';c.lineWidth=2.5;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x-7,y-h*.4,x+5,y-h);c.stroke();
+  if(j%2){dn13Bloom(c,col,x+5,y-h,46,36,.34);const q=c.createLinearGradient(0,y-h-14,0,y-h+5);q.addColorStop(0,dn13Mix(col,'#f4ffed',.76));q.addColorStop(1,col);c.fillStyle=q;c.beginPath();c.moveTo(x-15,y-h+1);c.bezierCurveTo(x-16,y-h-19,x+22,y-h-26,x+25,y-h+1);c.quadraticCurveTo(x+5,y-h+7,x-15,y-h+1);c.fill();
+   // The little cap has a shaded underside, fine gills and a reflected dew edge.
+   c.fillStyle=v?'#667b9c':'#397876';c.beginPath();c.moveTo(x-14,y-h+1);c.quadraticCurveTo(x+5,y-h+10,x+24,y-h+1);c.quadraticCurveTo(x+5,y-h+3,x-14,y-h+1);c.fill();c.strokeStyle='rgba(207,235,216,.31)';c.lineWidth=.45;for(let k=0;k<5;k++){c.beginPath();c.moveTo(x+5,y-h+6);c.lineTo(x-10+k*7,y-h+2);c.stroke();}c.strokeStyle='rgba(224,255,240,.78)';c.lineWidth=.7;c.beginPath();c.moveTo(x-11,y-h+1);c.quadraticCurveTo(x+5,y-h+6,x+21,y-h+1);c.stroke();dn13El(c,x+9,y-h-10,1.5,.8,'rgba(247,255,232,.62)',-.3);}
+  else {for(let k=0;k<4;k++)dn13Leaf(c,x+3,y-h*.3-k*9,14+k*2,5,(k%2?1:-1)*.8,v?'#7688a4':'#4d9e94');dn13Bloom(c,col,x+5,y-h,25,29,.26);dn13El(c,x+5,y-h,3,5,dn13Mix(col,'#f1ffeb',.69));}
+ }
+ // Low blue-violet wood-bells have folded petals, not a halo or an interactive marker.
+ for(let j=0;j<3;j++){const x=51+j*62,y=194,h=27+R()*23,side=j%2?1:-1;c.strokeStyle=v?'#59677f':'#416d67';c.lineWidth=1.2;c.beginPath();c.moveTo(x,y);c.bezierCurveTo(x+side*3,y-h*.5,x+side*13,y-h-5,x+side*18,y-h+1);c.stroke();dn13Leaf(c,x,y-5,22,6,-side*.5,v?'#63718b':'#497f70');const xx=x+side*18,yy=y-h+1;c.fillStyle=v?'#a9a1c8':'#8b91ba';c.beginPath();c.moveTo(xx-3,yy-2);c.bezierCurveTo(xx-8,yy,xx-10,yy+8,xx-9,yy+12);c.quadraticCurveTo(xx-4,yy+9,xx,yy+13);c.quadraticCurveTo(xx+4,yy+9,xx+8,yy+12);c.bezierCurveTo(xx+8,yy+5,xx+5,yy-1,xx+2,yy-2);c.closePath();c.fill();c.strokeStyle='rgba(219,219,227,.45)';c.lineWidth=.8;c.beginPath();c.moveTo(xx-1,yy);c.quadraticCurveTo(xx-3,yy+7,xx,yy+11);c.stroke();dn13El(c,xx,yy+11,1.5,.8,'#b5bda3');}
  return im;}
 
 // Organic terrain retains the exact contact line, while roots and clouds sculpt the visible underside.

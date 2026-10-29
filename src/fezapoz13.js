@@ -9,14 +9,14 @@ const FZ13 = { dt:0, ad:'', sahip:false, yon:1, don:1, eskiYon:1, w:0, t:0,
   Q:{a_R:null,a_hipY:0,a_hx:0,a_hy:0,a_lidM:1,vy:0,ik:null,ikUst:false,ara:null,a_tilt:0,
     a_noFar:false,a_cl:0,a_kenar:true,a_yaw:0,a_pil:0,a_shine:0,a_isik:0,a_dim:null,a_hw:0},
   ka:[0,0,1],kb:[0,0,1],pt:[0,0],o:{u:1,bak:-.3,sallan:.65,hedef:[25,-40]},
-  c:null,x:null,ring:null,rx:null, awePulse:0,gazeW:0,gazeGX:0,gazeGY:0,gazeHead:0,reachX:17,reachY:-35,lookY:0,u:0 };
+  c:null,x:null,ring:null,rx:null, renderT:-1,upperT:-1,reactT:0,awePulse:0,gazeW:0,gazeGX:0,gazeGY:0,gazeHead:0,reachX:17,reachY:-35,lookY:0,u:0 };
 function fz13Actif() { return typeof BOLUM_NO!=='undefined'&&BOLUM_NO===13; }
 function fz13Adim(dt,ad,o,ch) {
   if (!fz13Actif()) return;
   FZ13.dt = Number.isFinite(dt)?Math.max(0,Math.min(.05,dt)):0; FZ13.t += FZ13.dt;
   const own = !!P.ucus && !!ad && (!!o.sahip||ad==='yolculuk'||ad==='saril');
   if (own&&!FZ13.sahip) {
-    Object.assign(FZ13.R,P.a_R||FZ_REST); FZ13.w = 0; FZ13.yon = P.a_side===-1?-1:1; FZ13.eskiYon=FZ13.yon; FZ13.don=1;
+    Object.assign(FZ13.R,P.a_R||FZ_REST); FZ13.w = 0; FZ13.yon = P.a_side===-1?-1:1; FZ13.eskiYon=FZ13.yon; FZ13.don=1;FZ13.renderT=-1;
   }
   if (!own&&FZ13.sahip&&P.a_pose&&P.a_pv) {
     fzPack(FZ13.R,P.a_pose); P.a_pv.fill(0); Object.assign(P.a_R,FZ13.R);
@@ -30,7 +30,7 @@ function fz13Adim(dt,ad,o,ch) {
   FZ13.reachX+=(tx-FZ13.reachX)*follow;FZ13.reachY+=(ty-FZ13.reachY)*follow;
   FZ13.lookY+=((ty+42)/32-FZ13.lookY)*(1-Math.exp(-FZ13.dt*4.5));
   FZ13.w += ((ad?1:0)-FZ13.w)*(1-Math.exp(-FZ13.dt*7));
-  FZ13.gazeW=ad==='saril'?0:ch.gazeW||0;FZ13.awePulse=ch.awePulse||0;
+  FZ13.gazeW=ad==='saril'?0:ch.gazeW||0;FZ13.awePulse=ch.awePulse||0;FZ13.reactT=Number.isFinite(ch.tepkiT)?ch.tepkiT:0;
   const gdx=(ch.gazeX-px)*face,gdy=ch.gazeY-(py-64);
   const gf=1-Math.exp(-FZ13.dt*4.5);
   FZ13.gazeGX+=(Math.max(-1,Math.min(1,gdx/170))-FZ13.gazeGX)*gf;
@@ -47,18 +47,24 @@ function fz13Bak(R){
 function fz13Ust(tm,ad,o,w) {
   if (!fz13Actif()||!P.a_R||P.ucus) return;
   const R=P.a_R, hip=P.a_hipY, T=FZ13.hedef;
+  if(FZ13.upperT===FZ13.t){fz13Eller(R,hip,(P.rx??P.x)+(P.a_ox||0),(P.ry??P.y)+(P.a_oy||0),P.a_side||1);return;}FZ13.upperT=FZ13.t;
   Object.assign(T,R);
   let tx=0,ty=0,fx=0,fy=0, use=false;
   const sn=Math.sin(tm*1.45),wave=.5+.5*Math.sin(tm*.85);
   if (ad==='dokuma') {
     tx=FZ13.reachX+.8*sn;ty=FZ13.reachY-.7*sn;fx=tx-5;fy=ty+6;use=true;
     T.head=.04+Math.max(-.17,Math.min(.15,FZ13.lookY*.14));T.gy=Math.max(-.8,Math.min(.65,FZ13.lookY));T.gx=.7;T.brow=.26+.15*FZ13.u;T.mSmile=1;T.mOpen=.08+.12*FZ13.u;
+  } else if(ad==='paylas'){
+    const p=Math.sin(Math.max(0,Math.min(1,FZ13.reactT/1.4))*Math.PI);
+    tx=13+2*p;ty=-33-5*p;fx=8;fy=-27;use=true;T.head=Math.max(-.14,Math.min(.14,FZ13.lookY*.12));T.gy=Math.max(-.7,Math.min(.65,FZ13.lookY));T.gx=.6;T.brow=.25+.12*p;T.mSmile=1;T.mOpen=.06+.1*p;
   } else if (ad==='perde') {
     tx=18-3*wave;ty=-49+2*sn;fx=11;fy=-36;use=true;T.head=-.17;T.gy=-.75;T.brow=.5;T.mOpen=.15;T.hOpen=.8;
   } else if (ad==='hayran') {
-    tx=15+1.2*sn;ty=-49-2*wave;fx=9;fy=-32;use=true;T.head=-.24;T.gy=-.98;T.gx=.45+.3*Math.sin(tm*.31);T.brow=.6;T.mOpen=.3+.08*wave;T.mSmile=1;T.hOpen=.85;
+    const wonder=Math.max(FZ13.awePulse,Math.exp(-Math.pow((FZ13.reactT-.38)/.38,2))),r=Math.max(0,Math.min(1,(FZ13.reactT-1.15)/.8)),rest=r*r*(3-2*r);
+    tx=15+1.2*sn;ty=-49-2*wave+11*rest;fx=9;fy=-32+4*rest;use=true;T.head=-.24;T.gy=-.98;T.gx=.45+.3*Math.sin(tm*.31);T.brow=.3+.3*wonder;T.mOpen=.07+.24*wonder;T.mSmile=1;T.hOpen=.85;
   } else if (ad==='minder') {
-    T.la1=1.9+.08*sn;T.la2=.45;T.ba1=1.4-.08*sn;T.ba2=.4;T.hOpen=.9;T.mSmile=1;T.mOpen=.25;T.gy=-.65;T.brow=.5;
+    const fall=Math.max(-1,Math.min(1,(P.vy||0)/300));
+    T.la1=1.9+.08*sn-.16*fall;T.la2=.45+.14*Math.max(0,fall);T.ba1=1.4-.08*sn-.12*fall;T.ba2=.4+.1*Math.max(0,fall);T.hOpen=.9;T.mSmile=1;T.mOpen=.12+.13*Math.max(0,-fall);T.gy=-.65+.28*Math.max(0,fall);T.brow=.5;
   }
   else if(!(FZ13.gazeW>.002)){fz13Eller(R,hip,(P.rx??P.x)+(P.a_ox||0),(P.ry??P.y)+(P.a_oy||0),P.a_side||1);return;}
   if (use&&typeof fz12KolIK==='function') {
@@ -101,24 +107,26 @@ function fz13Ciz(ctx,tm,ad,o,ch) {
     fz12Saril(H,O,tm,T,Q);fz12Uygula(H,T,Q);
   } else {
     fz12Dur(H,tm);fz12Uygula(H,T,Q);
-    const sn=Math.sin(tm*1.45),hay=ad==='hayran',u=Math.max(0,Math.min(1,ch.u)),wave=.5+.5*Math.sin(tm*.9);
+    const sn=Math.sin(tm*1.45),hay=ad==='hayran',u=Math.max(0,Math.min(1,ch.u)),wave=.5+.5*Math.sin(tm*.9),restU=Math.max(0,Math.min(1,(FZ13.reactT-1.15)/.8)),rest=restU*restU*(3-2*restU);
     // Önce tohumu iki avucuyla korur; büyüdükçe elleri ve bakışı onunla yükselir.
-    const tx=(hay?16:18+sn)/FZ_SC,ty=(hay?-51-2*wave:-29-25*u-.8*sn)/FZ_SC;
-    const fx=(hay?9:12-sn)/FZ_SC,fy=(hay?-34:-25-23*u+.5*sn)/FZ_SC;
+    const tx=(hay?16:18+sn)/FZ_SC,ty=(hay?-51-2*wave+11*rest:-29-25*u-.8*sn)/FZ_SC;
+    const fx=(hay?9:12-sn)/FZ_SC,fy=(hay?-34+4*rest:-25-23*u+.5*sn)/FZ_SC;
     fz12KolIK(T,T.hx,H.hy,T.lean,tx,ty,true,1.1,FZ13.ka);fz12KolIK(T,T.hx,H.hy,T.lean,fx,fy,false,1.1,FZ13.kb);
     T.la1=FZ13.ka[0];T.la2=FZ13.ka[1];T.ba1=FZ13.kb[0];T.ba2=FZ13.kb[1];T.arm=1.1;
-    T.head=hay?-.23-.025*Math.sin(tm*.9):.11-.28*u;T.gy=hay?-.93-.05*wave:.5-1.35*u;T.gx=hay?.45+.3*Math.sin(tm*.31):.65;T.brow=hay?.6:.35;T.mOpen=hay?.32:.12+.12*u;T.hOpen=hay?.88:.6;
+    const wonder=Math.max(FZ13.awePulse,Math.exp(-Math.pow((FZ13.reactT-.38)/.38,2)));
+    T.head=hay?-.23-.025*Math.sin(tm*.9):.11-.28*u;T.gy=hay?-.93-.05*wave:.5-1.35*u;T.gx=hay?.45+.3*Math.sin(tm*.31):.65;T.brow=hay?.3+.3*wonder:.35;T.mOpen=hay?.07+.24*wonder:.12+.12*u;T.hOpen=hay?.88:.6;
 
   }
   if(ad!=='saril')fz13Bak(T);
-  const w=1-Math.exp(-FZ13.dt*11);
-  for (let i=0;i<FZ_KEYS.length;i++) {const k=FZ_KEYS[i];R[k]+=(T[k]-R[k])*w;}
+  // A layered/hug redraw or screenshot at the same simulation time must not
+  // advance the joints again. Their rate follows adim, never draw count.
+  if(FZ13.renderT!==FZ13.t){const w=1-Math.exp(-FZ13.dt*11);for(let i=0;i<FZ_KEYS.length;i++){const k=FZ_KEYS[i];R[k]+=(T[k]-R[k])*w;}FZ13.renderT=FZ13.t;}
   Q.a_R=R;Q.a_hipY=-Math.max(fzFy(R.lt1,R.lt2),fzFy(R.bt1,R.bt2))+R.bob;
-  Q.a_lidM=((tm+1.5)%3.9)<.12?0:1;Q.a_hx=Math.sin(tm*2.4)*.16;Q.a_hy=Math.sin(tm*2.4-.7)*.1;
+  const blink=((tm+1.5)%3.9+3.9)%3.9,bp=blink<.045?blink/.045:1-(blink-.045)/.095,bl=Math.max(0,Math.min(1,bp));Q.a_lidM=blink<.14?1-bl*bl*(3-2*bl)*.94:1;Q.a_hx=Math.sin(tm*2.4)*.16;Q.a_hy=Math.sin(tm*2.4-.7)*.1;
   Q.a_cl=ad==='yolculuk'?.2*Math.sin(tm*2.3):0;
   const du=FZ13.don,side=du<.5?FZ13.eskiYon:FZ13.yon,wide=1-.14*Math.sin(Math.PI*du);
   const px=Number.isFinite(o.fx)?o.fx:P.x,py=Number.isFinite(o.fy)?o.fy:P.y;
-  fz13Eller(R,Q.a_hipY,px,py,side);
+  fz13Eller(R,Q.a_hipY,px,py,side*wide);
   fz13Tuval();const x=FZ13.x,rx=FZ13.rx,k=3,C=FZ13.c,RC=FZ13.ring;
   x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,384,384);x.setTransform(k*FZ_SC*wide,0,0,k*FZ_SC,192,294);
   const oldQ=fzQ,oldKos=fzKos,oldM=fz8M;
