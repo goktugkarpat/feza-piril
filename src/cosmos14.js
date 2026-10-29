@@ -8,7 +8,6 @@ const COSMOS14=(()=>{
  const KEYS=['earth','moon','jupiter','uranus','uranus-ring-back','uranus-ring-front'];
  const FRAME={earth:{x:628,y:626,r:592,ry:577.5,shade:'#102f4b'},jupiter:{x:616,y:640,r:588,ry:588.5,shade:'#493a32'},uranus:{x:627,y:633,r:512,ry:512.5,shade:'#16424d'}};
  const items=Object.create(null),stats={draws:0,loads:0};
- const url=key=>'assets/space14/'+(key==='earth'?'earth-globe-v1.png':key==='jupiter'?'jupiter-globe-v1.png':key==='uranus'?'uranus-globe-v1.png':'cosmos-'+key+'.png');
  const time=()=>typeof performance!=='undefined'&&performance.now?performance.now():0;
  const PAPER={earth:['#b7e1d5','#70b9c3','#4e7fa2'],moon:['#f2e6c9','#c7c8bf','#858faa'],jupiter:['#f3dfbe','#d3a58f','#8e829d'],uranus:['#c2ecdc','#77c9ce','#5285ae']};
  function oval(c,x,y,rx,ry,color){c.fillStyle=color;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill();}
