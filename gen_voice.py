@@ -3,7 +3,9 @@
 
 Needs:  python3 -m pip install edge-tts   (internet while recording)   and ffmpeg
 Run:    python3 gen_voice.py            only new/changed lines are recorded; the rest come from .ses_onbellek/
+        python3 gen_voice.py --bolum14  only new space and five companion prompts -> sesler14.js; old banks untouched
         python3 gen_voice.py --hepsi    record everything again
+        python3 gen_voice.py --bolum13  only Bölüm 13 lines (p_ip_ / a_ip_) -> sesler13.js
         python3 gen_voice.py --bolum12  only Bölüm 12 lines (p_q_ / an_q_ / a_q_) -> sesler12.js (sesler.js is not touched)
 
 Voice: tr-TR-EmelNeural (natural Turkish female). Key prefix chooses the delivery:
@@ -20,7 +22,7 @@ Voice: tr-TR-EmelNeural (natural Turkish female). Key prefix chooses the deliver
   (warm grandma, a little low), vb_ baby Pıtır (one or two words, very high and sweet).
   Bölüm 12 (Annemle Sabancı'da Bir Gün): an_ Feza's mum (same voice, a touch lower and calmer than Pırıl, livelier than the narrator:
   warm and natural). Lines with _q_ (p_q_, an_q_, a_q_) are written to sesler12.js; all other lines to sesler.js.
-Output: sesler.js / sesler12.js  →  window.VOICE_MP3 = {key: base64 mp3}  and  window.VOICE_DUR = {key: seconds}.
+Output: sesler.js / sesler12.js / sesler13.js  →  window.VOICE_MP3 = {key: base64 mp3}  and  window.VOICE_DUR = {key: seconds}.
 """
 import asyncio
 import base64
@@ -99,11 +101,22 @@ PRONOUNCE = [
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CACHE = os.path.join(ROOT, ".ses_onbellek")
 OUT = os.path.join(ROOT, "sesler.js")
+OUT13 = os.path.join(ROOT, "sesler13.js")
+OUT14 = os.path.join(ROOT, "sesler14.js")
 OUT12 = os.path.join(ROOT, "sesler12.js")   # Bölüm 12 cümleleri (p_q_ an_q_ a_q_): index.html sesler.js'ten sonra yükler
 
 
+def bolum13(key):
+    return re.match(r"^(p|a)_ip_", key) is not None
+
 def bolum12(key):
     return re.match(r"^(p|an|a)_q_", key) is not None
+
+
+def bolum14(key):
+    # New companion bank also carries only the five new B12/B13 prompts.
+    # --bolum14 never rewrites the established voice banks.
+    return re.match(r"^(p|an|a)_uz_", key) is not None or key == "p_q_ekmek" or key.startswith("p_ip_oyuncak_")
 SRC = os.path.join(ROOT, "src", "ses.js")
 
 
@@ -143,7 +156,8 @@ def trim_chain(key):
 def style(key):
     for pre, st in STYLE.items():
         if key.startswith(pre):
-            return (TEACH_RATE,) + st[1:] if key in TEACH else st
+            new_teach = re.match(r"^p_uz_(ay|mars|jupiter|uranus)_", key) or key == "p_q_ekmek" or key.startswith("p_ip_oyuncak_")
+            return (TEACH_RATE,) + st[1:] if key in TEACH or new_teach else st
     return DEFAULT
 
 
@@ -243,7 +257,11 @@ async def main():
     os.makedirs(CACHE, exist_ok=True)
     all_lines = load_lines()
     only12 = "--bolum12" in sys.argv
-    lines = {k: t for k, t in all_lines.items() if bolum12(k)} if only12 else all_lines
+    only13 = "--bolum13" in sys.argv
+    only14 = "--bolum14" in sys.argv
+    if sum((only12, only13, only14)) > 1:
+        sys.exit("Choose one chapter output at a time")
+    lines = {k: t for k, t in all_lines.items() if bolum14(k)} if only14 else {k: t for k, t in all_lines.items() if bolum13(k) and not bolum14(k)} if only13 else {k: t for k, t in all_lines.items() if bolum12(k) and not bolum14(k)} if only12 else all_lines
     if "--hepsi" in sys.argv:
         for k, t in lines.items():
             if os.path.exists(cache_path(k, t)):
@@ -271,10 +289,19 @@ async def main():
     if missing:
         print("MISSING (existing voice bank preserved):", ", ".join(missing))
         sys.exit(1)
-    k12 = [k for k in mp3 if bolum12(k)]
-    write_out(OUT12, {k: mp3[k] for k in k12}, {k: dur[k] for k in k12}, True)
+    if only14:
+        write_out(OUT14, mp3, dur, True)
+        return
+    k12 = [k for k in mp3 if bolum12(k) and not bolum14(k)]
+    k13 = [k for k in mp3 if bolum13(k) and not bolum14(k)]
+    if not only13:
+        write_out(OUT12, {k: mp3[k] for k in k12}, {k: dur[k] for k in k12}, True)
     if not only12:
-        rest = [k for k in mp3 if not bolum12(k)]
+        write_out(OUT13, {k: mp3[k] for k in k13}, {k: dur[k] for k in k13}, True)
+    if not only12 and not only13:
+        k14 = [k for k in mp3 if bolum14(k)]
+        write_out(OUT14, {k: mp3[k] for k in k14}, {k: dur[k] for k in k14}, True)
+        rest = [k for k in mp3 if not bolum12(k) and not bolum13(k) and not bolum14(k)]
         write_out(OUT, {k: mp3[k] for k in rest}, {k: dur[k] for k in rest}, False)
         keep = {os.path.basename(cache_path(k, t)) for k, t in all_lines.items()}
         for f in os.listdir(CACHE):  # drop recordings of lines that no longer exist and temp leftovers
@@ -286,7 +313,12 @@ def write_out(path, mp3, dur, part12):
     temp_out = path + ".tmp"
     with open(temp_out, "w", encoding="utf-8", newline="\n") as f:   # LF also on Windows (the Mac commits it)
         if part12:   # loaded after sesler.js: adds to the same tables
-            f.write("// Feza ve Pırıl – Bölüm 12 (Annemle Sabancı'da Bir Gün) ses kayıtları (tr-TR-EmelNeural; p_q_ Pırıl, an_q_ anne, a_q_ anlatıcı).\n"
+            if path == OUT14:
+                f.write("// Feza ve Pırıl – Annemle Yıldız Yolculuğu ve yeni B12/B13 ipuçları; python3 gen_voice.py --bolum14.\n")
+            elif path == OUT13:
+                f.write("// Feza ve Pırıl – İpek Göğü sesleri; python3 gen_voice.py --bolum13.\n")
+            else:
+                f.write("// Feza ve Pırıl – Bölüm 12 (Annemle Sabancı'da Bir Gün) ses kayıtları (tr-TR-EmelNeural; p_q_ Pırıl, an_q_ anne, a_q_ anlatıcı).\n"
                     "// Bu dosya gen_voice.py ile üretildi (python3 gen_voice.py --bolum12); elle değiştirmeyin. Cümleler: src/ses.js › LINES.\n")
             f.write("window.VOICE_MP3 = window.VOICE_MP3 || {};\nObject.assign(window.VOICE_MP3, {\n")
             f.write(",\n".join(f" {json.dumps(k)}: \"{v}\"" for k, v in mp3.items()))
@@ -311,4 +343,5 @@ def write_out(path, mp3, dur, part12):
     print(f"wrote {os.path.basename(path)}: {len(mp3)} lines, {sum(dur.values()):.1f} s audio, {size:.0f} KB")
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
