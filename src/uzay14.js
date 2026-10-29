@@ -54,7 +54,11 @@
     for(const p of [[-146,-16],[-129,-88],[88,-54],[126,-9],[18,17],[-94,16]]){oval(c,p[0],p[1],2.2,2.2,'#55748e');oval(c,p[0]-.4,p[1]-.6,.75,.75,'#d8e7e3');}
     c.save();c.globalAlpha=.6;path(c,[[-103,-118],[-69,-128],[-32,-129]],'#fff9e5',1.5);c.restore();
     // Soft upholstered seats and a little shared instrument binnacle stay behind faces.
-    for(const seat of [[-63,-15],[13,-17]]){round(c,seat[0]-15,seat[1]-39,30,39,9,'#455c79');round(c,seat[0]-12,seat[1]-37,24,31,8,'#8197ae');round(c,seat[0]-17,seat[1]-3,38,8,4,'#a8b6c4');path(c,[[seat[0]-10,seat[1]-28],[seat[0]+9,seat[1]-28]],'#c0d0d1',1);}
+    // Cushions meet the seated suit silhouette; boots have separate forward rests.
+    path(c,[[-63,-25],[-63,7]],'#455c79',5);path(c,[[13,-18],[13,8]],'#455c79',5);
+    for(const seat of [[-63,-31.333333],[13,-23]]){round(c,seat[0]-15,seat[1]-39,30,39,9,'#455c79');round(c,seat[0]-12,seat[1]-37,24,31,8,'#8197ae');round(c,seat[0]-17,seat[1]-3,38,8,4,'#a8b6c4');path(c,[[seat[0]-10,seat[1]-28],[seat[0]+9,seat[1]-28]],'#c0d0d1',1);}
+    path(c,[[-43,-17],[-52,6]],'#4f6886',3);path(c,[[27,-19],[19,7]],'#4f6886',3);
+    round(c,-55,-20,24,4,1.5,'#6e88a2');round(c,18,-22,19,4,1.5,'#6e88a2');path(c,[[-53,-20],[-33,-20]],'#b5cbd2',.9);path(c,[[20,-22],[35,-22]],'#b5cbd2',.9);
     round(c,48,-37,39,14,5,'#394e70');round(c,53,-35,14,8,2,'#91c9cd');path(c,[[73,-25],[75,-42]],'#cbd9dd',2.2);oval(c,75,-43,3.4,3.4,'#e9ce91');
     for(let i=0;i<3;i++)oval(c,71+i*5,-32,1.2,1.2,['#e9cf9a','#c4d9b2','#aacde0'][i]);
     c.fillStyle='#647c98';c.beginPath();c.moveTo(-52,-41);c.lineTo(-41,-49);c.lineTo(28,-39);c.lineTo(35,-28);c.lineTo(-46,-33);c.closePath();c.fill();path(c,[[-47,-42],[28,-33]],'#b7d4d6',1.4);round(c,-28,-44,25,10,3,'#304f6f');round(c,-25,-42,19,6,2,'#8fc3ca');path(c,[[-22,-39],[-17,-40],[-12,-38],[-8,-40]],'#f2e6ba',.8);for(const joy of [[-45,-44],[24,-34]]){round(c,joy[0]-6,joy[1]+10,12,5,2,'#8c9db2');path(c,[[joy[0],joy[1]+11],[joy[0],joy[1]]],'#c3d1d3',2.2);oval(c,joy[0],joy[1],3.5,3.5,'#dec992');oval(c,joy[0]-.8,joy[1]-.8,1,1,'#fff1ce');}
